@@ -14,17 +14,21 @@ return new class extends Migration
         Schema::create('citizens', function (Blueprint $table) {
             $table->increments('id');
             $table->string('first_name');
+            $table->string('middle_name');
             $table->string('last_name');
             $table->string('gender')->length(50)->nullable();
             $table->date('date_of_birth')->nullable();
             $table->string('email')->unique()->nullable();
             $table->string('phone')->unique()->nullable();
+            $table->string('national_id')->unique();
             $table->string('image')->nullable();
             $table->tinyInteger('status')->default(1);
             $table->string('password')->nullable();
             $table->string('api_token', 80)->unique()->nullable()->default(null);
             $table->integer('citizen_type_id')->unsigned()->nullable();
             $table->boolean('is_verified')->default(0);
+            $table->boolean('identity_verification_status')->default(0);
+            $table->string('device_token')->nullable();
             $table->string('token')->nullable();
             $table->rememberToken();
             $table->timestamps();

@@ -4,6 +4,8 @@ namespace Najaz\Citizen\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Najaz\Citizen\Contracts\Citizen as CitizenContract;
 
 class Citizen extends Model implements CitizenContract
@@ -11,12 +13,46 @@ class Citizen extends Model implements CitizenContract
     use HasFactory;
 
     /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'citizens';
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array
      */
     protected $fillable = [
-        // Add your fillable attributes here
+        'first_name',
+        'middle_name',
+        'last_name',
+        'gender',
+        'date_of_birth',
+        'email',
+        'phone',
+        'national_id',
+        'image',
+        'status',
+        'password',
+        'api_token',
+        'citizen_type_id',
+        'is_verified',
+        'identity_verification_status',
+        'device_token',
+        'token',
+    ];
+
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
+        'api_token',
     ];
 
     /**
@@ -25,6 +61,25 @@ class Citizen extends Model implements CitizenContract
      * @var array
      */
     protected $casts = [
-        // Add your attribute casts here
+        'status'                       => 'integer',
+        'is_verified'                  => 'boolean',
+        'identity_verification_status' => 'boolean',
+        'citizen_type_id'              => 'integer',
     ];
+
+    /**
+     * Get the citizen type that owns the citizen.
+     */
+    public function citizenType(): BelongsTo
+    {
+        return $this->belongsTo(CitizenTypeProxy::modelClass(), 'citizen_type_id');
+    }
+
+    /**
+     * Get the identity verifications for the citizen.
+     */
+    public function identityVerifications(): HasMany
+    {
+        return $this->hasMany(IdentityVerificationProxy::modelClass(), 'citizen_id');
+    }
 }

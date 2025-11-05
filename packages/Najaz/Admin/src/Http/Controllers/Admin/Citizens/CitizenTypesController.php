@@ -4,7 +4,7 @@ namespace Najaz\Admin\Http\Controllers\Admin\Citizens;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Event;
-use Najaz\Admin\DataGrids\Citizens\TypeDateGrid;
+use Najaz\Admin\DataGrids\Citizens\CitizenTypeDateGrid;
 use Najaz\Citizen\Repositories\CitizenTypeRepository;
 use Webkul\Admin\Http\Controllers\Controller;
 use Webkul\Core\Rules\Code;
@@ -26,7 +26,7 @@ class CitizenTypesController extends Controller
     public function index()
     {
         if (request()->ajax()) {
-            return datagrid(TypeDateGrid::class)->process();
+            return datagrid(CitizenTypeDateGrid::class)->process();
         }
 
         return view('admin::citizens.types.index');

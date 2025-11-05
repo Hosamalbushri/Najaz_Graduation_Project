@@ -14,5 +14,6 @@ class ModuleServiceProvider extends BaseModuleServiceProvider
     protected $models = [
         \Najaz\Citizen\Models\Citizen::class,
         \Najaz\Citizen\Models\CitizenType::class,
+        \Najaz\Citizen\Models\IdentityVerification::class,
     ];
 }

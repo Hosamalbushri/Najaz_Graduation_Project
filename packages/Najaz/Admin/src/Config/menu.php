@@ -29,4 +29,11 @@ return [
         'sort'  => 2,
         'icon'  => 'icon-sales',
     ],
+    [
+        'key'   => 'citizens.identity-verifications',
+        'name'  => 'Admin::app.components.layouts.sidebar.identity-verifications',
+        'route' => 'admin.identity-verifications.index',
+        'sort'  => 3,
+        'icon'  => 'icon-sales',
+    ],
 ];

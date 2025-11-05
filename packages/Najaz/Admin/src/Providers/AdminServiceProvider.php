@@ -20,6 +20,9 @@ class AdminServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->publishes([
+            __DIR__.'/../Resources/views' => resource_path('themes/admin/views'),
+        ]);
         $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
 
         $this->loadRoutesFrom(__DIR__.'/../Routes/admin-routes.php');
