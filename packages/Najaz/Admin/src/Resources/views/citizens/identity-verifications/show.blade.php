@@ -153,6 +153,10 @@
                                         </p>
 
                                         <p class="text-gray-600 dark:text-gray-300">
+                                            @{{ "@lang('Admin::app.citizens.citizens.view.gender')".replace(':gender',verification.citizen.gender ?? 'N/A') }}
+                                        </p>
+
+                                        <p class="text-gray-600 dark:text-gray-300">
                                             @{{ "@lang('Admin::app.citizens.citizens.view.email')".replace(':email',
                                             verification.citizen.email ?? 'N/A') }}
                                         </p>

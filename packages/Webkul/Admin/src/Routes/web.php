@@ -12,17 +12,17 @@ Route::group(['middleware' => ['admin', NoCacheMiddleware::class], 'prefix' => c
     /**
      * Sales routes.
      */
-    require 'sales-routes.php';
+//    require 'sales-routes.php';
 
     /**
      * Catalog routes.
      */
-    require 'catalog-routes.php';
+//    require 'catalog-routes.php';
 
     /**
      * Customers routes.
      */
-    require 'customers-routes.php';
+//    require 'customers-routes.php';
 
     /**
      * Marketing routes.
@@ -37,7 +37,7 @@ Route::group(['middleware' => ['admin', NoCacheMiddleware::class], 'prefix' => c
     /**
      * Reporting routes.
      */
-    require 'reporting-routes.php';
+//    require 'reporting-routes.php';
 
     /**
      * Settings routes.

@@ -245,7 +245,7 @@
                     <template v-else>
                         <div class="grid max-h-[300px] overflow-y-auto sm:max-h-[400px]">
                             <a
-                                :href="'{{ route('admin.catalog.products.edit', ':id') }}'.replace(':id', product.id)"
+{{--                                :href="'{{ route('admin.catalog.products.edit', ':id') }}'.replace(':id', product.id)"--}}
                                 class="flex cursor-pointer justify-between gap-2 border-b border-slate-300 p-3 last:border-b-0 hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-gray-950 sm:gap-2.5 sm:p-4"
                                 v-for="product in searchedResults.products.data"
                             >
@@ -292,7 +292,7 @@
 
                         <div class="flex border-t p-2 dark:border-gray-800 sm:p-3">
                             <a
-                                :href="'{{ route('admin.catalog.products.index') }}?search=:query'.replace(':query', searchTerm)"
+{{--                                :href="'{{ route('admin.catalog.products.index') }}?search=:query'.replace(':query', searchTerm)"--}}
                                 class="cursor-pointer text-xs font-semibold text-blue-600 transition-all hover:underline"
                                 v-if="searchedResults.products.data.length"
                             >
@@ -300,7 +300,7 @@
                             </a>
 
                             <a
-                                href="{{ route('admin.catalog.products.index') }}"
+{{--                                href="{{ route('admin.catalog.products.index') }}"--}}
                                 class="cursor-pointer text-xs font-semibold text-blue-600 transition-all hover:underline"
                                 v-else
                             >
@@ -318,7 +318,7 @@
                     <template v-else>
                         <div class="grid max-h-[300px] overflow-y-auto sm:max-h-[400px]">
                             <a
-                                :href="'{{ route('admin.sales.orders.view', ':id') }}'.replace(':id', order.id)"
+{{--                                :href="'{{ route('admin.sales.orders.view', ':id') }}'.replace(':id', order.id)"--}}
                                 class="grid cursor-pointer place-content-start gap-1 border-b border-slate-300 p-3 last:border-b-0 hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-gray-950 sm:gap-1.5 sm:p-4"
                                 v-for="order in searchedResults.orders.data"
                             >
@@ -334,7 +334,7 @@
 
                         <div class="flex border-t p-2 dark:border-gray-800 sm:p-3">
                             <a
-                                :href="'{{ route('admin.sales.orders.index') }}?search=:query'.replace(':query', searchTerm)"
+{{--                                :href="'{{ route('admin.sales.orders.index') }}?search=:query'.replace(':query', searchTerm)"--}}
                                 class="cursor-pointer text-xs font-semibold text-blue-600 transition-all hover:underline"
                                 v-if="searchedResults.orders.data.length"
                             >
@@ -342,7 +342,7 @@
                             </a>
 
                             <a
-                                href="{{ route('admin.sales.orders.index') }}"
+{{--                                href="{{ route('admin.sales.orders.index') }}"--}}
                                 class="cursor-pointer text-xs font-semibold text-blue-600 transition-all hover:underline"
                                 v-else
                             >
@@ -360,7 +360,7 @@
                     <template v-else>
                         <div class="grid max-h-[300px] overflow-y-auto sm:max-h-[400px]">
                             <a
-                                :href="'{{ route('admin.catalog.categories.edit', ':id') }}'.replace(':id', category.id)"
+{{--                                :href="'{{ route('admin.catalog.categories.edit', ':id') }}'.replace(':id', category.id)"--}}
                                 class="cursor-pointer border-b p-3 text-xs font-semibold text-gray-600 last:border-b-0 hover:bg-gray-100 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-950 sm:p-4 sm:text-sm"
                                 v-for="category in searchedResults.categories.data"
                             >
@@ -370,7 +370,7 @@
 
                         <div class="flex border-t p-2 dark:border-gray-800 sm:p-3">
                             <a
-                                :href="'{{ route('admin.catalog.categories.index') }}?search=:query'.replace(':query', searchTerm)"
+{{--                                :href="'{{ route('admin.catalog.categories.index') }}?search=:query'.replace(':query', searchTerm)"--}}
                                 class="cursor-pointer text-xs font-semibold text-blue-600 transition-all hover:underline"
                                 v-if="searchedResults.categories.data.length"
                             >
@@ -378,7 +378,7 @@
                             </a>
 
                             <a
-                                href="{{ route('admin.catalog.categories.index') }}"
+{{--                                href="{{ route('admin.catalog.categories.index') }}"--}}
                                 class="cursor-pointer text-xs font-semibold text-blue-600 transition-all hover:underline"
                                 v-else
                             >
@@ -396,7 +396,7 @@
                     <template v-else>
                         <div class="grid max-h-[300px] overflow-y-auto sm:max-h-[400px]">
                             <a
-                                :href="'{{ route('admin.customers.customers.view', ':id') }}'.replace(':id', customer.id)"
+{{--                                :href="'{{ route('admin.customers.customers.view', ':id') }}'.replace(':id', customer.id)"--}}
                                 class="grid cursor-pointer place-content-start gap-1 border-b border-slate-300 p-3 last:border-b-0 hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-gray-950 sm:gap-1.5 sm:p-4"
                                 v-for="customer in searchedResults.customers.data"
                             >
@@ -412,7 +412,7 @@
 
                         <div class="flex border-t p-2 dark:border-gray-800 sm:p-3">
                             <a
-                                :href="'{{ route('admin.customers.customers.index') }}?search=:query'.replace(':query', searchTerm)"
+{{--                                :href="'{{ route('admin.customers.customers.index') }}?search=:query'.replace(':query', searchTerm)"--}}
                                 class="cursor-pointer text-xs font-semibold text-blue-600 transition-all hover:underline"
                                 v-if="searchedResults.customers.data.length"
                             >
@@ -420,7 +420,7 @@
                             </a>
 
                             <a
-                                href="{{ route('admin.customers.customers.index') }}"
+{{--                                href="{{ route('admin.customers.customers.index') }}"--}}
                                 class="cursor-pointer text-xs font-semibold text-blue-600 transition-all hover:underline"
                                 v-else
                             >
@@ -448,25 +448,25 @@
                             key: 'products',
                             title: "@lang('admin::app.components.layouts.header.mega-search.products')",
                             is_active: true,
-                            endpoint: "{{ route('admin.catalog.products.search') }}"
+                            {{--endpoint: "{{ route('admin.catalog.products.search') }}"--}}
                         },
 
                         orders: {
                             key: 'orders',
                             title: "@lang('admin::app.components.layouts.header.mega-search.orders')",
-                            endpoint: "{{ route('admin.sales.orders.search') }}"
+                            {{--endpoint: "{{ route('admin.sales.orders.search') }}"--}}
                         },
 
                         categories: {
                             key: 'categories',
                             title: "@lang('admin::app.components.layouts.header.mega-search.categories')",
-                            endpoint: "{{ route('admin.catalog.categories.search') }}"
+                            {{--endpoint: "{{ route('admin.catalog.categories.search') }}"--}}
                         },
 
                         customers: {
                             key: 'customers',
                             title: "@lang('admin::app.components.layouts.header.mega-search.customers')",
-                            endpoint: "{{ route('admin.customers.customers.search') }}"
+                            {{--endpoint: "{{ route('admin.customers.customers.search') }}"--}}
                         }
                     },
 

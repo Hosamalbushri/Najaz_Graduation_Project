@@ -11,7 +11,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Najaz\\Citizen\\": "src/"
+            "Najaz\\Service\\": "src/"
         }
     },
     "autoload-dev": {

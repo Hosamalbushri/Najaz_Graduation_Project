@@ -59,7 +59,9 @@
         "pestphp/pest-plugin-laravel": "^3.0",
         "phpunit/phpunit": "^11.0",
         "najaz/admin": "@dev",
-        "najaz/citizen": "@dev"
+        "najaz/citizen": "@dev",
+        "najaz/service": "@dev"
+
     },
     "autoload": {
         "psr-4": {

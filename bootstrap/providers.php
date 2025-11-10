@@ -25,7 +25,7 @@ return [
 //    Webkul\DebugBar\Providers\DebugBarServiceProvider::class,
     Webkul\FPC\Providers\FPCServiceProvider::class,
     Webkul\GDPR\Providers\GDPRServiceProvider::class,
-//    Webkul\Installer\Providers\InstallerServiceProvider::class,
+    Webkul\Installer\Providers\InstallerServiceProvider::class,
     Webkul\Inventory\Providers\InventoryServiceProvider::class,
     Webkul\MagicAI\Providers\MagicAIServiceProvider::class,
     Webkul\Marketing\Providers\MarketingServiceProvider::class,

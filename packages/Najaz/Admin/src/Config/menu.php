@@ -2,10 +2,17 @@
 
 return [
     [
-        'key'   => 'admin',
-        'name'  => 'Admin',
-        'route' => 'admin.admin.index',
-        'sort'  => 2,
+        'key'   => 'services',
+        'name'  => 'Admin::app.components.layouts.sidebar.services',
+        'route' => 'admin.services.index',
+        'sort'  => 1,
+        'icon'  => 'icon-sales',
+    ],
+    [
+        'key'   => 'services.services',
+        'name'  => 'Admin::app.components.layouts.sidebar.services',
+        'route' => 'admin.services.index',
+        'sort'  => 1,
         'icon'  => 'icon-sales',
     ],
     [
@@ -34,6 +41,27 @@ return [
         'name'  => 'Admin::app.components.layouts.sidebar.identity-verifications',
         'route' => 'admin.identity-verifications.index',
         'sort'  => 3,
+        'icon'  => 'icon-sales',
+    ],
+    [
+        'key'   => 'services.data-groups',
+        'name'  => 'Admin::app.components.layouts.sidebar.data-groups',
+        'route' => 'admin.data-groups.index',
+        'sort'  => 2,
+        'icon'  => 'icon-sales',
+    ],
+    [
+        'key'   => 'services.data-groups.data-groups',
+        'name'  => 'Admin::app.components.layouts.sidebar.data-groups',
+        'route' => 'admin.data-groups.index',
+        'sort'  => 2,
+        'icon'  => 'icon-sales',
+    ],
+    [
+        'key'   => 'services.data-groups.fields',
+        'name'  => 'Admin::app.components.layouts.sidebar.field-types',
+        'route' => 'admin.field-types.index',
+        'sort'  => 2,
         'icon'  => 'icon-sales',
     ],
 ];

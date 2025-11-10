@@ -2,12 +2,6 @@
 
 return [
     [
-        'key'   => 'admin',
-        'name'  => 'Admin',
-        'route' => 'admin.admin.index',
-        'sort'  => 2
-    ],
-    [
         'key'   => 'identity-verifications',
         'name'  => 'Identity Verifications',
         'route' => 'admin.identity-verifications.index',
@@ -37,6 +31,32 @@ return [
                 'name'  => 'Delete Identity Verification',
                 'route' => 'admin.identity-verifications.delete',
                 'sort'  => 4,
+            ],
+        ],
+    ],
+    [
+        'key'   => 'services',
+        'name'  => 'Services',
+        'route' => 'admin.services.index',
+        'sort'  => 4,
+        'children' => [
+            [
+                'key'   => 'services.create',
+                'name'  => 'Create Service',
+                'route' => 'admin.services.create',
+                'sort'  => 1,
+            ],
+            [
+                'key'   => 'services.edit',
+                'name'  => 'Edit Service',
+                'route' => 'admin.services.edit',
+                'sort'  => 2,
+            ],
+            [
+                'key'   => 'services.delete',
+                'name'  => 'Delete Service',
+                'route' => 'admin.services.delete',
+                'sort'  => 3,
             ],
         ],
     ],
