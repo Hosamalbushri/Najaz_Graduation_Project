@@ -5,7 +5,7 @@ namespace Najaz\Admin\Http\Controllers\Admin\Services;
 use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
 use Najaz\Admin\DataGrids\Services\ServiceDataGrid;
-use Najaz\Service\Repositories\ServiceCustomizableOptionRepository;
+use Najaz\Service\Models\ServiceAttributeGroupProxy;
 use Najaz\Service\Repositories\ServiceRepository;
 use Webkul\Admin\Http\Controllers\Controller;
 
@@ -16,7 +16,6 @@ class ServiceController extends Controller
      */
     public function __construct(
         protected ServiceRepository $serviceRepository,
-        protected ServiceCustomizableOptionRepository $serviceCustomizableOptionRepository
     ) {}
 
     /**
@@ -36,7 +35,15 @@ class ServiceController extends Controller
      */
     public function create(): View
     {
-        return view('admin::services.create');
+        $attributeGroups = ServiceAttributeGroupProxy::modelClass()::with([
+            'translations',
+            'fields.translations',
+            'fields.attributeType.translations',
+        ])->orderBy('sort_order')->get();
+
+        return view('admin::services.create', [
+            'attributeGroups' => $attributeGroups,
+        ]);
     }
 
     /**
@@ -47,7 +54,6 @@ class ServiceController extends Controller
         $this->validate(request(), [
             'name'        => 'required|string|max:255',
             'description' => 'nullable|string',
-            'price'       => 'required|numeric|min:0',
             'status'      => 'nullable|boolean',
             'image'       => 'nullable|string',
             'sort_order'  => 'nullable|integer',
@@ -64,15 +70,9 @@ class ServiceController extends Controller
 
         $service = $this->serviceRepository->create($data);
 
-        // Save customizable options if provided
-        $this->serviceCustomizableOptionRepository->saveCustomizableOptions(
-            request()->all(),
-            $service
-        );
 
         return new JsonResponse([
             'message' => trans('Admin::app.services.services.create-success'),
-            'data'    => $service->load('customizable_options'),
         ]);
     }
 
@@ -81,9 +81,20 @@ class ServiceController extends Controller
      */
     public function edit(int $id): View
     {
-        $service = $this->serviceRepository->with('customizable_options')->findOrFail($id);
+        $service = $this->serviceRepository->with([
+            'attributeGroups',
+        ])->findOrFail($id);
 
-        return view('admin::services.edit', compact('service'));
+        $attributeGroups = ServiceAttributeGroupProxy::modelClass()::with([
+            'translations',
+            'fields.translations',
+            'fields.attributeType.translations',
+        ])->orderBy('sort_order')->get();
+
+        return view('admin::services.edit', [
+            'service'          => $service,
+            'attributeGroups'  => $attributeGroups,
+        ]);
     }
 
     /**
@@ -94,7 +105,6 @@ class ServiceController extends Controller
         $this->validate(request(), [
             'name'        => 'required|string|max:255',
             'description' => 'nullable|string',
-            'price'       => 'required|numeric|min:0',
             'status'      => 'nullable|boolean',
             'image'       => 'nullable|string',
             'sort_order'  => 'nullable|integer',
@@ -111,15 +121,10 @@ class ServiceController extends Controller
 
         $service = $this->serviceRepository->update($data, $id);
 
-        // Save customizable options if provided
-        $this->serviceCustomizableOptionRepository->saveCustomizableOptions(
-            request()->all(),
-            $service
-        );
 
         return new JsonResponse([
             'message' => trans('Admin::app.services.services.update-success'),
-            'data'    => $service->fresh(['customizable_options']),
+            'data'    => $service->fresh(['attributeGroups']),
         ]);
     }
 

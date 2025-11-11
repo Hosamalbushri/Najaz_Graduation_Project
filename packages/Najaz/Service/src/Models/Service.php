@@ -4,7 +4,7 @@ namespace Najaz\Service\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Najaz\Service\Contracts\Service as ServiceContract;
 
 class Service extends Model implements ServiceContract
@@ -26,7 +26,6 @@ class Service extends Model implements ServiceContract
     protected $fillable = [
         'name',
         'description',
-        'price',
         'status',
         'image',
         'sort_order',
@@ -38,20 +37,28 @@ class Service extends Model implements ServiceContract
      * @var array
      */
     protected $casts = [
-        'price' => 'decimal:2',
-        'status' => 'boolean',
+        'price'      => 'decimal:2',
+        'status'     => 'boolean',
         'sort_order' => 'integer',
     ];
 
     /**
      * Get the customizable options for the service.
      */
-    public function customizable_options(): HasMany
+
+    /**
+     * Get the attribute groups assigned to the service.
+     */
+    public function attributeGroups(): BelongsToMany
     {
-        return $this->hasMany(ServiceCustomizableOptionProxy::modelClass())
-            ->orderBy('sort_order');
+        return $this->belongsToMany(
+            ServiceAttributeGroupProxy::modelClass(),
+            'service_attribute_group_service',
+            'service_id',
+            'service_attribute_group_id'
+        )->withPivot('sort_order')
+            ->withTimestamps()
+            ->orderByPivot('sort_order');
     }
+
 }
-
-
-

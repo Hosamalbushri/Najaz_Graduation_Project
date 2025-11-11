@@ -5,16 +5,16 @@
 ### الطريقة 1: تشغيل مباشر من سطر الأوامر
 
 ```bash
-php artisan db:seed --class="Najaz\Service\Database\Seeders\ServiceFieldTypeTableSeeder"
+php artisan db:seed --class="Najaz\Service\Database\Seeders\ServiceAttributeTypeTableSeeder"
 ```
 
 ### الطريقة 2: تشغيل مع معاملات (Locales)
 
 ```php
 // في tinker أو في كود
-use Najaz\Service\Database\Seeders\ServiceFieldTypeTableSeeder;
+use Najaz\Service\Database\Seeders\ServiceAttributeTypeTableSeeder;
 
-$seeder = new ServiceFieldTypeTableSeeder();
+$seeder = new ServiceAttributeTypeTableSeeder();
 $seeder->run([
     'default_locale' => 'ar',
     'allowed_locales' => ['ar', 'en']
@@ -26,12 +26,12 @@ $seeder->run([
 يمكن إضافة الـ Seeder إلى ملف `database/seeders/DatabaseSeeder.php`:
 
 ```php
-use Najaz\Service\Database\Seeders\ServiceFieldTypeTableSeeder;
+use Najaz\Service\Database\Seeders\ServiceAttributeTypeTableSeeder;
 
 public function run()
 {
     $this->call(BagistoDatabaseSeeder::class);
-    $this->call(ServiceFieldTypeTableSeeder::class);
+    $this->call(ServiceAttributeTypeTableSeeder::class);
 }
 ```
 

@@ -4,13 +4,8 @@ namespace Najaz\Service\Models;
 
 use Konekt\Concord\Proxies\ModelProxy;
 
-class ServiceProxy extends ModelProxy
+class ServiceAttributeGroupProxy extends ModelProxy
 {
 }
-
-
-
-
-
 
 

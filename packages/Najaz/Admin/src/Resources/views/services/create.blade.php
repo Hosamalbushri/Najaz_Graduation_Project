@@ -25,6 +25,11 @@
                     >
                         @csrf
 
+                        @php
+                            $service = new \Najaz\Service\Models\Service();
+                            $service->id = 0;
+                        @endphp
+
                         <div class="mt-4 rounded bg-white p-4 dark:bg-gray-900">
                             <x-admin::form.control-group>
                                 <x-admin::form.control-group.label class="required">
@@ -57,21 +62,6 @@
                                 <x-admin::form.control-group.error control-name="description" />
                             </x-admin::form.control-group>
 
-                            <x-admin::form.control-group>
-                                <x-admin::form.control-group.label class="required">
-                                    @lang('Admin::app.services.services.create.price')
-                                </x-admin::form.control-group.label>
-
-                                <x-admin::form.control-group.control
-                                    type="text"
-                                    name="price"
-                                    value="{{ old('price') }}"
-                                    rules="required|numeric|min:0"
-                                    :label="trans('Admin::app.services.services.create.price')"
-                                />
-
-                                <x-admin::form.control-group.error control-name="price" />
-                            </x-admin::form.control-group>
 
                             <x-admin::form.control-group>
                                 <x-admin::form.control-group.label>
@@ -90,19 +80,17 @@
                             </x-admin::form.control-group>
                         </div>
 
-                        <!-- Customizable Options -->
-                        @php
-                            $service = new \Najaz\Service\Models\Service();
-                            $service->id = 0; // Temporary ID for new service
-                        @endphp
-                        @include('admin::services.customizable-options', ['service' => $service])
+                        @include('admin::services.service-data-groups', [
+                            'service' => $service,
+                            'attributeGroups' => $attributeGroups,
+                        ])
 
                         <div class="mt-4 flex items-center gap-x-2.5">
                             <button
                                 type="submit"
                                 class="primary-button"
                             >
-                                @lang('Admin::app.services.create.save-btn')
+                                @lang('Admin::app.services.services.create.save-btn')
                             </button>
 
                             <a

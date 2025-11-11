@@ -57,21 +57,6 @@
                                 <x-admin::form.control-group.error control-name="description" />
                             </x-admin::form.control-group>
 
-                            <x-admin::form.control-group>
-                                <x-admin::form.control-group.label class="required">
-                                    @lang('Admin::app.services.services.edit.price')
-                                </x-admin::form.control-group.label>
-
-                                <x-admin::form.control-group.control
-                                    type="text"
-                                    name="price"
-                                    value="{{ old('price', $service->price) }}"
-                                    rules="required|numeric|min:0"
-                                    :label="trans('Admin::app.services.services.edit.price')"
-                                />
-
-                                <x-admin::form.control-group.error control-name="price" />
-                            </x-admin::form.control-group>
 
                             <x-admin::form.control-group>
                                 <x-admin::form.control-group.label>
@@ -90,8 +75,11 @@
                             </x-admin::form.control-group>
                         </div>
 
-                        <!-- Customizable Options -->
-                        @include('admin::services.services.customizable-options', ['service' => $service])
+                        @include('admin::services.service-data-groups', [
+                            'service' => $service,
+                            'attributeGroups' => $attributeGroups,
+                        ])
+
 
                         <div class="mt-4 flex items-center gap-x-2.5">
                             <button

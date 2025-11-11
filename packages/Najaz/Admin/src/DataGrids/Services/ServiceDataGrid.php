@@ -26,7 +26,6 @@ class ServiceDataGrid extends DataGrid
                 'services.id as service_id',
                 'services.name',
                 'services.description',
-                'services.price',
                 'services.status',
                 'services.image',
                 'services.sort_order',
@@ -160,7 +159,7 @@ class ServiceDataGrid extends DataGrid
             $this->addMassAction([
                 'title'  => trans('Admin::app.services.services.index.datagrid.delete'),
                 'method' => 'POST',
-                'url'    => route('admin.services.services.mass_delete'),
+                'url'    => route('admin.services.mass_delete'),
             ]);
         }
 
@@ -183,6 +182,7 @@ class ServiceDataGrid extends DataGrid
         }
     }
 }
+
 
 
 
