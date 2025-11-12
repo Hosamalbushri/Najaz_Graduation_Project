@@ -29,6 +29,7 @@ class AttributeGroupDataGrid extends DataGrid
             ->addSelect(
                 'service_attribute_groups.id as attribute_group_id',
                 'service_attribute_groups.code',
+                'service_attribute_groups.group_type',
                 'service_attribute_group_translations.name',
                 'service_attribute_groups.sort_order',
                 'service_attribute_groups.created_at',
@@ -38,6 +39,7 @@ class AttributeGroupDataGrid extends DataGrid
         $this->addFilter('attribute_group_id', 'service_attribute_groups.id');
         $this->addFilter('code', 'service_attribute_groups.code');
         $this->addFilter('name', 'service_attribute_group_translations.name');
+        $this->addFilter('group_type', 'service_attribute_groups.group_type');
 
         return $queryBuilder;
     }
@@ -71,6 +73,16 @@ class AttributeGroupDataGrid extends DataGrid
             'searchable' => true,
             'filterable' => true,
             'sortable'   => false,
+        ]);
+
+        $this->addColumn([
+            'index'      => 'group_type',
+            'label'      => trans('Admin::app.services.attribute-groups.index.datagrid.group-type'),
+            'type'       => 'string',
+            'filterable' => true,
+            'sortable'   => true,
+            'closure'    => fn ($row) => trans('Admin::app.services.attribute-groups.options.group-type.' . $row->group_type)
+                ?? ucfirst($row->group_type),
         ]);
 
         $this->addColumn([

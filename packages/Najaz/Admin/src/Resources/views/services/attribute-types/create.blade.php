@@ -125,6 +125,122 @@
 
                                 <x-admin::form.control-group.error control-name="type" />
                             </x-admin::form.control-group>
+
+                            <x-admin::form.control-group>
+                                <x-admin::form.control-group.label>
+                                    @lang('Admin::app.services.attribute-types.create.position')
+                                </x-admin::form.control-group.label>
+
+                                <x-admin::form.control-group.control
+                                    type="number"
+                                    name="position"
+                                    v-model.number="position"
+                                    :label="trans('Admin::app.services.attribute-types.create.position')"
+                                    min="0"
+                                />
+
+                                <x-admin::form.control-group.error control-name="position" />
+                            </x-admin::form.control-group>
+
+                            <x-admin::form.control-group>
+                                <x-admin::form.control-group.label>
+                                    @lang('Admin::app.services.attribute-types.create.default-value')
+                                </x-admin::form.control-group.label>
+
+                                <x-admin::form.control-group.control
+                                    type="text"
+                                    name="default_value"
+                                    v-model="defaultValue"
+                                    :label="trans('Admin::app.services.attribute-types.create.default-value')"
+                                />
+
+                                <x-admin::form.control-group.error control-name="default_value" />
+                            </x-admin::form.control-group>
+
+                            <div class="flex items-center gap-4">
+                                <div class="flex items-center gap-2">
+                                    <input type="hidden" name="is_required" value="0" />
+
+                                    <x-admin::form.control-group.control
+                                        type="switch"
+                                        name="is_required"
+                                        value="1"
+                                        ::checked="isRequired"
+                                        @change="isRequired = $event.target.checked"
+                                    />
+
+                                    <span class="text-sm text-gray-600 dark:text-gray-300">
+                                        @lang('Admin::app.services.attribute-types.create.is-required')
+                                    </span>
+                                </div>
+
+                                <div class="flex items-center gap-2">
+                                    <input type="hidden" name="is_unique" value="0" />
+
+                                    <x-admin::form.control-group.control
+                                        type="switch"
+                                        name="is_unique"
+                                        value="1"
+                                        ::checked="isUnique"
+                                        @change="isUnique = $event.target.checked"
+                                    />
+
+                                    <span class="text-sm text-gray-600 dark:text-gray-300">
+                                        @lang('Admin::app.services.attribute-types.create.is-unique')
+                                    </span>
+                                </div>
+                            </div>
+                        </x-slot:content>
+                    </x-admin::accordion>
+
+                    <x-admin::accordion>
+                        <x-slot:header>
+                            <p class="p-2.5 text-base font-semibold text-gray-800 dark:text-white">
+                                @lang('Admin::app.services.attribute-types.create.validation')
+                            </p>
+                        </x-slot:header>
+
+                        <x-slot:content>
+                            <x-admin::form.control-group>
+                                <x-admin::form.control-group.label>
+                                    @lang('Admin::app.services.attribute-types.create.validation')
+                                </x-admin::form.control-group.label>
+
+                                <x-admin::form.control-group.control
+                                    type="select"
+                                    name="validation"
+                                    v-model="validationType"
+                                    :label="trans('Admin::app.services.attribute-types.create.validation')"
+                                >
+                                    <option value="">
+                                        @lang('Admin::app.services.attribute-types.create.select-validation')
+                                    </option>
+
+                                    @foreach ($validations as $validation)
+                                        <option value="{{ $validation }}">
+                                            @lang('Admin::app.services.attribute-types.validation-options.' . $validation)
+                                        </option>
+                                    @endforeach
+                                </x-admin::form.control-group.control>
+
+                                <x-admin::form.control-group.error control-name="validation" />
+                            </x-admin::form.control-group>
+
+                            <x-admin::form.control-group v-if="validationType === 'regex'">
+                                <x-admin::form.control-group.label>
+                                    @lang('Admin::app.services.attribute-types.create.regex')
+                                </x-admin::form.control-group.label>
+
+                                <x-admin::form.control-group.control
+                                    type="text"
+                                    name="regex"
+                                    v-model="regex"
+                                    :label="trans('Admin::app.services.attribute-types.create.regex')"
+                                    placeholder="/^[0-9]+$/"
+                                />
+
+                                <x-admin::form.control-group.error control-name="regex" />
+                            </x-admin::form.control-group>
                         </x-slot:content>
                     </x-admin::accordion>
                 </div>
@@ -134,6 +250,23 @@
         <script type="module">
             app.component('v-field-type-create', {
                 template: '#v-field-type-create-template',
+                data() {
+                    return {
+                        validationType: @json(old('validation')),
+                        regex: @json(old('regex')),
+                        position: @json(old('position')),
+                        defaultValue: @json(old('default_value')),
+                        isRequired: {{ old('is_required') ? 'true' : 'false' }},
+                        isUnique: {{ old('is_unique') ? 'true' : 'false' }},
+                    }
+                },
+                watch: {
+                    validationType(value) {
+                        if (value !== 'regex') {
+                            this.regex = '';
+                        }
+                    },
+                },
             });
         </script>
     @endPushOnce

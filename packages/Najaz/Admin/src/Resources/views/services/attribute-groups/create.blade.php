@@ -1,129 +1,140 @@
-<x-admin::layouts>
-    <x-slot:title>
-        @lang('Admin::app.services.attribute-groups.create.title')
-    </x-slot>
-
-    <x-admin::form
-        :action="route('admin.attribute-groups.store')"
-        enctype="multipart/form-data"
-    >
-        <div class="flex items-center justify-between gap-4 max-sm:flex-wrap">
-            <p class="text-xl font-bold text-gray-800 dark:text-white">
-                @lang('Admin::app.services.attribute-groups.create.title')
-            </p>
-
-            <div class="flex items-center gap-x-2.5">
-                <a
-                    href="{{ route('admin.attribute-groups.index') }}"
-                    class="transparent-button hover:bg-gray-200 dark:text-white dark:hover:bg-gray-800"
+@pushOnce('scripts')
+        <script
+            type="text/x-template"
+            id="v-service-attribute-group-create-template"
+        >
+            <div>
+                <x-admin::form
+                    v-slot="{ handleSubmit }"
+                    as="div"
                 >
-                    @lang('Admin::app.services.attribute-groups.create.back-btn')
-                </a>
+                    <form
+                        ref="attributeGroupCreateForm"
+                        @submit="handleSubmit($event, create)"
+                    >
+                        @csrf
 
-                <button
-                    type="submit"
-                    class="primary-button"
-                >
-                    @lang('Admin::app.services.attribute-groups.create.save-btn')
-                </button>
-            </div>
-        </div>
+                        <x-admin::modal ref="attributeGroupCreateModal">
+                            <x-slot:header>
+                                <p class="text-lg font-bold text-gray-800 dark:text-white">
+                                    @lang('Admin::app.services.attribute-groups.create.title')
+                                </p>
+                            </x-slot:header>
 
-        <div class="mt-3.5 flex gap-2.5 max-xl:flex-wrap">
-            <div class="flex flex-1 flex-col gap-2 overflow-auto max-xl:flex-auto">
-                <div class="box-shadow rounded bg-white p-4 dark:bg-gray-900">
-                    <div class="mb-4 flex flex-col gap-1">
-                        <p class="text-base font-semibold text-gray-800 dark:text-white">
-                            @lang('Admin::app.services.attribute-groups.create.labels')
-                        </p>
+                            <x-slot:content>
+                                <div class="flex gap-4 max-sm:flex-wrap">
+                                    <x-admin::form.control-group class="w-full">
+                                        <x-admin::form.control-group.label class="required">
+                                            @lang('Admin::app.services.attribute-groups.create.name')
+                                        </x-admin::form.control-group.label>
 
-                        <p class="text-xs text-gray-500 dark:text-gray-400">
-                            @lang('Admin::app.services.attribute-groups.create.labels-help')
-                        </p>
-                    </div>
+                                        <x-admin::form.control-group.control
+                                            type="text"
+                                            name="name"
+                                            rules="required"
+                                            label="{{trans('Admin::app.services.attribute-groups.create.name')}}"
+                                            placeholder="{{trans('Admin::app.services.attribute-groups.create.name')}}"
+                                        />
 
-                    <div class="space-y-5">
-                        @foreach ($locales as $locale)
-                            <div class="grid gap-4 md:grid-cols-2 md:gap-6">
-                                <x-admin::form.control-group class="md:col-span-1">
+                                        <x-admin::form.control-group.error
+                                            control-name="name"
+                                        />
+                                    </x-admin::form.control-group>
+                                </div>
+                                <x-admin::form.control-group>
                                     <x-admin::form.control-group.label class="required">
-                                        {{ __('Admin::app.services.attribute-groups.create.name') }} ({{ mb_strtoupper($locale->code) }})
+                                        @lang('Admin::app.services.attribute-groups.create.code')
                                     </x-admin::form.control-group.label>
 
                                     <x-admin::form.control-group.control
                                         type="text"
-                                        name="name[{{ $locale->code }}]"
-                                        :value="old('name.' . $locale->code)"
-                                        :placeholder="$locale->name"
+                                        name="code"
                                         rules="required"
+                                        :label="trans('Admin::app.services.attribute-groups.create.code')"
+                                        placeholder="{{ trans('Admin::app.services.attribute-groups.create.code') }}"
                                     />
 
-                                    <x-admin::form.control-group.error :control-name="'name.' . $locale->code" />
+                                    <x-admin::form.control-group.error control-name="code" />
                                 </x-admin::form.control-group>
 
-                                <x-admin::form.control-group class="md:col-span-1">
-                                    <x-admin::form.control-group.label>
-                                        {{ __('Admin::app.services.attribute-groups.create.description') }} ({{ mb_strtoupper($locale->code) }})
+                                <x-admin::form.control-group class="!mb-0">
+                                    <x-admin::form.control-group.label class="required">
+                                        @lang('Admin::app.services.attribute-groups.create.group-type')
                                     </x-admin::form.control-group.label>
 
                                     <x-admin::form.control-group.control
-                                        type="textarea"
-                                        rows="3"
-                                        name="description[{{ $locale->code }}]"
-                                        :value="old('description.' . $locale->code)"
-                                        :placeholder="$locale->name"
-                                    />
+                                        type="select"
+                                        name="group_type"
+                                        rules="required"
+                                        :label="trans('Admin::app.services.attribute-groups.create.group-type')"
+                                    >
+                                        <option value="general">
+                                            @lang('Admin::app.services.attribute-groups.options.group-type.general')
+                                        </option>
 
-                                    <x-admin::form.control-group.error :control-name="'description.' . $locale->code" />
+                                        <option value="citizen">
+                                            @lang('Admin::app.services.attribute-groups.options.group-type.citizen')
+                                        </option>
+                                    </x-admin::form.control-group.control>
+
+                                    <x-admin::form.control-group.error control-name="group_type" />
                                 </x-admin::form.control-group>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
+                            </x-slot:content>
+
+                            <x-slot:footer>
+                                <div class="flex w-full justify-end gap-2">
+                                    <x-admin::button
+                                        button-type="submit"
+                                        class="primary-button justify-center"
+                                        :title="trans('Admin::app.services.attribute-groups.create.save-btn')"
+                                        ::loading="isSaving"
+                                        ::disabled="isSaving"
+                                    />
+                                </div>
+                            </x-slot:footer>
+                        </x-admin::modal>
+                    </form>
+                </x-admin::form>
             </div>
+        </script>
 
-            <div class="flex w-[360px] max-w-full flex-col gap-2">
-                <x-admin::accordion>
-                    <x-slot:header>
-                        <p class="p-2.5 text-base font-semibold text-gray-800 dark:text-white">
-                            @lang('Admin::app.services.attribute-groups.create.general')
-                        </p>
-                    </x-slot:header>
+        <script type="module">
+            app.component('v-service-attribute-group-create', {
+                template: '#v-service-attribute-group-create-template',
 
-                    <x-slot:content>
-                        <x-admin::form.control-group>
-                            <x-admin::form.control-group.label class="required">
-                                @lang('Admin::app.services.attribute-groups.create.code')
-                            </x-admin::form.control-group.label>
+                data() {
+                    return {
+                        isSaving: false,
+                    };
+                },
+                methods: {
+                    create(params, { resetForm,setErrors }) {
+                        this.isSaving = true;
+                        this.$axios.post('{{ route('admin.attribute-groups.store') }}', params)
+                            .then((response) => {
+                                this.$refs.attributeGroupCreateModal?.close();
+                                this.$emitter.emit('add-flash', { type: 'success', message: response.data.message });
+                                resetForm();
 
-                            <x-admin::form.control-group.control
-                                type="text"
-                                name="code"
-                                rules="required"
-                                :value="old('code')"
-                                placeholder="{{ trans('Admin::app.services.attribute-groups.create.code') }}"
-                            />
+                                this.isLoading = false;
 
-                            <x-admin::form.control-group.error control-name="code" />
-                        </x-admin::form.control-group>
+                            })
+                            .catch((error) => {
+                                this.isSaving = false;
 
-                        <x-admin::form.control-group>
-                            <x-admin::form.control-group.label>
-                                @lang('Admin::app.services.attribute-groups.create.sort-order')
-                            </x-admin::form.control-group.label>
+                                if (error.response?.status === 422) {
+                                    setErrors(error.response.data.errors ?? {});
+                                }
+                            })
+                            .finally(() => {
+                                this.isSaving = false;
+                            });
+                    },
 
-                            <x-admin::form.control-group.control
-                                type="number"
-                                name="sort_order"
-                                :value="old('sort_order', 0)"
-                                placeholder="{{ trans('Admin::app.services.attribute-groups.create.sort-order') }}"
-                            />
-
-                            <x-admin::form.control-group.error control-name="sort_order" />
-                        </x-admin::form.control-group>
-                    </x-slot:content>
-                </x-admin::accordion>
-            </div>
-        </div>
-    </x-admin::form>
-</x-admin::layouts>
+                    openModal() {
+                            this.$refs.attributeGroupCreateModal?.open();
+                    },
+                },
+            });
+        </script>
+    @endPushOnce

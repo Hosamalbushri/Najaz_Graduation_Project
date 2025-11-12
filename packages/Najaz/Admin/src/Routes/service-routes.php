@@ -23,7 +23,6 @@ Route::group(['middleware' => ['web', 'admin'], 'prefix' => 'admin/services'], f
 Route::group(['middleware' => ['web', 'admin'], 'prefix' => 'admin/attribute-groups'], function () {
     Route::controller(AttributeGroupController::class)->group(function () {
         Route::get('', 'index')->name('admin.attribute-groups.index');
-        Route::get('create', 'create')->name('admin.attribute-groups.create');
         Route::post('', 'store')->name('admin.attribute-groups.store');
         Route::get('{id}/edit', 'edit')->name('admin.attribute-groups.edit');
         Route::put('{id}', 'update')->name('admin.attribute-groups.update');

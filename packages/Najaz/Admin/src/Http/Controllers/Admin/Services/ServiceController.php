@@ -5,6 +5,7 @@ namespace Najaz\Admin\Http\Controllers\Admin\Services;
 use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
 use Najaz\Admin\DataGrids\Services\ServiceDataGrid;
+use Najaz\Citizen\Models\CitizenTypeProxy;
 use Najaz\Service\Models\ServiceAttributeGroupProxy;
 use Najaz\Service\Repositories\ServiceRepository;
 use Webkul\Admin\Http\Controllers\Controller;
@@ -43,6 +44,7 @@ class ServiceController extends Controller
 
         return view('admin::services.create', [
             'attributeGroups' => $attributeGroups,
+            'citizenTypeTree' => $this->buildCitizenTypeTree(),
         ]);
     }
 
@@ -55,14 +57,15 @@ class ServiceController extends Controller
             'name'        => 'required|string|max:255',
             'description' => 'nullable|string',
             'status'      => 'nullable|boolean',
-            'image'       => 'nullable|string',
-            'sort_order'  => 'nullable|integer',
+            'image'       => 'nullable|string|max:2048',
+            'sort_order'  => 'nullable|integer|min:0',
+            'citizen_type_ids'   => 'nullable|array',
+            'citizen_type_ids.*' => 'integer|exists:citizen_types,id',
         ]);
 
         $data = request()->only([
             'name',
             'description',
-            'price',
             'status',
             'image',
             'sort_order',
@@ -70,9 +73,12 @@ class ServiceController extends Controller
 
         $service = $this->serviceRepository->create($data);
 
+        $this->serviceRepository->syncCitizenTypes(request()->input('citizen_type_ids', []), $service);
+
 
         return new JsonResponse([
             'message' => trans('Admin::app.services.services.create-success'),
+            'redirect_to' => route('admin.services.edit', $service->id),
         ]);
     }
 
@@ -83,6 +89,7 @@ class ServiceController extends Controller
     {
         $service = $this->serviceRepository->with([
             'attributeGroups',
+            'citizenTypes',
         ])->findOrFail($id);
 
         $attributeGroups = ServiceAttributeGroupProxy::modelClass()::with([
@@ -94,6 +101,7 @@ class ServiceController extends Controller
         return view('admin::services.edit', [
             'service'          => $service,
             'attributeGroups'  => $attributeGroups,
+            'citizenTypeTree'  => $this->buildCitizenTypeTree(),
         ]);
     }
 
@@ -106,14 +114,15 @@ class ServiceController extends Controller
             'name'        => 'required|string|max:255',
             'description' => 'nullable|string',
             'status'      => 'nullable|boolean',
-            'image'       => 'nullable|string',
-            'sort_order'  => 'nullable|integer',
+            'image'       => 'nullable|string|max:2048',
+            'sort_order'  => 'nullable|integer|min:0',
+            'citizen_type_ids'   => 'nullable|array',
+            'citizen_type_ids.*' => 'integer|exists:citizen_types,id',
         ]);
 
         $data = request()->only([
             'name',
             'description',
-            'price',
             'status',
             'image',
             'sort_order',
@@ -121,10 +130,12 @@ class ServiceController extends Controller
 
         $service = $this->serviceRepository->update($data, $id);
 
+        $this->serviceRepository->syncCitizenTypes(request()->input('citizen_type_ids', []), $service);
+
 
         return new JsonResponse([
             'message' => trans('Admin::app.services.services.update-success'),
-            'data'    => $service->fresh(['attributeGroups']),
+            'data'    => $service->fresh(['attributeGroups', 'citizenTypes']),
         ]);
     }
 
@@ -152,6 +163,20 @@ class ServiceController extends Controller
         return new JsonResponse([
             'data' => $service->customizable_options()->get(),
         ]);
+    }
+
+    protected function buildCitizenTypeTree(): array
+    {
+        return CitizenTypeProxy::modelClass()::orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn ($type) => [
+                'id'       => $type->id,
+                'key'      => (string) $type->id,
+                'name'     => $type->name,
+                'children' => [],
+            ])
+            ->values()
+            ->toArray();
     }
 
     /**

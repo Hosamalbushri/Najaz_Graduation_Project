@@ -29,6 +29,9 @@ class AttributeGroupFieldController extends Controller
             'label'                     => 'required|array',
             'label.*'                   => 'required|string|max:255',
             'sort_order'                => 'nullable|integer',
+            'is_required'               => 'nullable|boolean',
+            'validation_rules'          => 'nullable|string',
+            'default_value'             => 'nullable|string',
         ]);
 
         $this->dataGroupRepository->findOrFail($groupId);
@@ -52,9 +55,13 @@ class AttributeGroupFieldController extends Controller
             'service_attribute_type_id'  => $attributeType->id,
             'code'                      => $attributeType->code,
             'type'                      => $attributeType->type,
-            'validation_rules'          => $attributeType->validation ? ['validation' => $attributeType->validation] : null,
-            'default_value'             => $attributeType->default_value,
+            'validation_rules'          => $this->prepareValidationRules(
+                request()->input('validation_rules', $attributeType->validation),
+                $attributeType->regex
+            ),
+            'default_value'             => request()->input('default_value', $attributeType->default_value),
             'sort_order'                => request()->input('sort_order', 0),
+            'is_required'               => request()->boolean('is_required', $attributeType->is_required),
         ];
 
         $field = $this->fieldRepository->create($data);
@@ -83,14 +90,24 @@ class AttributeGroupFieldController extends Controller
             'label'      => 'required|array',
             'label.*'    => 'required|string|max:255',
             'sort_order' => 'nullable|integer',
+            'is_required' => 'nullable|boolean',
+            'validation_rules' => 'nullable|string',
+            'default_value'    => 'nullable|string',
         ]);
 
         $this->dataGroupRepository->findOrFail($groupId);
         $field = $this->fieldRepository->findOrFail($fieldId);
+        $attributeType = $this->fieldTypeRepository->findOrFail($field->service_attribute_type_id);
 
-        // Only allow updating label and sort_order
+        // Only allow updating label, sort_order and is_required flag
         $data = [
             'sort_order' => request()->input('sort_order', $field->sort_order),
+            'is_required' => request()->boolean('is_required', $field->is_required),
+            'validation_rules' => $this->prepareValidationRules(
+                request()->input('validation_rules', $field->validation_rules),
+                $attributeType->regex
+            ),
+            'default_value' => request()->input('default_value', $field->default_value),
         ];
 
         $field = $this->fieldRepository->update($data, $fieldId);
@@ -123,6 +140,34 @@ class AttributeGroupFieldController extends Controller
         return new JsonResponse([
             'message' => trans('Admin::app.services.attribute-groups.attribute-group-fields.delete-success'),
         ]);
+    }
+
+    /**
+     * Normalize validation rules input into stored JSON structure.
+     */
+    protected function prepareValidationRules($rules, $regex = null): ?array
+    {
+        if (is_array($rules)) {
+            return $rules ?: null;
+        }
+
+        $formatted = is_string($rules) ? trim($rules) : null;
+
+        if (! $formatted) {
+            return null;
+        }
+
+        if ($formatted === 'regex') {
+            $pattern = is_string($regex) ? trim($regex) : '';
+
+            if (! $pattern) {
+                return null;
+            }
+
+            return ['validation' => 'regex:' . $pattern];
+        }
+
+        return ['validation' => $formatted];
     }
 }
 

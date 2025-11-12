@@ -5,6 +5,7 @@ namespace Najaz\Service\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Najaz\Citizen\Models\CitizenTypeProxy;
 use Najaz\Service\Contracts\Service as ServiceContract;
 
 class Service extends Model implements ServiceContract
@@ -37,14 +38,9 @@ class Service extends Model implements ServiceContract
      * @var array
      */
     protected $casts = [
-        'price'      => 'decimal:2',
         'status'     => 'boolean',
         'sort_order' => 'integer',
     ];
-
-    /**
-     * Get the customizable options for the service.
-     */
 
     /**
      * Get the attribute groups assigned to the service.
@@ -61,4 +57,16 @@ class Service extends Model implements ServiceContract
             ->orderByPivot('sort_order');
     }
 
+    /**
+     * Get the citizen types that can access the service.
+     */
+    public function citizenTypes(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            CitizenTypeProxy::modelClass(),
+            'citizen_type_service',
+            'service_id',
+            'citizen_type_id'
+        )->withTimestamps();
+    }
 }

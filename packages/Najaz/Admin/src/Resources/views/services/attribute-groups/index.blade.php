@@ -7,15 +7,19 @@
         <p class="text-xl font-bold text-gray-800 dark:text-white">
             @lang('Admin::app.services.attribute-groups.index.title')
         </p>
+        @include('admin::services.attribute-groups.create')
+        <v-service-attribute-group-create
+                ref="createAttributeGroupComponent"
+        ></v-service-attribute-group-create>
 
         <div class="flex items-center gap-x-2.5">
             @if (bouncer()->hasPermission('services.create'))
-                <a
-                    href="{{ route('admin.attribute-groups.create') }}"
-                    class="primary-button"
+                <button
+                        class="primary-button"
+                        @click="$refs.createAttributeGroupComponent.openModal()"
                 >
                     @lang('Admin::app.services.attribute-groups.index.create-btn')
-                </a>
+                </button>
             @endif
         </div>
     </div>

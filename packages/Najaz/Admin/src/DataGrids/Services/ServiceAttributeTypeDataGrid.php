@@ -26,6 +26,10 @@ class ServiceAttributeTypeDataGrid extends DataGrid
                 'service_attribute_types.code',
                 'service_attribute_type_translations.name',
                 'service_attribute_types.type',
+                'service_attribute_types.validation',
+                'service_attribute_types.is_required',
+                'service_attribute_types.is_unique',
+                'service_attribute_types.position',
                 'service_attribute_types.created_at',
                 'service_attribute_types.updated_at'
             );
@@ -73,6 +77,44 @@ class ServiceAttributeTypeDataGrid extends DataGrid
             'type'       => 'string',
             'filterable' => true,
             'sortable'   => true,
+        ]);
+
+        $this->addColumn([
+            'index'      => 'validation',
+            'label'      => trans('Admin::app.services.attribute-types.index.datagrid.validation'),
+            'type'       => 'string',
+            'sortable'   => true,
+            'filterable' => false,
+        ]);
+
+        $this->addColumn([
+            'index'      => 'is_required',
+            'label'      => trans('Admin::app.services.attribute-types.index.datagrid.is-required'),
+            'type'       => 'boolean',
+            'sortable'   => true,
+            'filterable' => true,
+            'closure'    => fn ($row) => $row->is_required
+                ? trans('Admin::app.services.attribute-types.index.datagrid.yes')
+                : trans('Admin::app.services.attribute-types.index.datagrid.no'),
+        ]);
+
+        $this->addColumn([
+            'index'      => 'is_unique',
+            'label'      => trans('Admin::app.services.attribute-types.index.datagrid.is-unique'),
+            'type'       => 'boolean',
+            'sortable'   => true,
+            'filterable' => true,
+            'closure'    => fn ($row) => $row->is_unique
+                ? trans('Admin::app.services.attribute-types.index.datagrid.yes')
+                : trans('Admin::app.services.attribute-types.index.datagrid.no'),
+        ]);
+
+        $this->addColumn([
+            'index'      => 'position',
+            'label'      => trans('Admin::app.services.attribute-types.index.datagrid.position'),
+            'type'       => 'integer',
+            'sortable'   => true,
+            'filterable' => false,
         ]);
     }
 

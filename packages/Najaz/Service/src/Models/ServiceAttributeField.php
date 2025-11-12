@@ -43,6 +43,7 @@ class ServiceAttributeField extends TranslatableModel implements ServiceAttribut
         'type',
         'validation_rules',
         'default_value',
+        'is_required',
         'sort_order',
     ];
 
@@ -53,6 +54,7 @@ class ServiceAttributeField extends TranslatableModel implements ServiceAttribut
      */
     protected $casts = [
         'validation_rules' => 'array',
+        'is_required' => 'bool',
     ];
 
     /**

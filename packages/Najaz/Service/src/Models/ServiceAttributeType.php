@@ -37,6 +37,12 @@ class ServiceAttributeType extends TranslatableModel implements ServiceAttribute
         'code',
         'type',
         'is_user_defined',
+        'is_required',
+        'is_unique',
+        'position',
+        'validation',
+        'regex',
+        'default_value',
     ];
 
     /**

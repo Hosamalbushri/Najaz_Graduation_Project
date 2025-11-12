@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('type'); // text, textarea, number, date, datetime, file, email, phone
             $table->json('validation_rules')->nullable();
             $table->text('default_value')->nullable();
+            $table->boolean('is_required')->default(false);
             $table->integer('sort_order')->default(0);
             $table->timestamps();
 

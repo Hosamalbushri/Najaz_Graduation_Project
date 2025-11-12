@@ -8,6 +8,7 @@ use Illuminate\View\View;
 use Najaz\Admin\DataGrids\Services\ServiceAttributeTypeDataGrid;
 use Najaz\Service\Enums\ServiceAttributeTypeEnum;
 use Najaz\Service\Repositories\ServiceAttributeTypeRepository;
+use Webkul\Attribute\Enums\ValidationEnum;
 use Webkul\Admin\Http\Controllers\Controller;
 use Webkul\Core\Rules\Code;
 
@@ -30,23 +31,47 @@ class ServiceAttributeTypeController extends Controller
     {
         $attributeTypes = ServiceAttributeTypeEnum::getValues();
         $locales = core()->getAllLocales();
+        $validations = ValidationEnum::getValues();
 
-        return view('admin::services.attribute-types.create', compact('attributeTypes', 'locales'));
+        return view('admin::services.attribute-types.create', compact('attributeTypes', 'locales', 'validations'));
     }
 
     public function store(): RedirectResponse
     {
+        if (request()->input('position') === '') {
+            request()->merge(['position' => null]);
+        }
+
+        if (! request()->filled('validation')) {
+            request()->merge(['validation' => null]);
+        }
+
         $this->validate(request(), [
             'code'   => ['required', 'unique:service_attribute_types,code', new Code],
             'type'   => 'required|in:' . implode(',', ServiceAttributeTypeEnum::getValues()),
             'name'   => 'required|array',
             'name.*' => 'required|string|max:255',
+            'position' => 'nullable|integer|min:0',
+            'default_value' => 'nullable|string',
+            'validation' => 'nullable|in:' . implode(',', ValidationEnum::getValues()),
+            'regex' => 'nullable|required_if:validation,regex|string',
+            'is_required' => 'nullable|boolean',
+            'is_unique' => 'nullable|boolean',
         ]);
+
+        $validation = request()->input('validation');
+        $regex = $validation === 'regex' ? request()->input('regex') : null;
 
         $data = [
             'code'            => request()->input('code'),
             'type'            => request()->input('type'),
             'is_user_defined' => 1,
+            'position'        => request()->input('position'),
+            'default_value'   => request()->input('default_value'),
+            'validation'      => $validation,
+            'regex'           => $regex,
+            'is_required'     => request()->boolean('is_required'),
+            'is_unique'       => request()->boolean('is_unique'),
         ];
 
         $attributeType = $this->serviceAttributeTypeRepository->create($data);
@@ -67,18 +92,45 @@ class ServiceAttributeTypeController extends Controller
         $attributeType = $this->serviceAttributeTypeRepository->with('translations')->findOrFail($id);
         $attributeTypes = ServiceAttributeTypeEnum::getValues();
         $locales = core()->getAllLocales();
+        $validations = ValidationEnum::getValues();
 
-        return view('admin::services.attribute-types.edit', compact('attributeType', 'attributeTypes', 'locales'));
+        return view('admin::services.attribute-types.edit', compact('attributeType', 'attributeTypes', 'locales', 'validations'));
     }
 
     public function update(int $id): RedirectResponse
     {
+        if (request()->input('position') === '') {
+            request()->merge(['position' => null]);
+        }
+
+        if (! request()->filled('validation')) {
+            request()->merge(['validation' => null]);
+        }
+
         $this->validate(request(), [
             'name'   => 'required|array',
             'name.*' => 'required|string|max:255',
+            'position' => 'nullable|integer|min:0',
+            'default_value' => 'nullable|string',
+            'validation' => 'nullable|in:' . implode(',', ValidationEnum::getValues()),
+            'regex' => 'nullable|required_if:validation,regex|string',
+            'is_required' => 'nullable|boolean',
+            'is_unique' => 'nullable|boolean',
         ]);
 
         $attributeType = $this->serviceAttributeTypeRepository->findOrFail($id);
+
+        $validation = request()->input('validation');
+        $regex = $validation === 'regex' ? request()->input('regex') : null;
+
+        $this->serviceAttributeTypeRepository->update([
+            'position'      => request()->input('position'),
+            'default_value' => request()->input('default_value'),
+            'validation'    => $validation,
+            'regex'         => $regex,
+            'is_required'   => request()->boolean('is_required'),
+            'is_unique'     => request()->boolean('is_unique'),
+        ], $attributeType->id);
 
         foreach (core()->getAllLocales() as $locale) {
             $attributeType->translateOrNew($locale->code)->fill([

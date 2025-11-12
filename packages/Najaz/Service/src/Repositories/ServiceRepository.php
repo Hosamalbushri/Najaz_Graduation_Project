@@ -108,6 +108,21 @@ class ServiceRepository extends Repository
     }
 
     /**
+     * Sync the citizen types associated with the service.
+     */
+    public function syncCitizenTypes($citizenTypeIds, $service): void
+    {
+        $ids = collect($citizenTypeIds)
+            ->filter(fn ($id) => $id !== null && $id !== '')
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->toArray();
+
+        $service->citizenTypes()->sync($ids);
+    }
+
+    /**
      * Clone an attribute group with its fields and translations.
      */
     protected function cloneAttributeGroup(

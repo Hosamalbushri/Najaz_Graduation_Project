@@ -7,6 +7,7 @@
     return [
         'id'          => $group->id,
         'code'        => $group->code,
+        'group_type'  => $group->group_type ?? 'general',
         'name'        => $translation?->name ?? $group->code,
         'description' => $translation?->description,
         'sort_order'  => $group->sort_order ?? 0,
@@ -34,6 +35,7 @@ $serviceGroups = optional($service?->attributeGroups)->map(function ($group) use
         'service_attribute_group_id' => $group->id,
         'template_id'           => $group->id,
         'code'                  => $group->code,
+        'group_type'            => $group->group_type ?? 'general',
         'name'                  => $translation?->name ?? $group->code,
         'description'           => $translation?->description,
         'sort_order'            => $group->pivot->sort_order ?? 0,
@@ -139,6 +141,10 @@ $serviceGroups = optional($service?->attributeGroups)->map(function ($group) use
                                     </div>
 
                                     <div class="flex items-center gap-2">
+                                        <span class="rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-600 dark:border-purple-900 dark:bg-purple-950 dark:text-purple-200">
+                                            @{{ translateGroupType(group.group_type) }}
+                                        </span>
+
                                         <span class="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-600 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-200">
                                             @lang('Admin::app.services.services.attribute-groups.group-code'):
                                             @{{ group.code }}
@@ -342,6 +348,7 @@ $serviceGroups = optional($service?->attributeGroups)->map(function ($group) use
                         code: '',
                         name: '',
                         description: '',
+                        group_type: 'general',
                     },
                     uidIncrement: 0,
                 };
@@ -363,6 +370,7 @@ $serviceGroups = optional($service?->attributeGroups)->map(function ($group) use
                     this.groupsCatalog = this.allAttributeGroups.map(group => ({
                         id: group.id,
                         code: group.code,
+                        group_type: group.group_type || 'general',
                         name: group.name,
                         description: group.description,
                         sort_order: group.sort_order ?? 0,
@@ -397,6 +405,7 @@ $serviceGroups = optional($service?->attributeGroups)->map(function ($group) use
                             template_id: selection.template_id || selection.service_attribute_group_id,
                             service_attribute_group_id: selection.service_attribute_group_id ?? null,
                             code: selection.code || '',
+                            group_type: selection.group_type || 'general',
                             display_name: selection.name || '',
                             description: selection.description || '',
                             sort_order: selection.sort_order ?? index,
@@ -409,6 +418,7 @@ $serviceGroups = optional($service?->attributeGroups)->map(function ($group) use
                             service_attribute_group_id: selection.service_attribute_group_id ?? null,
                             template_id: selection.template_id || cloneBase.template_id || cloneBase.id,
                             code: selection.code || cloneBase.code,
+                            group_type: selection.group_type || cloneBase.group_type || base?.group_type || 'general',
                             display_name: selection.name || cloneBase.display_name || cloneBase.name,
                             description: selection.description ?? cloneBase.description ?? '',
                             sort_order: selection.sort_order ?? index,
@@ -449,6 +459,7 @@ $serviceGroups = optional($service?->attributeGroups)->map(function ($group) use
                         template_id: base.id,
                         service_attribute_group_id: null,
                         code: base.code,
+                        group_type: base.group_type || 'general',
                         name: base.name,
                         display_name: base.name,
                         description: base.description,
@@ -478,6 +489,7 @@ $serviceGroups = optional($service?->attributeGroups)->map(function ($group) use
                         code: '',
                         name: '',
                         description: '',
+                        group_type: 'general',
                     };
                     this.selectedTemplate = null;
                     this.$refs.addGroupModal.open();
@@ -509,6 +521,7 @@ $serviceGroups = optional($service?->attributeGroups)->map(function ($group) use
                     clone.display_name = this.groupToAdd.name;
                     clone.name = clone.display_name;
                     clone.description = this.groupToAdd.description || base.description || '';
+                    clone.group_type = base.group_type || 'general';
                     clone.is_new = true;
                     clone.fields = clone.fields.map((field, index) => ({
                         ...field,
@@ -541,10 +554,12 @@ $serviceGroups = optional($service?->attributeGroups)->map(function ($group) use
                         this.groupToAdd.code = '';
                         this.groupToAdd.name = '';
                         this.groupToAdd.description = '';
+                        this.groupToAdd.group_type = 'general';
                         return;
                     }
 
                     this.selectedTemplate = template;
+                    this.groupToAdd.group_type = template.group_type || 'general';
 
                     if (! this.groupToAdd.code) {
                         const suffix = this.selectedGroups.filter(group => group.template_id === template.id).length + 1;
@@ -577,6 +592,12 @@ $serviceGroups = optional($service?->attributeGroups)->map(function ($group) use
 
                 sortedFields(group) {
                     return [...(group.fields || [])].sort((a, b) => a.sort_order - b.sort_order);
+                },
+
+                translateGroupType(value) {
+                    const type = value || 'general';
+
+                    return trans(`Admin::app.services.attribute-groups.options.group-type.${type}`) ?? type;
                 },
             },
         });
