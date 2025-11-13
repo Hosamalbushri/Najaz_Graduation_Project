@@ -39,6 +39,7 @@ class ServiceAttributeGroup extends TranslatableModel implements ServiceAttribut
      */
     protected $fillable = [
         'code',
+        'default_name',
         'group_type',
         'sort_order',
     ];

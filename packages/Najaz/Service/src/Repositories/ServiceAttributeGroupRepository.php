@@ -14,5 +14,3 @@ class ServiceAttributeGroupRepository extends Repository
         return 'Najaz\Service\Contracts\ServiceAttributeGroup';
     }
 }
-
-

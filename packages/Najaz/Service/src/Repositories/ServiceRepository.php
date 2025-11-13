@@ -143,6 +143,7 @@ class ServiceRepository extends Repository
 
         $newGroup = ServiceAttributeGroupProxy::modelClass()::create([
             'code'       => $code,
+            'default_name' => $name ?? ($template->default_name ?? $code),
             'sort_order' => $template->sort_order ?? 0,
         ]);
 

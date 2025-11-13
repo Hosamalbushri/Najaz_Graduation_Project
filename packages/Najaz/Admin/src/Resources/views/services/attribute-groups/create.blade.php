@@ -25,19 +25,19 @@
                                 <div class="flex gap-4 max-sm:flex-wrap">
                                     <x-admin::form.control-group class="w-full">
                                         <x-admin::form.control-group.label class="required">
-                                            @lang('Admin::app.services.attribute-groups.create.name')
+                                            @lang('Admin::app.services.attribute-groups.create.default-name')
                                         </x-admin::form.control-group.label>
 
                                         <x-admin::form.control-group.control
                                             type="text"
-                                            name="name"
+                                            name="default_name"
                                             rules="required"
-                                            label="{{trans('Admin::app.services.attribute-groups.create.name')}}"
-                                            placeholder="{{trans('Admin::app.services.attribute-groups.create.name')}}"
+                                            label="{{trans('Admin::app.services.attribute-groups.create.default-name')}}"
+                                            placeholder="{{trans('Admin::app.services.attribute-groups.create.default-name')}}"
                                         />
 
                                         <x-admin::form.control-group.error
-                                            control-name="name"
+                                            control-name="default_name"
                                         />
                                     </x-admin::form.control-group>
                                 </div>

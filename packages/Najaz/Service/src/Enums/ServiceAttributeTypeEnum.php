@@ -17,6 +17,11 @@ enum ServiceAttributeTypeEnum: string
     /**
      * Number type field.
      */
+    /**
+     * Boolean type field.
+     */
+    case BOOLEAN = 'boolean';
+
     case NUMBER = 'number';
 
     /**
@@ -30,14 +35,29 @@ enum ServiceAttributeTypeEnum: string
     case DATETIME = 'datetime';
 
     /**
-     * Email type field.
+     * Checkbox type field.
      */
-    case EMAIL = 'email';
+    case CHECKBOX = 'checkbox';
 
     /**
-     * Phone type field.
+     * Select type field.
      */
-    case PHONE = 'phone';
+    case SELECT = 'select';
+
+    /**
+     * Multiselect type field.
+     */
+    case MULTISELECT = 'multiselect';
+
+    /**
+     * Image type field.
+     */
+    case IMAGE = 'image';
+
+    /**
+     * File type field.
+     */
+    case FILE = 'file';
 
     /**
      * Get all attribute type values as an array.

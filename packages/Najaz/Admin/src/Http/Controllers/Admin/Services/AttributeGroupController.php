@@ -32,34 +32,26 @@ class AttributeGroupController extends Controller
         return view('admin::services.attribute-groups.index');
     }
 
-
     /**
      * Store a newly created resource in storage.
      */
     public function store(): \Symfony\Component\HttpFoundation\Response
     {
         $rules = [
-            'name'       => 'required|string|max:255',
-            'code'       => 'required|string|max:255|unique:service_attribute_groups,code',
-            'group_type' => 'required|in:general,citizen',
-            'sort_order' => 'nullable|integer',
+            'default_name' => 'required|string|max:255',
+            'code'         => 'required|string|max:255|unique:service_attribute_groups,code',
+            'group_type'   => 'required|in:general,citizen',
+            'sort_order'   => 'nullable|integer',
         ];
         $this->validate(request(), $rules);
         $data = [
-            'code'       => request()->input('code'),
-            'group_type' => request()->input('group_type', 'general'),
-            'sort_order' => request()->input('sort_order', 0),
+            'code'         => request()->input('code'),
+            'default_name' => request()->input('default_name'),
+            'group_type'   => request()->input('group_type', 'general'),
+            'sort_order'   => request()->input('sort_order', 0),
         ];
 
         $attributeGroup = $this->dataGroupRepository->create($data);
-        $locale = core()->getCurrentLocale();
-
-        // Save translations
-        $translationData = [
-            'name'        => request()->input('name'),
-        ];
-
-        $attributeGroup->translateOrNew($locale->code)->fill($translationData)->save();
         if (request()->expectsJson()) {
             return new JsonResponse([
                 'message'     => trans('Admin::app.services.attribute-groups.create-success'),
@@ -98,9 +90,10 @@ class AttributeGroupController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(int $id): \Illuminate\Http\RedirectResponse
+    public function update(int $id): JsonResponse
     {
         $rules = [
+            'default_name'                       => 'required|string|max:255',
             'code'                               => 'required|string|max:255|unique:service_attribute_groups,code,'.$id,
             'group_type'                         => 'required|in:general,citizen',
             'sort_order'                         => 'nullable|integer',
@@ -122,9 +115,10 @@ class AttributeGroupController extends Controller
         $this->validate(request(), $rules);
 
         $data = [
-            'code'       => request()->input('code'),
-            'group_type' => request()->input('group_type', 'general'),
-            'sort_order' => request()->input('sort_order', 0),
+            'code'         => request()->input('code'),
+            'default_name' => request()->input('default_name'),
+            'group_type'   => request()->input('group_type', 'general'),
+            'sort_order'   => request()->input('sort_order', 0),
         ];
 
         $attributeGroup = $this->dataGroupRepository->update($data, $id);
@@ -142,76 +136,19 @@ class AttributeGroupController extends Controller
         // Handle fields payload (drag/drop modal)
         if (request()->has('fields')) {
             $fields = request()->input('fields', []);
-            $existingFieldIds = [];
 
-            foreach ($fields as $fieldData) {
-                if (isset($fieldData['id']) && $fieldData['id']) {
-                    // Update existing field
-                    $field = $this->fieldRepository->findOrFail($fieldData['id']);
-
-                    $attributeType = app(\Najaz\Service\Repositories\ServiceAttributeTypeRepository::class)
-                        ->findOrFail($field->service_attribute_type_id);
-
-                    $this->fieldRepository->update([
-                        'sort_order'       => $fieldData['sort_order'] ?? $field->sort_order,
-                        'is_required'      => $this->toBoolean($fieldData['is_required'] ?? $field->is_required),
-                        'validation_rules' => $this->prepareValidationRules(
-                            $fieldData['validation_rules'] ?? $field->validation_rules,
-                            $attributeType->regex
-                        ),
-                        'default_value' => $fieldData['default_value'] ?? $field->default_value,
-                    ], $field->id);
-
-                    // Update translations
-                    foreach (core()->getAllLocales() as $locale) {
-                        $translationData = [
-                            'label' => $fieldData['label'][$locale->code] ?? '',
-                        ];
-                        $field->translateOrNew($locale->code)->fill($translationData)->save();
-                    }
-
-                    $existingFieldIds[] = $field->id;
-                } else {
-                    // Create new field
-                    if (isset($fieldData['service_attribute_type_id']) && $fieldData['service_attribute_type_id']) {
-                        $attributeType = app(\Najaz\Service\Repositories\ServiceAttributeTypeRepository::class)
-                            ->findOrFail($fieldData['service_attribute_type_id']);
-
-                        $fieldDataToSave = [
-                            'service_attribute_group_id' => $id,
-                            'service_attribute_type_id'  => $attributeType->id,
-                            'code'                       => $attributeType->code,
-                            'type'                       => $attributeType->type,
-                            'validation_rules'           => $this->prepareValidationRules(
-                                $fieldData['validation_rules'] ?? $attributeType->validation,
-                                $attributeType->regex
-                            ),
-                            'default_value'             => $fieldData['default_value'] ?? $attributeType->default_value,
-                            'sort_order'                => $fieldData['sort_order'] ?? 0,
-                            'is_required'               => $this->toBoolean($fieldData['is_required'] ?? $attributeType->is_required),
-                        ];
-
-                        $field = $this->fieldRepository->create($fieldDataToSave);
-
-                        // Save translations
-                        foreach (core()->getAllLocales() as $locale) {
-                            $translationData = [
-                                'label' => $fieldData['label'][$locale->code] ?? '',
-                            ];
-                            $field->translateOrNew($locale->code)->fill($translationData)->save();
-                        }
-
-                        $existingFieldIds[] = $field->id;
-                    }
-                }
+            if (! $this->fieldRepository->validateGroupTypeFields($data['group_type'], $fields)) {
+                return new JsonResponse([
+                    'message'     => trans('Admin::app.services.attribute-groups.validation.citizen-id-number-required'),
+                ]);
             }
 
-            // Delete fields that were removed
-            $attributeGroup->fields()->whereNotIn('id', $existingFieldIds)->delete();
+            $this->fieldRepository->syncGroupFields($attributeGroup, $fields);
         }
-        session()->flash('success', trans('Admin::app.services.attribute-groups.update-success'));
 
-        return redirect()->route('admin.attribute-groups.index');
+        return new JsonResponse([
+            'message'     => trans('Admin::app.services.attribute-groups.update-success'),
+        ]);
 
     }
 
@@ -243,41 +180,5 @@ class AttributeGroupController extends Controller
         return new JsonResponse([
             'message' => trans('Admin::app.services.attribute-groups.index.datagrid.mass-delete-success'),
         ]);
-    }
-
-    /**
-     * Normalize truthy values coming from the request payload.
-     */
-    protected function toBoolean($value): bool
-    {
-        return filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false;
-    }
-
-    /**
-     * Normalize validation rules input into stored JSON structure.
-     */
-    protected function prepareValidationRules($rules, $regex = null): ?array
-    {
-        if (is_array($rules)) {
-            return $rules ?: null;
-        }
-
-        $formatted = is_string($rules) ? trim($rules) : null;
-
-        if (! $formatted) {
-            return null;
-        }
-
-        if ($formatted === 'regex') {
-            $pattern = is_string($regex) ? trim($regex) : '';
-
-            if (! $pattern) {
-                return null;
-            }
-
-            return ['validation' => 'regex:'.$pattern];
-        }
-
-        return ['validation' => $formatted];
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Najaz\Service\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Najaz\Service\Contracts\ServiceAttributeType as ServiceAttributeTypeContract;
 use Webkul\Core\Eloquent\TranslatableModel;
 
@@ -43,6 +44,7 @@ class ServiceAttributeType extends TranslatableModel implements ServiceAttribute
         'validation',
         'regex',
         'default_value',
+        'default_name',
     ];
 
     /**
@@ -56,6 +58,15 @@ class ServiceAttributeType extends TranslatableModel implements ServiceAttribute
         'is_user_defined'=> 'boolean',
         'position'       => 'integer',
     ];
+
+    /**
+     * Attribute options relation.
+     */
+    public function options(): HasMany
+    {
+        return $this->hasMany(ServiceAttributeTypeOptionProxy::modelClass(), 'service_attribute_type_id')
+            ->orderBy('sort_order');
+    }
 }
 
 

@@ -3,348 +3,514 @@
             type="text/x-template"
             id="v-attribute-group-edit-template">
 
-            <div class="mt-4 box-shadow rounded bg-white p-4 dark:bg-gray-900">
-                <div class="mb-4 flex items-center justify-between">
-                    <div>
-                        <p class="text-base font-semibold text-gray-800 dark:text-white">
-                            @lang('Admin::app.services.attribute-groups.edit.fields-title')
-                        </p>
-
-                        <p class="text-xs provar font-medium text-gray-500 dark:text-gray-300">
-                            @lang('Admin::app.services.attribute-groups.edit.fields-info')
-                        </p>
-                    </div>
-
-                    <div
-                            class="secondary-button"
-                            @click="openAddFieldModal"
-                    >
-                        @lang('Admin::app.services.attribute-groups.edit.add-field-btn')
-                    </div>
-                </div>
-
-                <div v-if="fields.length" class="grid">
-                    <draggable
-                            ghost-class="draggable-ghost"
-                            v-bind="{ animation: 200 }"
-                            handle=".icon-drag"
-                            :list="fields"
-                            item-key="uid"
-                            @end="recalculateSortOrders"
-                    >
-                        <template #item="{ element, index }">
-                            <div class="mb-2.5 rounded border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-                                <input
-                                        v-if="element.id"
-                                        type="hidden"
-                                        :name="`fields[${index}][id]`"
-                                        :value="element.id"
-                                />
-
-                                <input
-                                        type="hidden"
-                                        :name="`fields[${index}][service_attribute_type_id]`"
-                                        :value="element.service_attribute_type_id"
-                                />
-
-                                <input
-                                        type="hidden"
-                                        :name="`fields[${index}][sort_order]`"
-                                        :value="index"
-                                />
-
-                                <template v-for="locale in locales" :key="`${element.uid}-${locale.code}`">
-                                    <input
-                                            type="hidden"
-                                            :name="`fields[${index}][label][${locale.code}]`"
-                                            :value="element.labels?.[locale.code] ?? ''"
-                                    />
-                                </template>
-
-                                <input
-                                        type="hidden"
-                                        :name="`fields[${index}][is_required]`"
-                                        :value="element.is_required ? 1 : 0"
-                                />
-
-                                <input
-                                        type="hidden"
-                                        :name="`fields[${index}][default_value]`"
-                                        :value="element.default_value ?? ''"
-                                />
-
-                                <input
-                                        type="hidden"
-                                        :name="`fields[${index}][validation_rules]`"
-                                        :value="formatValidationRule(element)"
-                                />
-
-                                <div class="flex items-center justify-between gap-4 p-4">
-                                    <div class="flex flex-1 items-start gap-2.5">
-                                        <i class="icon-drag cursor-grab text-xl transition-all hover:text-gray-700 dark:text-gray-300"></i>
-
-                                        <div class="flex flex-col gap-1">
-                                            <p class="text-base font-semibold text-gray-800 dark:text-white">
-                                                @{{ displayFieldTitle(element, index) }}
-                                            </p>
-
-                                            <p class="text-xs text-gray-500 dark:text-gray-300" v-if="element.labels && Object.keys(element.labels).length">
-                                                @{{ displayFieldLocales(element) }}
-                                            </p>
-
-                                            <div
-                                                    v-if="element.service_attribute_type_id && getAttributeTypeInfo(element.service_attribute_type_id)"
-                                                    class="text-xs text-gray-500 dark:text-gray-400"
-                                            >
-                                                <p>
-                                                    <strong>@lang('Admin::app.services.attribute-groups.attribute-group-fields.field-type'):</strong>
-                                                    @{{ getAttributeTypeInfo(element.service_attribute_type_id).type }}
-                                                </p>
-
-                                                <p v-if="getAttributeTypeInfo(element.service_attribute_type_id)?.validation">
-                                                    <strong>@lang('Admin::app.services.attribute-types.index.datagrid.validation'):</strong>
-                                                    @{{ getAttributeTypeInfo(element.service_attribute_type_id).validation }}
-                                                </p>
-
-                                                <p>
-                                                    <strong>@lang('Admin::app.services.attribute-groups.attribute-group-fields.is-required'):</strong>
-                                                    @{{ element.is_required ? yesLabel : noLabel }}
-                                                </p>
-
-                                                <p v-if="formatValidationRule(element)">
-                                                    <strong>@lang('Admin::app.services.attribute-groups.attribute-group-fields.validation'):</strong>
-                                                    @{{ displayValidationLabel(element) }}
-                                                </p>
-
-                                                <p v-if="getAttributeTypeInfo(element.service_attribute_type_id)?.is_unique">
-                                                    <strong>@lang('Admin::app.services.attribute-types.index.datagrid.is-unique'):</strong>
-                                                    @lang('Admin::app.common.yes')
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="flex items-center gap-3 text-sm font-medium">
-                                            <span
-                                                    class="cursor-pointer text-blue-600 transition-all hover:underline"
-                                                    @click="openEditFieldModal(index)"
-                                            >
-                                                @lang('Admin::app.services.attribute-groups.edit.edit-field-btn')
-                                            </span>
-
-                                        <span
-                                                class="cursor-pointer text-red-600 transition-all hover:underline"
-                                                @click="removeField(element, index)"
-                                        >
-                                                @lang('Admin::app.services.attribute-groups.edit.delete-field-btn')
-                                            </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </template>
-                    </draggable>
-                </div>
-
-                <div
-                        v-else
-                        class="grid justify-center justify-items-center gap-3.5 px-2.5 py-10 text-center"
+        <div>
+            <x-admin::form
+                    v-slot="{ handleSubmit }"
+                    as="div"
+            >
+                <form
+                        ref="attributeGroupEditForm"
+                        @submit="handleSubmit($event, update)"
                 >
-                    <img
-                            src="{{ bagisto_asset('images/icon-options.svg') }}"
-                            class="h-20 w-20 rounded border border-dashed dark:border-gray-800 dark:mix-blend-exclusion dark:invert"
-                    />
+                    @csrf
 
-                    <div class="flex flex-col items-center gap-1.5">
-                        <p class="text-base font-semibold text-gray-400">
-                            @lang('Admin::app.services.attribute-groups.edit.no-fields')
+                    <div class="flex items-center justify-between gap-4 max-sm:flex-wrap">
+                        <p class="text-xl font-bold text-gray-800 dark:text-white">
+                            @lang('Admin::app.services.attribute-groups.edit.title')
                         </p>
 
-                        <p class="text-gray-400">
-                            @lang('Admin::app.services.attribute-groups.edit.no-fields-info')
-                        </p>
+                        <div class="flex items-center gap-x-2.5">
+                            <a
+                                    href="{{ route('admin.attribute-groups.index') }}"
+                                    class="transparent-button hover:bg-gray-200 dark:text-white dark:hover:bg-gray-800"
+                            >
+                                @lang('Admin::app.services.attribute-groups.edit.back-btn')
+                            </a>
+
+                            <x-admin::button
+                                    button-type="submit"
+                                    class="primary-button"
+                                    :title="trans('Admin::app.services.attribute-groups.edit.save-btn')"
+                                    ::loading="isSaving"
+                                    ::disabled="isSaving"
+                            />
+                        </div>
                     </div>
 
-                    <div
-                            class="secondary-button text-sm"
-                            @click="openAddFieldModal"
-                    >
-                        @lang('Admin::app.services.attribute-groups.edit.add-field-btn')
-                    </div>
-                </div>
+                    <div class="mt-3.5">
+                        <div class="flex gap-2.5 max-xl:flex-wrap">
+                            <div class="flex flex-1 flex-col gap-2 overflow-auto max-xl:flex-auto">
+                                <div class="box-shadow rounded bg-white p-4 dark:bg-gray-900">
+                                    <x-admin::form.control-group>
+                                        <x-admin::form.control-group.label class="required">
+                                            @lang('Admin::app.services.attribute-groups.edit.default-name')
+                                        </x-admin::form.control-group.label>
 
-                <x-admin::form as="div" v-slot="{ handleSubmit }">
-                    <form @submit="handleSubmit($event, updateOrCreateField)">
-                        <x-admin::modal ref="updateCreateFieldModal">
-                            <x-slot:header>
-                                <p class="text-lg font-bold text-gray-800 dark:text-white">
-                                    @{{ selectedFieldIndex === null ? uiTexts.add_field_title : uiTexts.edit_field_title }}
-                                </p>
-                            </x-slot:header>
+                                        <x-admin::form.control-group.control
+                                                type="text"
+                                                name="default_name"
+                                                :value="old('default_name', $attributeGroup->default_name)"
+                                                :placeholder="trans('Admin::app.services.attribute-groups.edit.default-name')"
+                                        />
 
-                            <x-slot:content>
-                                <x-admin::form.control-group>
-                                    <x-admin::form.control-group.label class="required">
-                                        @lang('Admin::app.services.attribute-groups.attribute-group-fields.field-type')
-                                    </x-admin::form.control-group.label>
+                                        <x-admin::form.control-group.error control-name="default_name" />
+                                    </x-admin::form.control-group>
 
-                                    <x-admin::form.control-group.control
-                                            type="select"
-                                            name="service_attribute_type_id"
-                                            rules="required"
-                                            v-model="selectedField.service_attribute_type_id"
-                                            ::disabled="selectedField.id"
-                                            label="{{ trans('Admin::app.services.attribute-groups.attribute-group-fields.field-type') }}"
-                                            @change="onSelectedAttributeTypeChange"
-                                    >
-                                        <option value="">
-                                            @lang('Admin::app.services.attribute-groups.attribute-group-fields.select-field-type')
-                                        </option>
-
-                                        <option
-                                                v-for="attributeType in availableAttributeTypesForModal"
-                                                :key="attributeType.id"
-                                                :value="attributeType.id"
-                                        >
-                                            @{{ getAttributeTypeName(attributeType) }}
-                                        </option>
-                                    </x-admin::form.control-group.control>
-
-                                    <x-admin::form.control-group.error control-name="service_attribute_type_id" />
-                                </x-admin::form.control-group>
-
-                                <div class="grid gap-4 md:grid-cols-2">
-                                    <div
-                                            v-for="locale in locales"
-                                            :key="`modal-${locale.code}`"
-                                    >
+                                    @foreach (core()->getAllLocales() as $locale)
                                         <x-admin::form.control-group>
                                             <x-admin::form.control-group.label class="required">
-                                                @lang('Admin::app.services.attribute-groups.edit.field-label') (@{{ locale.name }})
+                                                {{ __('Admin::app.services.attribute-groups.edit.name'). ' (' . strtoupper($locale->code) . ')' }}
                                             </x-admin::form.control-group.label>
 
                                             <x-admin::form.control-group.control
                                                     type="text"
-                                                    ::name="`labels[${locale.code}]`"
-                                                    rules="required"
-                                                    v-model="selectedField.labels[locale.code]"
-                                                    ::placeholder="locale.name"
-                                                    ::label="`${uiTexts.field_label} (${locale.name})`"
+                                                    :name="'name[' . $locale->code . ']'"
+                                                    :value="old('name.' . $locale->code, $attributeGroup->translate($locale->code)?->name ?? '')"
+                                                    :placeholder="$locale->name"
                                             />
 
-                                            <x-admin::form.control-group.error ::control-name="`labels[${locale.code}]`" />
+                                            <x-admin::form.control-group.error :control-name="'name[' . $locale->code . ']'" />
                                         </x-admin::form.control-group>
-                                    </div>
+
+                                        <x-admin::form.control-group>
+                                            <x-admin::form.control-group.label>
+                                                {{ __('Admin::app.services.attribute-groups.edit.description') .' (' . strtoupper($locale->code) . ')' }}
+                                            </x-admin::form.control-group.label>
+
+                                            <x-admin::form.control-group.control
+                                                    type="textarea"
+                                                    :name="'description[' . $locale->code . ']'"
+                                                    :value="old('description.' . $locale->code, $attributeGroup->translate($locale->code)?->description ?? '')"
+                                            />
+
+                                            <x-admin::form.control-group.error :control-name="'description[' . $locale->code . ']'" />
+                                        </x-admin::form.control-group>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <div class="flex w-[360px] max-w-full flex-col gap-2">
+                                <x-admin::accordion>
+                                    <x-slot:header>
+                                        <p class="p-2.5 text-base font-semibold text-gray-800 dark:text-white">
+                                            @lang('Admin::app.services.attribute-groups.edit.general')
+                                        </p>
+                                    </x-slot:header>
+
+                                    <x-slot:content>
+                                        <x-admin::form.control-group>
+                                            <x-admin::form.control-group.label class="required">
+                                                @lang('Admin::app.services.attribute-groups.edit.code')
+                                            </x-admin::form.control-group.label>
+
+                                            <x-admin::form.control-group.control
+                                                    type="text"
+                                                    name="code"
+                                                    class="cursor-not-allowed"
+                                                    disabled="true"
+                                                    :value="old('code', $attributeGroup->code)"
+                                                    :placeholder="trans('Admin::app.services.attribute-groups.edit.code')"
+                                                    readonly
+                                            />
+
+                                            <x-admin::form.control-group.error control-name="code" />
+                                        </x-admin::form.control-group>
+
+                                        <x-admin::form.control-group>
+                                            <x-admin::form.control-group.label class="required">
+                                                @lang('Admin::app.services.attribute-groups.edit.group-type')
+                                            </x-admin::form.control-group.label>
+
+                                            <x-admin::form.control-group.control
+                                                    type="select"
+                                                    name="group_type"
+                                                    class="cursor-not-allowed"
+                                                    disabled="true"
+                                                    readonly
+                                                    :value="old('group_type', $attributeGroup->group_type ?? 'general')"
+                                                    :label="trans('Admin::app.services.attribute-groups.edit.group-type')"
+                                            >
+                                                <option value="general" @selected(old('group_type', $attributeGroup->group_type ?? 'general') === 'general')>
+                                                    @lang('Admin::app.services.attribute-groups.options.group-type.general')
+                                                </option>
+
+                                                <option value="citizen" @selected(old('group_type', $attributeGroup->group_type ?? 'general') === 'citizen')>
+                                                    @lang('Admin::app.services.attribute-groups.options.group-type.citizen')
+                                                </option>
+                                            </x-admin::form.control-group.control>
+
+                                            <x-admin::form.control-group.error control-name="group_type" />
+
+                                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                                @lang('Admin::app.services.attribute-groups.edit.group-type-help')
+                                            </p>
+                                        </x-admin::form.control-group>
+
+                                        <x-admin::form.control-group>
+                                            <x-admin::form.control-group.label>
+                                                @lang('Admin::app.services.attribute-groups.edit.sort-order')
+                                            </x-admin::form.control-group.label>
+
+                                            <x-admin::form.control-group.control
+                                                    type="number"
+                                                    name="sort_order"
+                                                    :value="old('sort_order', $attributeGroup->sort_order)"
+                                                    :placeholder="trans('Admin::app.services.attribute-groups.edit.sort-order')"
+                                            />
+
+                                            <x-admin::form.control-group.error control-name="sort_order" />
+                                        </x-admin::form.control-group>
+                                    </x-slot:content>
+                                </x-admin::accordion>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 box-shadow rounded bg-white p-4 dark:bg-gray-900">
+                            <div class="mb-4 flex items-center justify-between">
+                                <div>
+                                    <p class="text-base font-semibold text-gray-800 dark:text-white">
+                                        @lang('Admin::app.services.attribute-groups.edit.fields-title')
+                                    </p>
+
+                                    <p class="text-xs provar font-medium text-gray-500 dark:text-gray-300">
+                                        @lang('Admin::app.services.attribute-groups.edit.fields-info')
+                                    </p>
                                 </div>
 
-                                <x-admin::form.control-group>
-                                    <x-admin::form.control-group.label>
-                                        @lang('Admin::app.services.attribute-groups.attribute-group-fields.default-value')
-                                    </x-admin::form.control-group.label>
-
-                                    <x-admin::form.control-group.control
-                                            type="text"
-                                            name="default_value"
-                                            v-model="selectedField.default_value"
-                                            placeholder="{{ trans('Admin::app.services.attribute-groups.attribute-group-fields.default-value') }}"
-                                    />
-
-                                    <x-admin::form.control-group.error control-name="default_value" />
-                                </x-admin::form.control-group>
-
-                                <x-admin::form.control-group>
-                                    <x-admin::form.control-group.label>
-                                        @lang('Admin::app.services.attribute-groups.attribute-group-fields.validation')
-                                    </x-admin::form.control-group.label>
-
-                                    <x-admin::form.control-group.control
-                                            type="select"
-                                            name="validation_option"
-                                            v-model="selectedField.validation_option"
-                                            :label="trans('Admin::app.services.attribute-groups.attribute-group-fields.validation')"
-                                    >
-                                        <option value="">
-                                            @lang('Admin::app.services.attribute-groups.attribute-group-fields.select-validation')
-                                        </option>
-
-                                        <option
-                                                v-for="option in validationOptionsList"
-                                                :key="option"
-                                                :value="option"
-                                        >
-                                            @{{ translateValidationOption(option) }}
-                                        </option>
-
-                                        <option value="custom">
-                                            @lang('Admin::app.services.attribute-groups.attribute-group-fields.validation-custom')
-                                        </option>
-                                    </x-admin::form.control-group.control>
-
-                                    <x-admin::form.control-group.error control-name="validation_rules" />
-                                </x-admin::form.control-group>
-
-                                <x-admin::form.control-group v-if="selectedField.validation_option === 'regex'">
-                                    <x-admin::form.control-group.label>
-                                        @lang('Admin::app.services.attribute-groups.attribute-group-fields.validation-regex')
-                                    </x-admin::form.control-group.label>
-
-                                    <x-admin::form.control-group.control
-                                            type="text"
-                                            name="validation_regex"
-                                            v-model="selectedField.validation_regex"
-                                            placeholder="{{ trans('Admin::app.services.attribute-groups.attribute-group-fields.validation-regex-placeholder') }}"
-                                    />
-                                </x-admin::form.control-group>
-
-                                <x-admin::form.control-group v-if="selectedField.validation_option === 'custom'">
-                                    <x-admin::form.control-group.label>
-                                        @lang('Admin::app.services.attribute-groups.attribute-group-fields.validation-custom-rule')
-                                    </x-admin::form.control-group.label>
-
-                                    <x-admin::form.control-group.control
-                                            type="text"
-                                            name="validation_custom"
-                                            v-model="selectedField.validation_custom"
-                                            placeholder="{{ trans('Admin::app.services.attribute-groups.attribute-group-fields.validation-rules-placeholder') }}"
-                                    />
-                                </x-admin::form.control-group>
-
-                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                    @lang('Admin::app.services.attribute-groups.attribute-group-fields.validation-rules-help')
-                                </p>
-
-                                <x-admin::form.control-group>
-                                    <x-admin::form.control-group.label>
-                                        @lang('Admin::app.services.attribute-groups.attribute-group-fields.is-required')
-                                    </x-admin::form.control-group.label>
-
-                                    <x-admin::form.control-group.control
-                                            type="switch"
-                                            name="is_required"
-                                            value="1"
-                                            ::checked="selectedField.is_required"
-                                            @change="selectedField.is_required = $event.target.checked"
-                                    />
-
-                                    <x-admin::form.control-group.error control-name="is_required" />
-
-                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                        @lang('Admin::app.services.attribute-groups.attribute-group-fields.is-required-help')
-                                    </p>
-                                </x-admin::form.control-group>
-                            </x-slot:content>
-
-                            <x-slot:footer>
-                                <button
-                                        type="submit"
-                                        class="primary-button"
+                                <div
+                                        class="secondary-button"
+                                        @click="openAddFieldModal"
                                 >
-                                    @{{ selectedFieldIndex === null ? uiTexts.save_field_btn : uiTexts.update_field_btn }}
-                                </button>
-                            </x-slot:footer>
-                        </x-admin::modal>
-                    </form>
-                </x-admin::form>
-            </div>
+                                    @lang('Admin::app.services.attribute-groups.edit.add-field-btn')
+                                </div>
+                            </div>
+
+                            <div v-if="fields.length" class="grid">
+                                <draggable
+                                        ghost-class="draggable-ghost"
+                                        v-bind="{ animation: 200 }"
+                                        handle=".icon-drag"
+                                        :list="fields"
+                                        item-key="uid"
+                                        @end="recalculateSortOrders"
+                                >
+                                    <template #item="{ element, index }">
+                                        <div class="mb-2.5 rounded border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+                                            <input
+                                                    v-if="element.id"
+                                                    type="hidden"
+                                                    :name="`fields[${index}][id]`"
+                                                    :value="element.id"
+                                            />
+
+                                            <input
+                                                    type="hidden"
+                                                    :name="`fields[${index}][service_attribute_type_id]`"
+                                                    :value="element.service_attribute_type_id"
+                                            />
+
+                                            <input
+                                                    type="hidden"
+                                                    :name="`fields[${index}][sort_order]`"
+                                                    :value="index"
+                                            />
+
+                                            <template v-for="locale in locales" :key="`${element.uid}-${locale.code}`">
+                                                <input
+                                                        type="hidden"
+                                                        :name="`fields[${index}][label][${locale.code}]`"
+                                                        :value="element.labels?.[locale.code] ?? ''"
+                                                />
+                                            </template>
+
+                                            <input
+                                                    type="hidden"
+                                                    :name="`fields[${index}][is_required]`"
+                                                    :value="element.is_required ? 1 : 0"
+                                            />
+
+                                            <input
+                                                    type="hidden"
+                                                    :name="`fields[${index}][default_value]`"
+                                                    :value="element.default_value ?? ''"
+                                            />
+
+                                            <input
+                                                    type="hidden"
+                                                    :name="`fields[${index}][validation_rules]`"
+                                                    :value="formatValidationRule(element)"
+                                            />
+
+                                            <div class="flex items-center justify-between gap-4 p-4">
+                                                <div class="flex flex-1 items-start gap-2.5">
+                                                    <i class="icon-drag cursor-grab text-xl transition-all hover:text-gray-700 dark:text-gray-300"></i>
+
+                                                    <div class="flex flex-col gap-1">
+                                                        <p class="text-base font-semibold text-gray-800 dark:text-white">
+                                                            @{{ displayFieldTitle(element, index) }}
+                                                        </p>
+
+                                                        <p class="text-xs text-gray-500 dark:text-gray-300" v-if="element.labels && Object.keys(element.labels).length">
+                                                            @{{ displayFieldLocales(element) }}
+                                                        </p>
+
+                                                        <div
+                                                                v-if="element.service_attribute_type_id && getAttributeTypeInfo(element.service_attribute_type_id)"
+                                                                class="text-xs text-gray-500 dark:text-gray-400"
+                                                        >
+                                                            <p>
+                                                                <strong>@lang('Admin::app.services.attribute-groups.attribute-group-fields.field-type'):</strong>
+                                                                @{{ getAttributeTypeInfo(element.service_attribute_type_id).type }}
+                                                            </p>
+
+                                                            <p v-if="getAttributeTypeInfo(element.service_attribute_type_id)?.validation">
+                                                                <strong>@lang('Admin::app.services.attribute-types.index.datagrid.validation'):</strong>
+                                                                @{{ getAttributeTypeInfo(element.service_attribute_type_id).validation }}
+                                                            </p>
+
+                                                            <p>
+                                                                <strong>@lang('Admin::app.services.attribute-groups.attribute-group-fields.is-required'):</strong>
+                                                                @{{ element.is_required ? yesLabel : noLabel }}
+                                                            </p>
+
+                                                            <p v-if="formatValidationRule(element)">
+                                                                <strong>@lang('Admin::app.services.attribute-groups.attribute-group-fields.validation'):</strong>
+                                                                @{{ displayValidationLabel(element) }}
+                                                            </p>
+
+                                                            <p v-if="getAttributeTypeInfo(element.service_attribute_type_id)?.is_unique">
+                                                                <strong>@lang('Admin::app.services.attribute-types.index.datagrid.is-unique'):</strong>
+                                                                @lang('Admin::app.common.yes')
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="flex items-center gap-3 text-sm font-medium">
+                                                    <span
+                                                            class="cursor-pointer text-blue-600 transition-all hover:underline"
+                                                            @click="openEditFieldModal(index)"
+                                                    >
+                                                        @lang('Admin::app.services.attribute-groups.edit.edit-field-btn')
+                                                    </span>
+
+                                                    <span
+                                                            class="cursor-pointer text-red-600 transition-all hover:underline"
+                                                            @click="removeField(element, index)"
+                                                    >
+                                                        @lang('Admin::app.services.attribute-groups.edit.delete-field-btn')
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </draggable>
+                            </div>
+
+                            <div
+                                    v-else
+                                    class="grid justify-center justify-items-center gap-3.5 px-2.5 py-10 text-center"
+                            >
+                                <img
+                                        src="{{ bagisto_asset('images/icon-options.svg') }}"
+                                        class="h-20 w-20 rounded border border-dashed dark:border-gray-800 dark:mix-blend-exclusion dark:invert"
+                                />
+
+                                <div class="flex flex-col items-center gap-1.5">
+                                    <p class="text-base font-semibold text-gray-400">
+                                        @lang('Admin::app.services.attribute-groups.edit.no-fields')
+                                    </p>
+
+                                    <p class="text-gray-400">
+                                        @lang('Admin::app.services.attribute-groups.edit.no-fields-info')
+                                    </p>
+                                </div>
+
+                                <div
+                                        class="secondary-button text-sm"
+                                        @click="openAddFieldModal"
+                                >
+                                    @lang('Admin::app.services.attribute-groups.edit.add-field-btn')
+                                </div>
+                            </div>
+
+                            <x-admin::form as="div" v-slot="{ handleSubmit }">
+                                <form @submit="handleSubmit($event, updateOrCreateField)">
+                                    <x-admin::modal ref="updateCreateFieldModal">
+                                        <x-slot:header>
+                                            <p class="text-lg font-bold text-gray-800 dark:text-white">
+                                                @{{ selectedFieldIndex === null ? uiTexts.add_field_title : uiTexts.edit_field_title }}
+                                            </p>
+                                        </x-slot:header>
+
+                                        <x-slot:content>
+                                            <x-admin::form.control-group>
+                                                <x-admin::form.control-group.label class="required">
+                                                    @lang('Admin::app.services.attribute-groups.attribute-group-fields.field-type')
+                                                </x-admin::form.control-group.label>
+
+                                                <x-admin::form.control-group.control
+                                                        type="select"
+                                                        name="service_attribute_type_id"
+                                                        rules="required"
+                                                        v-model="selectedField.service_attribute_type_id"
+                                                        ::disabled="selectedField.id"
+                                                        label="{{ trans('Admin::app.services.attribute-groups.attribute-group-fields.field-type') }}"
+                                                        @change="onSelectedAttributeTypeChange"
+                                                >
+                                                    <option value="">
+                                                        @lang('Admin::app.services.attribute-groups.attribute-group-fields.select-field-type')
+                                                    </option>
+
+                                                    <option
+                                                            v-for="attributeType in availableAttributeTypesForModal"
+                                                            :key="attributeType.id"
+                                                            :value="attributeType.id"
+                                                    >
+                                                        @{{ getAttributeTypeName(attributeType) }}
+                                                    </option>
+                                                </x-admin::form.control-group.control>
+
+                                                <x-admin::form.control-group.error control-name="service_attribute_type_id" />
+                                            </x-admin::form.control-group>
+
+                                            <div class="grid gap-4 md:grid-cols-2">
+                                                <div
+                                                        v-for="locale in locales"
+                                                        :key="`modal-${locale.code}`"
+                                                >
+                                                    <x-admin::form.control-group>
+                                                        <x-admin::form.control-group.label class="required">
+                                                            @lang('Admin::app.services.attribute-groups.edit.field-label') (@{{ locale.name }})
+                                                        </x-admin::form.control-group.label>
+
+                                                        <x-admin::form.control-group.control
+                                                                type="text"
+                                                                ::name="`labels[${locale.code}]`"
+                                                                rules="required"
+                                                                v-model="selectedField.labels[locale.code]"
+                                                                ::placeholder="locale.name"
+                                                                ::label="`${uiTexts.field_label} (${locale.name})`"
+                                                        />
+
+                                                        <x-admin::form.control-group.error ::control-name="`labels[${locale.code}]`" />
+                                                    </x-admin::form.control-group>
+                                                </div>
+                                            </div>
+
+                                            <x-admin::form.control-group>
+                                                <x-admin::form.control-group.label>
+                                                    @lang('Admin::app.services.attribute-groups.attribute-group-fields.default-value')
+                                                </x-admin::form.control-group.label>
+
+                                                <x-admin::form.control-group.control
+                                                        type="text"
+                                                        name="default_value"
+                                                        v-model="selectedField.default_value"
+                                                        placeholder="{{ trans('Admin::app.services.attribute-groups.attribute-group-fields.default-value') }}"
+                                                />
+
+                                                <x-admin::form.control-group.error control-name="default_value" />
+                                            </x-admin::form.control-group>
+
+                                            <x-admin::form.control-group>
+                                                <x-admin::form.control-group.label>
+                                                    @lang('Admin::app.services.attribute-groups.attribute-group-fields.validation')
+                                                </x-admin::form.control-group.label>
+
+                                                <x-admin::form.control-group.control
+                                                        type="select"
+                                                        name="validation_option"
+                                                        v-model="selectedField.validation_option"
+                                                        :label="trans('Admin::app.services.attribute-groups.attribute-group-fields.validation')"
+                                                >
+                                                    <option value="">
+                                                        @lang('Admin::app.services.attribute-groups.attribute-group-fields.select-validation')
+                                                    </option>
+
+                                                    <option
+                                                            v-for="option in validationOptionsList"
+                                                            :key="option"
+                                                            :value="option"
+                                                    >
+                                                        @{{ translateValidationOption(option) }}
+                                                    </option>
+
+                                                    <option value="custom">
+                                                        @lang('Admin::app.services.attribute-groups.attribute-group-fields.validation-custom')
+                                                    </option>
+                                                </x-admin::form.control-group.control>
+
+                                                <x-admin::form.control-group.error control-name="validation_rules" />
+                                            </x-admin::form.control-group>
+
+                                            <x-admin::form.control-group v-if="selectedField.validation_option === 'regex'">
+                                                <x-admin::form.control-group.label>
+                                                    @lang('Admin::app.services.attribute-groups.attribute-group-fields.validation-regex')
+                                                </x-admin::form.control-group.label>
+
+                                                <x-admin::form.control-group.control
+                                                        type="text"
+                                                        name="validation_regex"
+                                                        v-model="selectedField.validation_regex"
+                                                        placeholder="{{ trans('Admin::app.services.attribute-groups.attribute-group-fields.validation-regex-placeholder') }}"
+                                                />
+                                            </x-admin::form.control-group>
+
+                                            <x-admin::form.control-group v-if="selectedField.validation_option === 'custom'">
+                                                <x-admin::form.control-group.label>
+                                                    @lang('Admin::app.services.attribute-groups.attribute-group-fields.validation-custom-rule')
+                                                </x-admin::form.control-group.label>
+
+                                                <x-admin::form.control-group.control
+                                                        type="text"
+                                                        name="validation_custom"
+                                                        v-model="selectedField.validation_custom"
+                                                        placeholder="{{ trans('Admin::app.services.attribute-groups.attribute-group-fields.validation-rules-placeholder') }}"
+                                                />
+                                            </x-admin::form.control-group>
+
+                                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                                @lang('Admin::app.services.attribute-groups.attribute-group-fields.validation-rules-help')
+                                            </p>
+
+                                            <x-admin::form.control-group>
+                                                <x-admin::form.control-group.label>
+                                                    @lang('Admin::app.services.attribute-groups.attribute-group-fields.is-required')
+                                                </x-admin::form.control-group.label>
+
+                                                <x-admin::form.control-group.control
+                                                        type="switch"
+                                                        name="is_required"
+                                                        value="1"
+                                                        ::checked="selectedField.is_required"
+                                                        @change="selectedField.is_required = $event.target.checked"
+                                                />
+
+                                                <x-admin::form.control-group.error control-name="is_required" />
+
+                                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                                    @lang('Admin::app.services.attribute-groups.attribute-group-fields.is-required-help')
+                                                </p>
+                                            </x-admin::form.control-group>
+                                        </x-slot:content>
+
+                                        <x-slot:footer>
+                                            <button
+                                                    type="submit"
+                                                    class="primary-button"
+                                            >
+                                                @{{ selectedFieldIndex === null ? uiTexts.save_field_btn : uiTexts.update_field_btn }}
+                                            </button>
+                                        </x-slot:footer>
+                                    </x-admin::modal>
+                                </form>
+                            </x-admin::form>
+                        </div>
+                    </div>
+                </form>
+            </x-admin::form>
+        </div>
     </script>
 
     <script type="module">
@@ -543,6 +709,7 @@
                 });
 
                 return {
+                    isSaving: false,
                     fields: initialFields,
                     locales: this.locales,
                     attributeTypesList: this.attributeTypes || [],
@@ -597,6 +764,31 @@
             },
 
             methods: {
+                update(params, { setErrors }) {
+                    this.isSaving = true;
+
+                    const formElement = this.$refs.attributeGroupEditForm;
+
+                    const formData = new FormData(formElement);
+
+                    formData.append('_method', 'put');
+
+                    this.$axios.post('{{ route('admin.attribute-groups.update', $attributeGroup->id) }}', formData)
+                        .then((response) => {
+                            this.$emitter.emit('add-flash', { type: 'success', message: response.data.message });
+
+                            window.location.reload();
+                        })
+                        .catch((error) => {
+                            if (error?.response?.status === 422) {
+                                setErrors(error.response.data.errors ?? {});
+                            }
+                        })
+                        .finally(() => {
+                            this.isSaving = false;
+                        });
+                },
+
                 translateValidationOption(option) {
                     if (!option) {
                         return this.validationNoneLabel;

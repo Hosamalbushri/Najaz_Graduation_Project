@@ -7,15 +7,17 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use Najaz\Admin\DataGrids\Services\ServiceAttributeTypeDataGrid;
 use Najaz\Service\Enums\ServiceAttributeTypeEnum;
+use Najaz\Service\Enums\ValidationEnum;
+use Najaz\Service\Repositories\ServiceAttributeTypeOptionRepository;
 use Najaz\Service\Repositories\ServiceAttributeTypeRepository;
-use Webkul\Attribute\Enums\ValidationEnum;
 use Webkul\Admin\Http\Controllers\Controller;
 use Webkul\Core\Rules\Code;
 
 class ServiceAttributeTypeController extends Controller
 {
     public function __construct(
-        protected ServiceAttributeTypeRepository $serviceAttributeTypeRepository
+        protected ServiceAttributeTypeRepository $serviceAttributeTypeRepository,
+        protected ServiceAttributeTypeOptionRepository $serviceAttributeTypeOptionRepository
     ) {}
 
     public function index()
@@ -49,6 +51,7 @@ class ServiceAttributeTypeController extends Controller
         $this->validate(request(), [
             'code'   => ['required', 'unique:service_attribute_types,code', new Code],
             'type'   => 'required|in:' . implode(',', ServiceAttributeTypeEnum::getValues()),
+            'default_name' => 'required|string|max:255',
             'name'   => 'required|array',
             'name.*' => 'required|string|max:255',
             'position' => 'nullable|integer|min:0',
@@ -59,12 +62,19 @@ class ServiceAttributeTypeController extends Controller
             'is_unique' => 'nullable|boolean',
         ]);
 
+        $type = request()->input('type');
+
+        if ($this->requiresOptions($type)) {
+            $this->validateOptions();
+        }
+
         $validation = request()->input('validation');
         $regex = $validation === 'regex' ? request()->input('regex') : null;
 
         $data = [
             'code'            => request()->input('code'),
             'type'            => request()->input('type'),
+            'default_name'    => request()->input('default_name'),
             'is_user_defined' => 1,
             'position'        => request()->input('position'),
             'default_value'   => request()->input('default_value'),
@@ -82,6 +92,13 @@ class ServiceAttributeTypeController extends Controller
             ])->save();
         }
 
+        if ($this->requiresOptions($type)) {
+            $this->serviceAttributeTypeOptionRepository->syncOptions(
+                $attributeType,
+                request()->input('options', [])
+            );
+        }
+
         session()->flash('success', trans('Admin::app.services.attribute-types.create-success'));
 
         return redirect()->route('admin.attribute-types.index');
@@ -89,7 +106,9 @@ class ServiceAttributeTypeController extends Controller
 
     public function edit(int $id): View
     {
-        $attributeType = $this->serviceAttributeTypeRepository->with('translations')->findOrFail($id);
+        $attributeType = $this->serviceAttributeTypeRepository
+            ->with(['translations', 'options.translations'])
+            ->findOrFail($id);
         $attributeTypes = ServiceAttributeTypeEnum::getValues();
         $locales = core()->getAllLocales();
         $validations = ValidationEnum::getValues();
@@ -108,6 +127,7 @@ class ServiceAttributeTypeController extends Controller
         }
 
         $this->validate(request(), [
+            'default_name' => 'required|string|max:255',
             'name'   => 'required|array',
             'name.*' => 'required|string|max:255',
             'position' => 'nullable|integer|min:0',
@@ -120,12 +140,17 @@ class ServiceAttributeTypeController extends Controller
 
         $attributeType = $this->serviceAttributeTypeRepository->findOrFail($id);
 
+        if ($this->requiresOptions($attributeType->type)) {
+            $this->validateOptions();
+        }
+
         $validation = request()->input('validation');
         $regex = $validation === 'regex' ? request()->input('regex') : null;
 
         $this->serviceAttributeTypeRepository->update([
             'position'      => request()->input('position'),
             'default_value' => request()->input('default_value'),
+            'default_name'  => request()->input('default_name'),
             'validation'    => $validation,
             'regex'         => $regex,
             'is_required'   => request()->boolean('is_required'),
@@ -136,6 +161,13 @@ class ServiceAttributeTypeController extends Controller
             $attributeType->translateOrNew($locale->code)->fill([
                 'name' => request()->input("name.{$locale->code}"),
             ])->save();
+        }
+
+        if ($this->requiresOptions($attributeType->type)) {
+            $this->serviceAttributeTypeOptionRepository->syncOptions(
+                $attributeType,
+                request()->input('options', [])
+            );
         }
 
         session()->flash('success', trans('Admin::app.services.attribute-types.update-success'));
@@ -191,6 +223,42 @@ class ServiceAttributeTypeController extends Controller
         return new JsonResponse([
             'message' => trans('Admin::app.services.attribute-types.index.datagrid.mass-delete-success'),
         ]);
+    }
+
+    /**
+     * Determine if the attribute type requires options.
+     */
+    protected function requiresOptions(?string $type): bool
+    {
+        if (! $type) {
+            return false;
+        }
+
+        return in_array($type, [
+            ServiceAttributeTypeEnum::SELECT->value,
+            ServiceAttributeTypeEnum::MULTISELECT->value,
+            ServiceAttributeTypeEnum::CHECKBOX->value,
+        ], true);
+    }
+
+    /**
+     * Validate option payload.
+     */
+    protected function validateOptions(): void
+    {
+        $rules = [
+            'options' => 'required|array|min:1',
+            'options.*.id' => 'nullable|integer|exists:service_attribute_type_options,id',
+            'options.*.admin_name' => 'required|string|max:255',
+            'options.*.label' => 'required|array',
+            'options.*.sort_order' => 'nullable|integer',
+        ];
+
+        foreach (core()->getAllLocales() as $locale) {
+            $rules["options.*.label.{$locale->code}"] = 'required|string|max:255';
+        }
+
+        request()->validate($rules);
     }
 }
 

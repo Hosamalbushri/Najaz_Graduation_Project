@@ -1,5 +1,43 @@
 # Service Package Change Log (November 2025)
 
+## Service Attribute Type Default Name & UI Parity
+
+### Summary
+- Added a required `default_name` field to attribute-type create/edit screens so every type has a canonical fallback label alongside locale-specific names.
+- Added the same `default_name` support to service attribute groups (create/edit UI + schema) to keep template groups aligned with attribute types.
+- Brought the edit view to feature-parity with the revamped create view: table preview with drag-and-drop ordering, modal-driven option CRUD, boolean default-value selector, and conditional validation controls.
+- Introduced a schema change plus backend validation to persist the new field throughout the stack.
+
+### Frontend Details
+- `packages/Najaz/Admin/src/Resources/views/services/attribute-types/create.blade.php`
+  - Inserted a `default_name` input ahead of locale fields.
+  - Limited the default-value selector to boolean types and localized the placeholder with `Admin::app.common.select`.
+- `packages/Najaz/Admin/src/Resources/views/services/attribute-types/edit.blade.php`
+  - Mirrored the create screen layout: option table, modal form (including required/optional switches), validation visibility, and boolean default-value select.
+  - Synced the Vue component data/computed/methods to reuse helper logic (`getOptionFieldName`, `isRequiredLocale`, modal open/save flows, etc.).
+  - Replaced toggle switches with checkbox controls to align with the new create page styling.
+- `packages/Najaz/Admin/src/Resources/views/services/attribute-groups/create.blade.php`
+  - Added a required `default_name` field to the create modal.
+- `packages/Najaz/Admin/src/Resources/views/services/attribute-groups/view/filed-manger.blade.php`
+  - Surfaced `default_name` in the general accordion for edit and preserved existing locale fields.
+
+### Backend Impact
+- `packages/Najaz/Service/src/Database/Migrations/2025_11_20_120000_add_default_name_to_service_attribute_types_table.php` adds the nullable `default_name` column.
+- `packages/Najaz/Service/src/Database/Migrations/2025_11_20_130100_add_default_name_to_service_attribute_groups_table.php` adds the same column for attribute groups.
+- `packages/Najaz/Service/src/Models/ServiceAttributeType.php` and `.../ServiceAttributeGroup.php` now treat `default_name` as fillable.
+- `packages/Najaz/Admin/src/Http/Controllers/Admin/Services/ServiceAttributeTypeController.php` and `AttributeGroupController.php` validate and persist `default_name` on store/update.
+- `packages/Najaz/Service/src/Repositories/ServiceRepository.php` clones attribute groups with the new default name fallback when templating groups.
+
+### Localization
+- Extended both EN/AR resources (`packages/Najaz/Admin/src/Resources/lang/en/app.php`, `.../ar/app.php`) with:
+  - Labels/placeholders for `default_name` on create/edit (attribute types & groups).
+  - Modal button/validation strings used by the shared option editor.
+  - A shared `common.select` entry for the boolean default-value dropdown.
+
+### Deployment Notes
+- Run `php artisan migrate` to append the `default_name` column before hitting the updated forms.
+- Rebuild the frontend assets if your pipeline inlines Blade templates into cached bundles.
+
 ## Service Attribute Enhancements
 
 ### Summary
