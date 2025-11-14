@@ -9,3 +9,4 @@ class ServiceAttributeTypeOptionTranslationProxy extends ModelProxy
 }
 
 
+

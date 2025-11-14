@@ -6,6 +6,7 @@
         id="v-button-template"
     >
         <button
+            :type="resolvedType"
             v-if="! loading"
             :class="[buttonClass, '']"
         >
@@ -13,6 +14,7 @@
         </button>
 
         <button
+            :type="resolvedType"
             v-else
             :class="[buttonClass, '']"
         >
@@ -57,6 +59,12 @@
                 buttonType: String,
                 title: String,
                 buttonClass: String,
+            },
+
+            computed: {
+                resolvedType() {
+                    return this.buttonType || 'submit';
+                },
             },
         });
     </script>

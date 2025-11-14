@@ -73,6 +73,11 @@ class ServiceController extends Controller
 
         $service = $this->serviceRepository->create($data);
 
+        $this->serviceRepository->syncAttributeGroups(
+            request()->input('service_attribute_groups'),
+            $service
+        );
+
         $this->serviceRepository->syncCitizenTypes(request()->input('citizen_type_ids', []), $service);
 
 
@@ -129,6 +134,11 @@ class ServiceController extends Controller
         ]);
 
         $service = $this->serviceRepository->update($data, $id);
+
+        $this->serviceRepository->syncAttributeGroups(
+            request()->input('service_attribute_groups'),
+            $service
+        );
 
         $this->serviceRepository->syncCitizenTypes(request()->input('citizen_type_ids', []), $service);
 

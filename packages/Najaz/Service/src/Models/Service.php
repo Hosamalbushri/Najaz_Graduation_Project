@@ -52,7 +52,7 @@ class Service extends Model implements ServiceContract
             'service_attribute_group_service',
             'service_id',
             'service_attribute_group_id'
-        )->withPivot('sort_order')
+        )->withPivot('pivot_uid', 'sort_order', 'is_notifiable', 'custom_code', 'custom_name')
             ->withTimestamps()
             ->orderByPivot('sort_order');
     }

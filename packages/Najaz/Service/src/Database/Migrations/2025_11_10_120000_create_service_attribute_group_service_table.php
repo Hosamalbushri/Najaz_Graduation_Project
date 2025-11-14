@@ -13,22 +13,19 @@ return new class extends Migration
     {
         Schema::create('service_attribute_group_service', function (Blueprint $table) {
             $table->increments('id');
+            $table->uuid('pivot_uid')
+                ->unique();
             $table->integer('service_id')->unsigned();
             $table->integer('service_attribute_group_id')->unsigned();
             $table->integer('sort_order')->default(0);
+            $table->boolean('is_notifiable')
+                ->default(false);
+            $table->string('custom_code')->nullable();
+            $table->string('custom_name')
+                ->nullable();
+
+
             $table->timestamps();
-
-            $table->unique(['service_id', 'service_attribute_group_id'], 'sags_service_group_unique');
-
-            $table->foreign('service_id', 'sags_service_id_foreign')
-                ->references('id')
-                ->on('services')
-                ->onDelete('cascade');
-
-            $table->foreign('service_attribute_group_id', 'sags_attribute_group_id_foreign')
-                ->references('id')
-                ->on('service_attribute_groups')
-                ->onDelete('cascade');
         });
     }
 

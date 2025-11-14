@@ -4,7 +4,8 @@ namespace Najaz\Service\Repositories;
 
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
-use Najaz\Service\Models\ServiceAttributeFieldProxy;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Najaz\Service\Models\ServiceAttributeGroupProxy;
 use Webkul\Core\Eloquent\Repository;
 
@@ -28,82 +29,84 @@ class ServiceRepository extends Repository
             return;
         }
 
+        $normalizedCodes = [];
+
+        foreach ($payload as $index => $groupData) {
+            $groupData = Arr::wrap($groupData);
+            $rawCode = $groupData['custom_code'] ?? $groupData['code'] ?? null;
+            $code = is_string($rawCode) ? trim($rawCode) : '';
+
+            if ($code === '') {
+                continue;
+            }
+
+            $normalized = mb_strtolower($code);
+
+            if (isset($normalizedCodes[$normalized])) {
+                throw ValidationException::withMessages([
+                    "service_attribute_groups.{$index}.code" => trans(
+                        'Admin::app.services.services.attribute-groups.duplicate-code',
+                        ['code' => $code]
+                    ),
+                ]);
+
+            }
+
+            $normalizedCodes[$normalized] = true;
+        }
+
         DB::transaction(function () use ($payload, $service) {
             $groupsSync = [];
 
             foreach ($payload as $index => $groupData) {
                 $groupData = Arr::wrap($groupData);
 
-                $existingGroupId = ! empty($groupData['service_attribute_group_id'])
-                    ? (int) $groupData['service_attribute_group_id']
-                    : null;
-
                 $templateGroupId = ! empty($groupData['template_id'])
                     ? (int) $groupData['template_id']
                     : null;
 
-                $isNew = filter_var($groupData['is_new'] ?? false, FILTER_VALIDATE_BOOLEAN);
-                $code = $groupData['code'] ?? null;
-                $name = $groupData['name'] ?? null;
-                $description = $groupData['description'] ?? null;
                 $groupSortOrder = isset($groupData['sort_order'])
                     ? (int) $groupData['sort_order']
                     : $index;
+                $isNotifiable = $this->toBoolean($groupData['is_notifiable'] ?? false);
+                $customCode = $groupData['custom_code'] ?? $groupData['code'] ?? null;
+                $customName = $groupData['custom_name'] ?? $groupData['name'] ?? null;
 
-                $groupId = $existingGroupId;
-
-                if ($isNew || ! $existingGroupId) {
-                    if (! $templateGroupId || ! $code) {
-                        continue;
-                    }
-
-                    $clone = $this->cloneAttributeGroup($templateGroupId, $code, $name, $description);
-
-                    if (! $clone) {
-                        continue;
-                    }
-
-                    $groupId = $clone->id;
-                } else {
-                    $group = ServiceAttributeGroupProxy::modelClass()::with('translations')->find($existingGroupId);
-
-                    if (! $group) {
-                        continue;
-                    }
-
-                    $updatePayload = ['sort_order' => $groupSortOrder];
-
-                    if ($code) {
-                        $updatePayload['code'] = $code;
-                    }
-
-                    $group->update($updatePayload);
-
-                    if ($name || $description !== null) {
-                        foreach (core()->getAllLocales() as $locale) {
-                            $currentTranslation = $group->translate($locale->code);
-
-                            $translationPayload = [
-                                'name' => $name ?? ($currentTranslation?->name ?? $group->code),
-                            ];
-
-                            if ($description !== null) {
-                                $translationPayload['description'] = $description;
-                            }
-
-                            $group->translateOrNew($locale->code)->fill($translationPayload)->save();
-                        }
-                    }
-                }
+                $groupId = $templateGroupId;
 
                 if (! $groupId) {
                     continue;
                 }
 
-                $groupsSync[$groupId] = ['sort_order' => $groupSortOrder];
+                if (! ServiceAttributeGroupProxy::modelClass()::whereKey($groupId)->exists()) {
+                    continue;
+                }
+
+                $pivotUid = $groupData['pivot_uid'] ?? null;
+
+                if (! is_string($pivotUid) || ! $pivotUid) {
+                    $pivotUid = (string) Str::uuid();
+                }
+
+                $groupsSync[$pivotUid] = [
+                    'group_id'   => $groupId,
+                    'attributes' => [
+                        'sort_order'    => $groupSortOrder,
+                        'is_notifiable' => $isNotifiable,
+                        'custom_code'   => $customCode,
+                        'custom_name'   => $customName,
+                    ],
+                ];
             }
 
-            $service->attributeGroups()->sync($groupsSync);
+            $service->attributeGroups()->detach();
+
+            foreach ($groupsSync as $pivotUid => $payload) {
+                $service->attributeGroups()->attach(
+                    $payload['group_id'],
+                    array_merge($payload['attributes'], ['pivot_uid' => $pivotUid])
+                );
+            }
         });
     }
 
@@ -122,61 +125,21 @@ class ServiceRepository extends Repository
         $service->citizenTypes()->sync($ids);
     }
 
-    /**
-     * Clone an attribute group with its fields and translations.
-     */
-    protected function cloneAttributeGroup(
-        int $templateId,
-        string $code,
-        ?string $name = null,
-        ?string $description = null
-    ): ?\Illuminate\Database\Eloquent\Model
+    protected function toBoolean($value): bool
     {
-        $template = ServiceAttributeGroupProxy::modelClass()::with([
-            'translations',
-            'fields.translations',
-        ])->find($templateId);
-
-        if (! $template) {
-            return null;
+        if (is_bool($value)) {
+            return $value;
         }
 
-        $newGroup = ServiceAttributeGroupProxy::modelClass()::create([
-            'code'       => $code,
-            'default_name' => $name ?? ($template->default_name ?? $code),
-            'sort_order' => $template->sort_order ?? 0,
-        ]);
-
-        foreach (core()->getAllLocales() as $locale) {
-            $templateTranslation = $template->translate($locale->code);
-
-            $newGroup->translateOrNew($locale->code)->fill([
-                'name'        => $name ?? ($templateTranslation?->name ?? $code),
-                'description' => $description ?? $templateTranslation?->description,
-            ])->save();
+        if (is_numeric($value)) {
+            return (int) $value === 1;
         }
 
-        foreach ($template->fields as $field) {
-            $newField = ServiceAttributeFieldProxy::modelClass()::create([
-                'service_attribute_group_id' => $newGroup->id,
-                'service_attribute_type_id' => $field->service_attribute_type_id ?? $field->service_field_type_id,
-                'code'                  => $field->code,
-                'type'                  => $field->type,
-                'validation_rules'      => $field->validation_rules,
-                'default_value'         => $field->default_value,
-                'sort_order'            => $field->sort_order ?? 0,
-            ]);
-
-            foreach (core()->getAllLocales() as $locale) {
-                $fieldTranslation = $field->translate($locale->code);
-
-                $newField->translateOrNew($locale->code)->fill([
-                    'label' => $fieldTranslation?->label ?? $field->code,
-                ])->save();
-            }
+        if (is_string($value)) {
+            return in_array(strtolower($value), ['1', 'true', 'yes', 'on'], true);
         }
 
-        return $newGroup->fresh();
+        return false;
     }
 }
 

@@ -99,9 +99,16 @@
 
                                     <x-slot:content>
                                         <x-admin::form.control-group>
-                                            <x-admin::form.control-group.label class="required">
+                                            <x-admin::form.control-group.label>
                                                 @lang('Admin::app.services.attribute-groups.edit.code')
                                             </x-admin::form.control-group.label>
+                                            <x-admin::form.control-group.control
+                                                    type="hidden"
+                                                    name="code"
+                                                    ::value="{{$attributeGroup->code}}">
+                                            </x-admin::form.control-group.control>
+
+
 
                                             <x-admin::form.control-group.control
                                                     type="text"
@@ -117,9 +124,15 @@
                                         </x-admin::form.control-group>
 
                                         <x-admin::form.control-group>
-                                            <x-admin::form.control-group.label class="required">
+                                            <x-admin::form.control-group.label>
                                                 @lang('Admin::app.services.attribute-groups.edit.group-type')
                                             </x-admin::form.control-group.label>
+                                              <x-admin::form.control-group.control
+                                                    type="hidden"
+                                                    name="group_type"
+                                                    ::value="{{$attributeGroup->group_type}}"
+                                            >
+                                            </x-admin::form.control-group.control>
 
                                             <x-admin::form.control-group.control
                                                     type="select"
@@ -398,21 +411,34 @@
                                                 </div>
                                             </div>
 
-                                            <x-admin::form.control-group>
+                                            <x-admin::form.control-group v-if="canHaveDefaultValue">
                                                 <x-admin::form.control-group.label>
                                                     @lang('Admin::app.services.attribute-groups.attribute-group-fields.default-value')
                                                 </x-admin::form.control-group.label>
 
                                                 <x-admin::form.control-group.control
-                                                        type="text"
+                                                        type="select"
                                                         name="default_value"
                                                         v-model="selectedField.default_value"
-                                                        placeholder="{{ trans('Admin::app.services.attribute-groups.attribute-group-fields.default-value') }}"
-                                                />
+                                                        :label="trans('Admin::app.services.attribute-groups.attribute-group-fields.default-value')"
+                                                >
+                                                    <option value="">
+                                                        @lang('Admin::app.common.select')
+                                                    </option>
+
+                                                    <option value="1">
+                                                        @lang('Admin::app.common.yes')
+                                                    </option>
+
+                                                    <option value="0">
+                                                        @lang('Admin::app.common.no')
+                                                    </option>
+                                                </x-admin::form.control-group.control>
 
                                                 <x-admin::form.control-group.error control-name="default_value" />
                                             </x-admin::form.control-group>
 
+                                            <template v-if="canShowValidationControls">
                                             <x-admin::form.control-group>
                                                 <x-admin::form.control-group.label>
                                                     @lang('Admin::app.services.attribute-groups.attribute-group-fields.validation')
@@ -473,6 +499,7 @@
                                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                                                 @lang('Admin::app.services.attribute-groups.attribute-group-fields.validation-rules-help')
                                             </p>
+                                            </template>
 
                                             <x-admin::form.control-group>
                                                 <x-admin::form.control-group.label>
@@ -532,6 +559,26 @@
             }
 
             return false;
+        };
+
+        const normalizeDefaultValue = (value) => {
+            if (value === null || value === undefined) {
+                return '';
+            }
+
+            if (typeof value === 'boolean') {
+                return value ? '1' : '0';
+            }
+
+            if (typeof value === 'number') {
+                return value.toString();
+            }
+
+            if (typeof value === 'string') {
+                return value;
+            }
+
+            return '';
         };
 
         const getValidationString = (value) => {
@@ -683,7 +730,7 @@
                         labels,
                         sort_order: field.sort_order ?? 0,
                         is_required: normalizeBoolean(field.is_required),
-                        default_value: field.default_value ?? '',
+                        default_value: normalizeDefaultValue(field.default_value),
                         validation_option: parsedValidation.option,
                         validation_regex: parsedValidation.regex,
                         validation_custom: parsedValidation.custom,
@@ -737,6 +784,21 @@
                 availableAttributeTypesForModal() {
                     return Array.isArray(this.attributeTypesList) ? this.attributeTypesList : [];
                 },
+
+                selectedAttributeType() {
+                    if (!this.selectedField || !this.selectedField.service_attribute_type_id) {
+                        return null;
+                    }
+
+                    return this.getAttributeTypeInfo(this.selectedField.service_attribute_type_id);
+                },
+
+                canShowValidationControls() {
+                    return this.supportsValidationForType(this.selectedAttributeType);
+                },
+                canHaveDefaultValue() {
+                    return this.selectedAttributeType?.type === 'boolean';
+                },
             },
 
             watch: {
@@ -761,9 +823,35 @@
                         this.selectedField.validation_rules = formatValidationRuleValue(this.selectedField);
                     }
                 },
+                canShowValidationControls(value) {
+                    if (!value) {
+                        this.selectedField.validation_option = '';
+                        this.selectedField.validation_regex = '';
+                        this.selectedField.validation_custom = '';
+                        this.selectedField.validation_rules = '';
+                    }
+                },
+
+                canHaveDefaultValue(value) {
+                    if (!value) {
+                        this.selectedField.default_value = '';
+                    } else {
+                        this.selectedField.default_value = normalizeDefaultValue(this.selectedField.default_value);
+                    }
+                },
             },
 
             methods: {
+                supportsValidationForType(attributeType) {
+                    if (!attributeType) {
+                        return false;
+                    }
+
+                    const supportedTypes = ['text', 'textarea', 'number', 'price', 'email', 'url'];
+
+                    return supportedTypes.includes(attributeType.type);
+                },
+
                 update(params, { setErrors }) {
                     this.isSaving = true;
 
@@ -858,7 +946,7 @@
                         labels: JSON.parse(JSON.stringify(field.labels)),
                         sort_order: field.sort_order,
                         is_required: normalizeBoolean(field.is_required),
-                        default_value: field.default_value ?? '',
+                        default_value: normalizeDefaultValue(field.default_value),
                         validation_option: parsedValidation.option || field.validation_option || '',
                         validation_regex: parsedValidation.regex || field.validation_regex || '',
                         validation_custom: parsedValidation.option === 'custom'
@@ -886,7 +974,7 @@
                         labels: JSON.parse(JSON.stringify(this.selectedField.labels)),
                         sort_order: this.selectedField.sort_order ?? 0,
                         is_required: normalizeBoolean(this.selectedField.is_required),
-                        default_value: this.selectedField.default_value ?? '',
+                        default_value: normalizeDefaultValue(this.selectedField.default_value),
                         validation_option: this.selectedField.validation_option || '',
                         validation_regex: this.selectedField.validation_regex || '',
                         validation_custom: this.selectedField.validation_custom || '',
@@ -944,8 +1032,16 @@
                     }
 
                     this.selectedField.is_required = normalizeBoolean(attributeType.is_required);
-                    this.selectedField.default_value = attributeType.default_value ?? '';
+                    this.selectedField.default_value = attributeType.type === 'boolean'
+                        ? normalizeDefaultValue(attributeType.default_value)
+                        : '';
 
+                    if (!this.supportsValidationForType(attributeType)) {
+                        this.selectedField.validation_option = '';
+                        this.selectedField.validation_regex = '';
+                        this.selectedField.validation_custom = '';
+                        this.selectedField.validation_rules = '';
+                    } else {
                     const baseValidation = attributeType.validation === 'regex'
                         ? (attributeType.regex ? `regex:${attributeType.regex}` : 'regex:')
                         : attributeType.validation;
@@ -960,6 +1056,7 @@
                         ? (parsedValidation.custom || '')
                         : '';
                     this.selectedField.validation_rules = formatValidationRuleValue(this.selectedField);
+                    }
 
                     this.locales.forEach(locale => {
                         if (!this.selectedField.labels[locale.code]) {

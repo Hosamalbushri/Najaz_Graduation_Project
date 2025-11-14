@@ -76,6 +76,39 @@
 
 ---
 
+## Service Attribute Group Selection
+
+### Summary
+- Wired the service create/update form to persist selected attribute groups through hidden inputs and repository syncs.
+- Persisted per-service overrides (code, name, notify flag) on the pivot while leaving template groups untouched.
+
+### Frontend Details
+- Injected hidden fields inside the `v-service-attribute-groups` accordion so every chosen group—and its fields—post back with the service form.
+- Normalized group type labels client-side via a localized lookup, avoiding runtime dependence on the global `trans` helper.
+- Added a per-group notification toggle in the service editor (persisted as the new `is_notifiable` pivot column) so admins can pick which contacts receive updates.
+- Stored per-service overrides for group code/name (`custom_code`, `custom_name`) on the pivot to keep template definitions intact.
+- Introduced new localization keys (`Admin::app.services.services.attribute-groups.notify-label` / `notify-help`) in EN & AR so the toggle renders translated copy.
+- Filtered the catalog and restored selections so only attribute groups with at least one field appear in the picker; empty groups trigger a warning instead of being added.
+- Notification toggle now renders only for citizen-type groups that include an `id_number` field, matching the eligibility logic used when persisting `is_notifiable`.
+- Enforced unique group codes per service at save time; duplicate codes now trigger a validation error instead of silently overwriting data.
+- Added `pivot_uid` to the pivot table and removed the legacy unique index so a service can attach the same template multiple times with distinct metadata.
+- Enabled inline editing of assigned groups (code, name, description, notification flag) via the existing modal, while keeping the template selection read-only during edits.
+- Updated the shared `x-admin::button` component to honor the passed `button-type`, preventing the edit action from submitting the entire service form when reopening the modal.
+- Simplified the modal form by removing the description input, leaving code/name as the only editable metadata alongside the notification toggle.
+- Moved the notification toggle out of the accordion header; headers are now display-only while the toggle sits inside the content area with a prominent badge that clarifies when a group sends notifications.
+- Restyled the field list for each attached group to mirror the catalog product option layout (drag icon, label, badge chips for code/type) for consistent admin UX.
+- Brought the overall card/layout styling of `service-data-groups` in line with the service create/edit pages so the attribute-group panel now reuses the same box-shadow card, spacing, and empty states as the core service form.
+
+### Backend Impact
+- `ServiceController@store` and `@update` now invoke `ServiceRepository::syncAttributeGroups()` to persist the submitted payload alongside citizen types.
+- Repository logic now syncs solely through the pivot (no cloning/updates to template groups), ensuring template definitions remain immutable.
+
+### Follow-up
+- Add validation to reject duplicate codes within the same service submission.
+- Cover the selection flow with feature tests once automated UI coverage is available.
+
+---
+
 ## Attribute Field Required & Validation Controls
 
 ### Summary
@@ -100,6 +133,26 @@
 ### Notes & Follow-up
 - Validation rules are stored under the JSON key `validation` (e.g. `{"validation":"required|string|max:255"}`); leaving the field blank reuses the attribute-type defaults.
 - Automated tests are still pending; run manual regression on field creation/update flows when adjusting validation syntax.
+
+---
+
+## Attribute Field Boolean Defaults
+
+### Summary
+- Limited the field-default UI to boolean attribute types and rendered it as a friendly yes/no select.
+- Normalized persisted default values so stored booleans/integers/string literals appear consistently inside the modal.
+
+### Frontend Details
+- Added `canHaveDefaultValue` to reveal the default-value control only when the selected attribute type is `boolean`.
+- Replaced the free-text input with a select (`'' | 1 | 0`) and wired it to the modal form payload.
+- Hid validation selectors automatically for attribute types that do not support custom validation, preventing empty submissions from toggling the panel back on.
+
+### Backend Impact
+- Reused the shared `normalizeDefaultValue` helper when hydrating/syncing fields to ensure boolean defaults are stored as `"1"` or `"0"` strings before submission.
+
+### Follow-up
+- Consider surfacing a disabled helper message when defaults are unavailable (e.g. text/number) so admins understand why the control is hidden.
+- Add browser/UI tests covering boolean attribute types to prevent regressions when adding new field types.
 
 ---
 

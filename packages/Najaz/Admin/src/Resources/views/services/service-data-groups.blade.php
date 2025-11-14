@@ -1,57 +1,70 @@
 @php
     $currentLocale = app()->getLocale();
 
-    $formattedGroups = ($attributeGroups ?? collect())->map(function ($group) use ($currentLocale) {
+    $formattedGroups = ($attributeGroups ?? collect())
+        ->filter(fn ($group) => ($group->fields ?? collect())->count())
+        ->map(function ($group) use ($currentLocale) {
         $translation = $group->translate($currentLocale);
+            $supportsNotification = $group->group_type === 'citizen'
+                && ($group->fields ?? collect())->contains(fn ($field) => strtolower($field->code ?? '') === 'id_number');
 
     return [
-        'id'          => $group->id,
-        'code'        => $group->code,
-        'group_type'  => $group->group_type ?? 'general',
-        'name'        => $translation?->name ?? $group->code,
-        'description' => $translation?->description,
-        'sort_order'  => $group->sort_order ?? 0,
-        'fields'      => $group->fields->map(function ($field) use ($currentLocale) {
+                'id'             => $group->id,
+                'code'           => $group->code,
+                'group_type'     => $group->group_type ?? 'general',
+                'name'           => $translation?->name ?? $group->code,
+                'description'    => $translation?->description,
+                'sort_order'     => $group->sort_order ?? 0,
+                'is_notifiable'  => false,
+                'supports_notification' => $supportsNotification,
+                'fields'         => $group->fields->map(function ($field) use ($currentLocale) {
                 $fieldTranslation = $field->translate($currentLocale);
                 $attributeType = $field->attributeType;
                 $attributeTypeTranslation = $attributeType?->translate($currentLocale);
 
                 return [
-                    'id'              => $field->id,
-                    'code'            => $field->code,
-                    'label'           => $fieldTranslation?->label ?? $field->code,
-                    'type'            => $field->type,
+                        'id'                  => $field->id,
+                        'code'                => $field->code,
+                        'label'               => $fieldTranslation?->label ?? $field->code,
+                        'type'                => $field->type,
                     'attribute_type_name' => $attributeTypeTranslation?->name ?? $attributeType?->code ?? '',
-                'sort_order'      => $field->sort_order ?? 0,
+                        'sort_order'          => $field->sort_order ?? 0,
                 ];
             })->values(),
         ];
     })->values();
 
-$serviceGroups = optional($service?->attributeGroups)->map(function ($group) use ($currentLocale) {
+$serviceGroups = optional($service?->attributeGroups)
+    ->filter(fn ($group) => ($group->fields ?? collect())->count())
+    ->map(function ($group) use ($currentLocale) {
     $translation = $group->translate($currentLocale);
+        $supportsNotification = $group->group_type === 'citizen'
+            && ($group->fields ?? collect())->contains(fn ($field) => strtolower($field->code ?? '') === 'id_number');
 
     return [
         'service_attribute_group_id' => $group->id,
-        'template_id'           => $group->id,
-        'code'                  => $group->code,
-        'group_type'            => $group->group_type ?? 'general',
-        'name'                  => $translation?->name ?? $group->code,
-        'description'           => $translation?->description,
-        'sort_order'            => $group->pivot->sort_order ?? 0,
-        'fields'                => $group->fields->map(function ($field) use ($currentLocale) {
+        'template_id'                => $group->id,
+        'code'                       => $group->pivot->custom_code ?? $group->code,
+        'group_type'                 => $group->group_type ?? 'general',
+        'name'                       => $group->pivot->custom_name ?? ($translation?->name ?? $group->code),
+        'description'                => $translation?->description,
+        'sort_order'                 => $group->pivot->sort_order ?? 0,
+        'is_notifiable'              => (bool) ($group->pivot->is_notifiable ?? false),
+        'supports_notification'      => $supportsNotification,
+        'pivot_uid'                  => $group->pivot->pivot_uid ?? '',
+        'fields'                     => $group->fields->map(function ($field) use ($currentLocale) {
             $fieldTranslation = $field->translate($currentLocale);
             $attributeType = $field->attributeType;
             $attributeTypeTranslation = $attributeType?->translate($currentLocale);
 
             return [
                 'service_attribute_field_id' => $field->id,
-                'template_field_id'           => $field->id,
-                'code'                        => $field->code,
-                'label'                       => $fieldTranslation?->label ?? $field->code,
-                'type'                        => $field->type,
-                'attribute_type_name'         => $attributeTypeTranslation?->name ?? $attributeType?->code ?? '',
-                'sort_order'                  => $field->sort_order ?? 0,
+                    'template_field_id'          => $field->id,
+                    'code'                       => $field->code,
+                    'label'                      => $fieldTranslation?->label ?? $field->code,
+                    'type'                       => $field->type,
+                    'attribute_type_name'        => $attributeTypeTranslation?->name ?? $attributeType?->code ?? '',
+                    'sort_order'                 => $field->sort_order ?? 0,
             ];
         })->values()->toArray(),
     ];
@@ -67,9 +80,24 @@ $serviceGroups = optional($service?->attributeGroups)->map(function ($group) use
                 return null;
             }
 
+            $fields = collect($group['fields'] ?? [])->filter();
+
+            if ($fields->isEmpty()) {
+                return null;
+            }
+
             return [
                 'service_attribute_group_id' => $groupId,
-                'sort_order'            => isset($group['sort_order']) ? (int) $group['sort_order'] : $index,
+                'template_id'                => isset($group['template_id']) ? (int) $group['template_id'] : $groupId,
+                'code'                       => $group['code'] ?? null,
+                'group_type'                 => $group['group_type'] ?? 'general',
+                'name'                       => $group['name'] ?? null,
+                'description'                => $group['description'] ?? null,
+                'sort_order'                 => isset($group['sort_order']) ? (int) $group['sort_order'] : $index,
+                'is_notifiable'              => ! empty($group['is_notifiable']),
+                'fields'                     => $fields->values(),
+                'supports_notification'      => ! empty($group['supports_notification']),
+                'pivot_uid'                  => $group['pivot_uid'] ?? '',
             ];
         })->filter()->values();
     }
@@ -88,7 +116,7 @@ $serviceGroups = optional($service?->attributeGroups)->map(function ($group) use
 @pushOnce('scripts')
     <script type="text/x-template" id="v-service-attribute-groups-template">
         <div class="mt-4 box-shadow rounded bg-white p-4 dark:bg-gray-900">
-            <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="flex flex-wrap items-start justify-between gap-4">
                 <div class="flex-1">
                     <p class="text-base font-semibold text-gray-800 dark:text-white">
                         @lang('Admin::app.services.services.attribute-groups.title')
@@ -100,13 +128,15 @@ $serviceGroups = optional($service?->attributeGroups)->map(function ($group) use
                 </div>
 
                 <div>
-                    <div
-                        class="secondary-button"
-                        :class="{ 'pointer-events-none cursor-not-allowed opacity-50': !availableGroups.length }"
+                    <x-admin::button
+                        button-type="button"
+                        :title="trans('Admin::app.services.services.attribute-groups.add-group-btn')"
+                        ::button-class="availableGroups.length
+                            ? 'secondary-button'
+                            : 'secondary-button pointer-events-none cursor-not-allowed opacity-50'"
+                        ::disabled="!availableGroups.length"
                         @click="openAddGroupModal"
-                    >
-                        @lang('Admin::app.services.services.attribute-groups.add-group-btn')
-                    </div>
+                    />
                 </div>
             </div>
 
@@ -139,45 +169,166 @@ $serviceGroups = optional($service?->attributeGroups)->map(function ($group) use
                                             </p>
                                         </div>
                                     </div>
-
-                                    <div class="flex items-center gap-2">
-                                        <span class="rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-600 dark:border-purple-900 dark:bg-purple-950 dark:text-purple-200">
-                                            @{{ translateGroupType(group.group_type) }}
-                                        </span>
-
-                                        <span class="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-600 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-200">
-                                            @lang('Admin::app.services.services.attribute-groups.group-code'):
-                                            @{{ group.code }}
-                                        </span>
-
-                                        <x-admin::button
-                                            button-type="button"
-                                            class="link-button text-red-600 hover:text-red-700 dark:text-red-400"
-                                            :title="trans('Admin::app.services.services.attribute-groups.remove-group-btn')"
-                                            @click="removeGroup(index)"
-                                        />
-                                    </div>
                                 </div>
                             </x-slot:header>
 
                             <x-slot:content>
                                 <div class="space-y-2">
                                     <div
+                                        v-if="groupSupportsNotification(group) && normalizeBoolean(group.is_notifiable)"
+                                        class="rounded border border-green-300 bg-green-100 px-3 py-2 text-xs font-semibold text-green-700 dark:border-green-800 dark:bg-green-900/60 dark:text-green-200 text-center"
+                                    >
+                                        @lang('Admin::app.services.services.attribute-groups.notify-label')
+                                    </div>
+
+                                    <div class="hidden" aria-hidden="true">
+                                        <input
+                                            type="hidden"
+                                            :name="`service_attribute_groups[${index}][service_attribute_group_id]`"
+                                            :value="group.service_attribute_group_id ?? ''"
+                                        />
+
+                                        <input
+                                            type="hidden"
+                                            :name="`service_attribute_groups[${index}][template_id]`"
+                                            :value="group.template_id ?? group.id ?? ''"
+                                        />
+
+                                        <input
+                                            type="hidden"
+                                            :name="`service_attribute_groups[${index}][pivot_uid]`"
+                                            :value="group.pivot_uid ?? ''"
+                                        />
+
+                                        <input
+                                            type="hidden"
+                                            :name="`service_attribute_groups[${index}][code]`"
+                                            :value="group.code ?? ''"
+                                        />
+
+                                        <input
+                                            type="hidden"
+                                            :name="`service_attribute_groups[${index}][name]`"
+                                            :value="group.display_name ?? group.name ?? ''"
+                                        />
+
+                                        <input
+                                            type="hidden"
+                                            :name="`service_attribute_groups[${index}][description]`"
+                                            :value="group.description ?? ''"
+                                        />
+
+                                        <input
+                                            type="hidden"
+                                            :name="`service_attribute_groups[${index}][group_type]`"
+                                            :value="group.group_type ?? 'general'"
+                                        />
+
+                                        <input
+                                            type="hidden"
+                                            :name="`service_attribute_groups[${index}][sort_order]`"
+                                            :value="group.sort_order ?? index"
+                                        />
+
+                                        <input
+                                            type="hidden"
+                                            :name="`service_attribute_groups[${index}][is_notifiable]`"
+                                            :value="groupSupportsNotification(group) && group.is_notifiable ? 1 : 0"
+                                        />
+                                    </div>
+
+                                    <div
+                                        v-for="(field, fieldIndex) in sortedFields(group)"
+                                        :key="`hidden-field-${group.uid}-${fieldIndex}`"
+                                        class="hidden"
+                                        aria-hidden="true"
+                                    >
+                                        <input
+                                            type="hidden"
+                                            :name="`service_attribute_groups[${index}][fields][${fieldIndex}][service_attribute_field_id]`"
+                                            :value="field.service_attribute_field_id ?? ''"
+                                        />
+
+                                        <input
+                                            type="hidden"
+                                            :name="`service_attribute_groups[${index}][fields][${fieldIndex}][template_field_id]`"
+                                            :value="field.template_field_id ?? field.id ?? ''"
+                                        />
+
+                                        <input
+                                            type="hidden"
+                                            :name="`service_attribute_groups[${index}][fields][${fieldIndex}][code]`"
+                                            :value="field.code ?? ''"
+                                        />
+
+                                        <input
+                                            type="hidden"
+                                            :name="`service_attribute_groups[${index}][fields][${fieldIndex}][label]`"
+                                            :value="field.label ?? ''"
+                                        />
+
+                                        <input
+                                            type="hidden"
+                                            :name="`service_attribute_groups[${index}][fields][${fieldIndex}][type]`"
+                                            :value="field.type ?? ''"
+                                        />
+
+                                        <input
+                                            type="hidden"
+                                            :name="`service_attribute_groups[${index}][fields][${fieldIndex}][attribute_type_name]`"
+                                            :value="field.attribute_type_name ?? ''"
+                                        />
+
+                                        <input
+                                            type="hidden"
+                                            :name="`service_attribute_groups[${index}][fields][${fieldIndex}][sort_order]`"
+                                            :value="field.sort_order ?? fieldIndex"
+                                        />
+                                    </div>
+
+                                    <div class="overflow-hidden rounded border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900/40">
+                                    <div
                                         v-for="field in sortedFields(group)"
                                         :key="field.uid || `field-display-${group.uid}-${field.id}`"
-                                        class="flex items-center justify-between gap-3 rounded border border-gray-200 bg-gray-50 px-3 py-2 text-sm dark:border-gray-800 dark:bg-gray-900/60"
+                                        class="flex items-start justify-between gap-4 border-b border-gray-200 px-4 py-3 text-sm last:border-b-0 dark:border-gray-800"
                                     >
-                                        <div class="flex-1">
-                                            <p class="font-medium text-gray-800 dark:text-gray-100">
-                                                @{{ field.label }}
-                                            </p>
+                                        <div class="flex flex-1 items-start gap-3">
+                                            <i class="icon-drag mt-1 text-lg text-gray-400 dark:text-gray-500/70"></i>
 
-                                            <p class="text-xs text-gray-500 dark:text-gray-400">
-                                                @lang('Admin::app.services.services.attribute-groups.field-type'):
-                                                @{{ field.attribute_type_name || field.type }}
-                                            </p>
+                                            <div class="flex flex-col gap-1">
+                                                <p class="text-base font-semibold text-gray-800 dark:text-white/90">
+                                                    @{{ field.label }}
+                                                </p>
+                                            </div>
                                         </div>
 
+                                        <div class="flex flex-wrap items-center gap-2 text-xs font-medium text-gray-500 dark:text-gray-300/80">
+                                            <span class="rounded bg-gray-100 px-2 py-0.5 text-gray-700 dark:bg-gray-800 dark:text-gray-200">
+                                                @lang('Admin::app.services.services.attribute-groups.field-code'):
+                                                @{{ field.code }}
+                                            </span>
+
+                                            <span class="rounded bg-blue-100 px-2 py-0.5 text-blue-600 dark:bg-blue-900/50 dark:text-blue-200">
+                                                @{{ field.attribute_type_name || field.type }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    </div>
+
+                                    <div class="mt-4 flex flex-wrap items-center justify-end gap-2">
+                                        <x-admin::button
+                                            button-type="button"
+                                            button-class="link-button text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                                            :title="trans('Admin::app.services.services.attribute-groups.edit-group-btn')"
+                                            @click="openEditGroupModal(index)"
+                                        />
+
+                                        <x-admin::button
+                                            button-type="button"
+                                            button-class="link-button text-red-600 hover:text-red-700 dark:text-red-400"
+                                            :title="trans('Admin::app.services.services.attribute-groups.remove-group-btn')"
+                                            @click="removeGroup(index)"
+                                        />
                                     </div>
                                 </div>
 
@@ -199,16 +350,21 @@ $serviceGroups = optional($service?->attributeGroups)->map(function ($group) use
                     @lang('Admin::app.services.services.attribute-groups.empty-info')
                 </p>
 
-                <div
-                    class="secondary-button text-sm"
-                    :class="{ 'pointer-events-none cursor-not-allowed opacity-50': !availableGroups.length }"
+                <x-admin::button
+                    button-type="button"
+                    ::button-class="availableGroups.length
+                        ? 'secondary-button text-sm'
+                        : 'secondary-button text-sm pointer-events-none cursor-not-allowed opacity-50'"
+                    :title="trans('Admin::app.services.services.attribute-groups.add-group-btn')"
+                    ::disabled="!availableGroups.length"
                     @click="openAddGroupModal"
-                >
-                    @lang('Admin::app.services.services.attribute-groups.add-group-btn')
-                </div>
+                />
             </div>
 
-            <x-admin::modal ref="addGroupModal">
+            <x-admin::modal
+                ref="addGroupModal"
+                @toggle="handleModalToggle"
+            >
                 <x-slot:header>
                     <p class="text-lg font-bold text-gray-800 dark:text-white">
                         @lang('Admin::app.services.services.attribute-groups.modal-title')
@@ -227,6 +383,7 @@ $serviceGroups = optional($service?->attributeGroups)->map(function ($group) use
                                 name="template_id"
                                 ::value="groupToAdd.template_id"
                                 :label="trans('Admin::app.services.services.attribute-groups.select-group-placeholder')"
+                                ::disabled="isEditing"
                                 @change="onTemplateChange($event.target.value)"
                             >
                                 <option value="">
@@ -273,20 +430,23 @@ $serviceGroups = optional($service?->attributeGroups)->map(function ($group) use
                             />
                         </x-admin::form.control-group>
 
-                        <x-admin::form.control-group>
+                        <x-admin::form.control-group v-if="selectedTemplate && groupSupportsNotification(selectedTemplate)">
                             <x-admin::form.control-group.label>
-                                @lang('Admin::app.services.services.attribute-groups.description-label')
+                                @lang('Admin::app.services.services.attribute-groups.notify-label')
                             </x-admin::form.control-group.label>
 
                             <x-admin::form.control-group.control
-                                type="textarea"
-                                name="group_description"
-                                rows="3"
-                                ::value="groupToAdd.description"
-                                ::placeholder="selectedTemplate ? (selectedTemplate.description || '') : ''"
-                                :label="trans('Admin::app.services.services.attribute-groups.description-label')"
-                                @input="groupToAdd.description = $event.target.value"
+                                type="switch"
+                                name="group_is_notifiable"
+                                value="1"
+                                ::checked="groupToAdd.is_notifiable"
+                                @change="groupToAdd.is_notifiable = $event.target.checked"
+                                :label="trans('Admin::app.services.services.attribute-groups.notify-label')"
                             />
+
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                @lang('Admin::app.services.services.attribute-groups.notify-help')
+                            </p>
                         </x-admin::form.control-group>
                     </div>
 
@@ -299,22 +459,22 @@ $serviceGroups = optional($service?->attributeGroups)->map(function ($group) use
                 </x-slot>
 
                 <x-slot:footer>
-                    <button
-                        type="button"
-                        class="secondary-button"
+                    <div class="flex flex-wrap items-center justify-end gap-2">
+                        <x-admin::button
+                            button-type="button"
+                            button-class="secondary-button"
+                            :title="trans('Admin::app.services.services.create.cancel-btn')"
                         @click="$refs.addGroupModal.close()"
-                    >
-                        @lang('Admin::app.services.services.create.cancel-btn')
-                    </button>
+                        />
 
-                    <button
-                        type="button"
-                        class="primary-button"
-                        :disabled="!groupToAdd.template_id"
+                        <x-admin::button
+                            button-type="button"
+                            button-class="primary-button"
+                            ::title="isEditing ? modalButtonLabels.update : modalButtonLabels.add"
+                            ::disabled="!groupToAdd.template_id"
                         @click="confirmAddGroup"
-                    >
-                        @lang('Admin::app.services.services.attribute-groups.add-group-btn')
-                    </button>
+                        />
+                    </div>
                 </x-slot>
             </x-admin::modal>
         </div>
@@ -349,8 +509,21 @@ $serviceGroups = optional($service?->attributeGroups)->map(function ($group) use
                         name: '',
                         description: '',
                         group_type: 'general',
+                        is_notifiable: false,
+                        supports_notification: false,
+                        pivot_uid: '',
                     },
                     uidIncrement: 0,
+                    isEditing: false,
+                    editingIndex: null,
+                    groupTypeLabels: @json([
+                        'general' => trans('Admin::app.services.attribute-groups.options.group-type.general'),
+                        'citizen' => trans('Admin::app.services.attribute-groups.options.group-type.citizen'),
+                    ]),
+                    modalButtonLabels: @json([
+                        'add'    => trans('Admin::app.services.services.attribute-groups.add-group-btn'),
+                        'update' => trans('Admin::app.services.services.attribute-groups.update-group-btn'),
+                    ]),
                 };
             },
 
@@ -366,14 +539,30 @@ $serviceGroups = optional($service?->attributeGroups)->map(function ($group) use
             },
 
             methods: {
+                normalizeBoolean(value) {
+                    if (typeof value === 'string') {
+                        return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase());
+                    }
+
+                    if (typeof value === 'number') {
+                        return value === 1;
+                    }
+
+                    return !!value;
+                },
+
                 bootstrapCatalog() {
-                    this.groupsCatalog = this.allAttributeGroups.map(group => ({
+                    this.groupsCatalog = this.allAttributeGroups
+                        .map(group => ({
                         id: group.id,
                         code: group.code,
                         group_type: group.group_type || 'general',
                         name: group.name,
                         description: group.description,
                         sort_order: group.sort_order ?? 0,
+                            is_notifiable: !!group.is_notifiable,
+                            supports_notification: this.normalizeBoolean(group.supports_notification ?? false),
+                            pivot_uid: group.pivot_uid || '',
                         fields: (group.fields || []).map((field, index) => ({
                             uid: `template_field_${field.id}_${this.uidIncrement++}`,
                             id: field.id,
@@ -385,7 +574,8 @@ $serviceGroups = optional($service?->attributeGroups)->map(function ($group) use
                             template_field_id: field.id,
                             service_attribute_field_id: null,
                         })),
-                    }));
+                        }))
+                        .filter(group => Array.isArray(group.fields) && group.fields.length);
                 },
 
                 bootstrapSelection() {
@@ -409,7 +599,8 @@ $serviceGroups = optional($service?->attributeGroups)->map(function ($group) use
                             display_name: selection.name || '',
                             description: selection.description || '',
                             sort_order: selection.sort_order ?? index,
-                            is_new: false,
+                            is_notifiable: this.normalizeBoolean(selection.is_notifiable ?? false),
+                            pivot_uid: selection.pivot_uid || '',
                             fields: [],
                         };
 
@@ -422,7 +613,9 @@ $serviceGroups = optional($service?->attributeGroups)->map(function ($group) use
                             display_name: selection.name || cloneBase.display_name || cloneBase.name,
                             description: selection.description ?? cloneBase.description ?? '',
                             sort_order: selection.sort_order ?? index,
-                            is_new: false,
+                            is_notifiable: this.normalizeBoolean(selection.is_notifiable ?? cloneBase.is_notifiable ?? base?.is_notifiable ?? false),
+                            supports_notification: this.normalizeBoolean(selection.supports_notification ?? cloneBase.supports_notification ?? base?.supports_notification ?? false),
+                            pivot_uid: selection.pivot_uid || cloneBase.pivot_uid || '',
                         };
                         clone.name = clone.display_name;
 
@@ -444,6 +637,16 @@ $serviceGroups = optional($service?->attributeGroups)->map(function ($group) use
                             };
                         }).sort((a, b) => a.sort_order - b.sort_order);
 
+                        if (! clone.fields.length) {
+                            return null;
+                        }
+
+                         clone.supports_notification = this.groupSupportsNotification(clone);
+
+                         if (! clone.supports_notification) {
+                             clone.is_notifiable = false;
+                         }
+
                         return clone;
                     }).filter(Boolean);
 
@@ -464,7 +667,9 @@ $serviceGroups = optional($service?->attributeGroups)->map(function ($group) use
                         display_name: base.name,
                         description: base.description,
                         sort_order: base.sort_order ?? 0,
-                        is_new: true,
+                        is_notifiable: !!base.is_notifiable,
+                        supports_notification: this.normalizeBoolean(base.supports_notification ?? false),
+                        pivot_uid: base.pivot_uid || '',
                         fields: base.fields.map(field => ({
                             uid: `field_${field.template_field_id ?? field.id}_${this.uidIncrement++}`,
                             id: field.id,
@@ -480,6 +685,9 @@ $serviceGroups = optional($service?->attributeGroups)->map(function ($group) use
                 },
 
                 openAddGroupModal() {
+                    this.isEditing = false;
+                    this.editingIndex = null;
+
                     if (! this.availableGroups.length) {
                         return;
                     }
@@ -490,8 +698,52 @@ $serviceGroups = optional($service?->attributeGroups)->map(function ($group) use
                         name: '',
                         description: '',
                         group_type: 'general',
+                        is_notifiable: false,
+                        supports_notification: false,
+                        pivot_uid: '',
                     };
                     this.selectedTemplate = null;
+                    this.$refs.addGroupModal.open();
+                },
+
+                openEditGroupModal(index) {
+                    const group = this.selectedGroups[index];
+
+                    if (! group) {
+                        return;
+                    }
+
+                    if (! group.template_id && ! group.id) {
+                        this.$emitter.emit('add-flash', {
+                            type: 'warning',
+                            message: "@lang('Admin::app.services.services.attribute-groups.select-first-warning')",
+                        });
+
+                        return;
+                    }
+
+                    this.isEditing = true;
+                    this.editingIndex = index;
+
+                    this.selectedTemplate = this.groupsCatalog.find(item => item.id === (group.template_id ?? group.id)) || null;
+
+                    this.$nextTick(() => {
+                        this.groupToAdd = {
+                            template_id: group.template_id ?? group.id ?? '',
+                            code: group.code ?? '',
+                            name: group.display_name ?? group.name ?? '',
+                            description: group.description ?? '',
+                            group_type: group.group_type ?? 'general',
+                            is_notifiable: this.normalizeBoolean(group.is_notifiable ?? false),
+                            supports_notification: this.groupSupportsNotification(group),
+                            pivot_uid: group.pivot_uid ?? '',
+                        };
+
+                        if (! this.groupToAdd.supports_notification) {
+                            this.groupToAdd.is_notifiable = false;
+                        }
+                    });
+
                     this.$refs.addGroupModal.open();
                 },
 
@@ -508,21 +760,52 @@ $serviceGroups = optional($service?->attributeGroups)->map(function ($group) use
                     const groupId = Number(this.groupToAdd.template_id);
                     const base = this.groupsCatalog.find(item => item.id === groupId);
 
-                    if (! base) {
+                    if (! base && ! this.isEditing) {
                         this.$refs.addGroupModal.close();
                         return;
                     }
 
-                    const clone = this.cloneGroup(base);
+                    if (this.isEditing && this.editingIndex !== null) {
+                        const existing = this.selectedGroups[this.editingIndex];
+
+                        if (! existing) {
+                            this.$refs.addGroupModal.close();
+                            return;
+                        }
+
+                        const supports = this.groupSupportsNotification(existing);
+                        const updated = {
+                            ...existing,
+                            code: this.groupToAdd.code,
+                            display_name: this.groupToAdd.name,
+                            name: this.groupToAdd.name,
+                            description: this.groupToAdd.description || '',
+                            is_notifiable: supports ? this.normalizeBoolean(this.groupToAdd.is_notifiable) : false,
+                            supports_notification: supports,
+                            pivot_uid: this.groupToAdd.pivot_uid || existing.pivot_uid || '',
+                        };
+
+                        this.selectedGroups.splice(this.editingIndex, 1, updated);
+                    } else {
+                        const cloneBase = base ?? this.groupsCatalog.find(item => item.id === groupId);
+
+                        if (! cloneBase) {
+                            this.$refs.addGroupModal.close();
+                            return;
+                        }
+
+                        const clone = this.cloneGroup(cloneBase);
                     clone.sort_order = this.selectedGroups.length;
-                    clone.template_id = base.id;
+                        clone.template_id = cloneBase.id;
                     clone.service_attribute_group_id = null;
                     clone.code = this.groupToAdd.code;
                     clone.display_name = this.groupToAdd.name;
                     clone.name = clone.display_name;
-                    clone.description = this.groupToAdd.description || base.description || '';
-                    clone.group_type = base.group_type || 'general';
-                    clone.is_new = true;
+                        clone.description = this.groupToAdd.description || cloneBase.description || '';
+                        clone.group_type = cloneBase.group_type || 'general';
+                        clone.is_notifiable = this.normalizeBoolean(this.groupToAdd.is_notifiable);
+                        clone.supports_notification = this.normalizeBoolean(cloneBase.supports_notification ?? false);
+                        clone.pivot_uid = this.groupToAdd.pivot_uid || '';
                     clone.fields = clone.fields.map((field, index) => ({
                         ...field,
                         service_attribute_field_id: null,
@@ -530,20 +813,45 @@ $serviceGroups = optional($service?->attributeGroups)->map(function ($group) use
                         sort_order: index,
                     }));
 
+                        if (! clone.fields.length) {
+                            this.$emitter.emit('add-flash', {
+                                type: 'warning',
+                                message: "@lang('Admin::app.services.attribute-groups.attribute-group-fields.no-fields')",
+                            });
+
+                            return;
+                        }
+
+                        if (! clone.supports_notification) {
+                            clone.is_notifiable = false;
+                        }
+
                     this.selectedGroups.push(clone);
+                    }
+
                     this.groupToAdd = {
                         template_id: '',
                         code: '',
                         name: '',
                         description: '',
+                        group_type: 'general',
+                        is_notifiable: false,
+                        supports_notification: false,
+                        pivot_uid: '',
                     };
                     this.selectedTemplate = null;
+                    this.isEditing = false;
+                    this.editingIndex = null;
 
                     this.$refs.addGroupModal.close();
                     this.recalculateGroupOrder();
                 },
 
                 onTemplateChange(value) {
+                    if (this.isEditing) {
+                        return;
+                    }
+
                     this.groupToAdd.template_id = value;
 
                     const groupId = Number(value);
@@ -555,11 +863,17 @@ $serviceGroups = optional($service?->attributeGroups)->map(function ($group) use
                         this.groupToAdd.name = '';
                         this.groupToAdd.description = '';
                         this.groupToAdd.group_type = 'general';
+                        this.groupToAdd.is_notifiable = false;
+                        this.groupToAdd.supports_notification = false;
                         return;
                     }
 
                     this.selectedTemplate = template;
                     this.groupToAdd.group_type = template.group_type || 'general';
+                    this.groupToAdd.supports_notification = this.groupSupportsNotification(template);
+                    this.groupToAdd.is_notifiable = this.groupToAdd.supports_notification
+                        ? this.normalizeBoolean(template.is_notifiable)
+                        : false;
 
                     if (! this.groupToAdd.code) {
                         const suffix = this.selectedGroups.filter(group => group.template_id === template.id).length + 1;
@@ -597,7 +911,65 @@ $serviceGroups = optional($service?->attributeGroups)->map(function ($group) use
                 translateGroupType(value) {
                     const type = value || 'general';
 
-                    return trans(`Admin::app.services.attribute-groups.options.group-type.${type}`) ?? type;
+                    return this.groupTypeLabels[type] ?? type;
+                },
+
+                onNotifiableToggle(group, checked) {
+                    if (! group) {
+                        return;
+                    }
+
+                    if (! this.groupSupportsNotification(group)) {
+                        group.is_notifiable = false;
+                        return;
+                    }
+
+                    group.is_notifiable = this.normalizeBoolean(checked);
+                },
+
+                groupSupportsNotification(group) {
+                    if (! group) {
+                        return false;
+                    }
+
+                    const type = (group.group_type || group.groupType || '').toLowerCase();
+
+                    if (type !== 'citizen') {
+                        return false;
+                    }
+
+                    const fields = Array.isArray(group.fields) ? group.fields : [];
+
+                    return fields.some(field => {
+                        const code = (field?.code ?? '').toLowerCase();
+                        return code === 'id_number';
+                    }) || this.normalizeBoolean(group.supports_notification ?? false);
+                },
+
+                handleModalToggle(event) {
+                    if (event?.isActive) {
+                        return;
+                    }
+
+                    if (this.isEditing) {
+                        return;
+                    }
+
+                    this.isEditing = false;
+                    this.editingIndex = null;
+
+                    this.groupToAdd = {
+                        template_id: '',
+                        code: '',
+                        name: '',
+                        description: '',
+                        group_type: 'general',
+                        is_notifiable: false,
+                        supports_notification: false,
+                        pivot_uid: '',
+                    };
+
+                    this.selectedTemplate = null;
                 },
             },
         });
