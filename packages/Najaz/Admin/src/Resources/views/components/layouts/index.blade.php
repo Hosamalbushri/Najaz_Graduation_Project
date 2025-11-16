@@ -124,10 +124,10 @@
 
                 <!-- Powered By -->
                 <div class="mt-auto">
-                    <div class="border-t bg-white py-2 text-center text-xs sm:text-sm dark:border-gray-800 dark:bg-gray-900 dark:text-white">
+                    <div class="border-t border-[var(--border-muted)] bg-surface-card py-2 text-center text-xs sm:text-sm text-text-secondary">
                         @lang('admin::app.components.layouts.powered-by.description', [
-                            'bagisto' => '<a class="text-blue-600 hover:underline dark:text-darkBlue" href="https://bagisto.com/en/">Bagisto</a>',
-                            'webkul' => '<a class="text-blue-600 hover:underline dark:text-darkBlue" href="https://webkul.com/">Webkul</a>',
+                            'bagisto' => '<a class="text-brand hover:underline" href="https://bagisto.com/en/">Bagisto</a>',
+                            'webkul' => '<a class="text-brand hover:underline" href="https://webkul.com/">Webkul</a>',
                         ])
                     </div>
                 </div>

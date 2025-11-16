@@ -56,7 +56,7 @@ return [
 
             'vite'        => [
                 'hot_file'                 => 'admin-default-vite.hot',
-                'build_directory'          => 'themes/admin/default/build',
+                'build_directory'          => 'themes/admin/new/default/build',
                 'package_assets_directory' => 'src/Resources/assets',
             ],
         ],

@@ -1,0 +1,218 @@
+@layer base {
+:root {
+    /* ===== Base Palette (واضحة وبسيطة) ===== */
+    --color-white: #ffffff;
+    --color-black: #000000;
+
+    --gray-25: #fcfcfd;
+    --gray-50: #f8fafc;
+    --gray-100: #f1f5f9;
+    --gray-200: #e2e8f0;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #0f172a;
+
+    --brand-50: #eff6ff;
+    --brand-100: #dbeafe;
+    --brand-200: #bfdbfe;
+    --brand-300: #93c5fd;
+    --brand-400: #4f46e5;
+    --brand-500: #3b82f6;
+    --brand-600: #4f46e5;
+    --brand-700: #1d4ed8;
+    --brand-800: #1e40af;
+    --brand-900: #1e3a8a;
+
+    --success-100: #dcfce7;
+    --success-500: #22c55e;
+    --success-600: #16a34a;
+
+    --warning-100: #fef3c7;
+    --warning-500: #f59e0b;
+    --warning-600: #d97706;
+
+    --info-100: #cffafe;
+    --info-600: #0891b2;
+
+    --danger-100: #ffe4e6;
+    --danger-600: #e11d48;
+
+    --indigo-200: #c7d2fe;
+    --indigo-600: #4f46e5;
+    --slate-400: #94a3b8;
+
+    /* ===== Surfaces & Borders ===== */
+    --surface-body: var(--gray-50);
+    --surface-card: var(--color-white);
+    --surface-muted: var(--gray-100);
+    --surface-inverse: var(--gray-900);
+
+    --border-muted: var(--gray-200);
+    --border-strong: var(--gray-300);
+
+    /* ===== نصوص وأيقونات ===== */
+    --text-primary: var(--gray-800);
+    --text-secondary: var(--gray-600);
+    --text-muted: var(--gray-500);
+    --text-inverse: var(--color-white);
+    --icon-default: var(--gray-500);
+
+    /* ===== تفاعل و روابط ===== */
+    --brand-primary: var(--brand-600);
+    --brand-primary-strong: var(--brand-700);
+    --brand-primary-medium: var(--brand-400);
+    --brand-primary-soft: var(--brand-50);
+    --brand-primary-soft-strong: var(--brand-100);
+    --brand-primary-soft-alpha: rgba(37, 99, 235, 0.12);
+
+    --link-primary: var(--brand-primary);
+    --link-muted: var(--indigo-200);
+    --focus-ring: var(--brand-300);
+    --selection-bg: rgba(37, 99, 235, 0.2);
+
+    /* ===== حالات واستجابات ===== */
+    --status-success: var(--success-600);
+    --status-success-bg: var(--success-100);
+
+    --status-warning: var(--warning-500);
+    --status-warning-strong: var(--warning-600);
+    --status-warning-bg: var(--warning-100);
+
+    --status-info: var(--info-600);
+    --status-info-bg: var(--info-100);
+
+    --status-danger: var(--danger-600);
+    --status-danger-bg: var(--danger-100);
+
+    --status-closed: var(--indigo-600);
+    --status-closed-bg: var(--indigo-200);
+    --status-disable: #dc2626;
+
+    /* ===== مكونات محددة ===== */
+    --surface-scrollbar-track: var(--color-white);
+    --surface-scrollbar-thumb: var(--gray-200);
+    --surface-scrollbar-border: var(--gray-200);
+    --surface-draggable: var(--brand-100);
+    --surface-selection: var(--selection-bg);
+    --surface-button-secondary: var(--color-white);
+    --surface-button-secondary-hover: rgba(239, 246, 255, 0.38);
+    --surface-button-transparent-hover: #f3f4f6;
+
+    --star-active: #ffb600;
+    --star-muted: #7d7d7d;
+
+    --shimmer-light-start: #f6f6f6;
+    --shimmer-light-mid: #f0f0f0;
+    --shimmer-dark-start: #1f2937;
+    --shimmer-dark-mid: #1a2232;
+
+    --editor-chip-bg: var(--brand-50);
+    --editor-chip-bg-hover: var(--brand-100);
+    --editor-chip-text: var(--brand-600);
+
+    --flash-success: var(--status-success);
+    --flash-error: var(--status-danger);
+    --flash-warning: var(--status-warning);
+    --flash-info: var(--status-info);
+    --flash-warning-text: var(--gray-800);
+    --flash-light-text: var(--color-white);
+
+    --seo-title: #161b9d;
+    --seo-url: #135f29;
+    --seo-description: var(--gray-600);
+    --seo-description-dark: var(--slate-400);
+
+    --chart-total-visitors: #f87171;
+    --chart-total-sales: #598de6;
+
+    /* ===== واجهات قديمة (تسهيل الانتقال) ===== */
+    --color-primary: var(--brand-primary);
+    --color-primary-border: var(--brand-primary-strong);
+    --color-primary-medium: var(--brand-primary-medium);
+    --color-on-primary: var(--text-inverse);
+    --color-primary-soft: var(--brand-primary-soft);
+    --color-primary-soft-strong: var(--brand-primary-soft-strong);
+    --color-primary-soft-alpha: var(--brand-primary-soft-alpha);
+
+    --color-text-muted: var(--text-muted);
+    --color-icon-default: var(--icon-default);
+
+    --color-draggable-bg: var(--surface-draggable);
+    --color-selection-bg: var(--surface-selection);
+    --color-scrollbar-track: var(--surface-scrollbar-track);
+    --color-scrollbar-border: var(--surface-scrollbar-border);
+    --color-scrollbar-thumb: var(--surface-scrollbar-thumb);
+
+    --color-button-secondary-bg: var(--surface-button-secondary);
+    --color-button-secondary-hover: var(--surface-button-secondary-hover);
+    --color-button-transparent-hover: var(--surface-button-transparent-hover);
+
+    --color-status-pending: var(--status-warning);
+    --color-status-processing: var(--status-info);
+    --color-status-completed: var(--status-success);
+    --color-status-closed: var(--indigo-600);
+    --color-status-danger: var(--status-danger);
+    --color-status-info: var(--slate-400);
+    --color-status-enable: var(--status-success);
+    --color-status-disable: var(--status-disable);
+
+    --color-status-pending-bg: var(--status-warning-bg);
+    --color-status-processing-bg: var(--status-info-bg);
+    --color-status-completed-bg: var(--brand-100);
+    --color-status-closed-bg: var(--status-closed-bg);
+    --color-status-canceled-bg: var(--status-danger-bg);
+
+    --color-star-active: var(--star-active);
+    --color-star-muted: var(--star-muted);
+
+    --color-shimmer-start: var(--shimmer-light-start);
+    --color-shimmer-mid: var(--shimmer-light-mid);
+    --color-shimmer-start-dark: var(--shimmer-dark-start);
+    --color-shimmer-mid-dark: var(--shimmer-dark-mid);
+
+    --color-editor-chip-bg: var(--editor-chip-bg);
+    --color-editor-chip-bg-hover: var(--editor-chip-bg-hover);
+    --color-editor-chip-text: var(--editor-chip-text);
+
+    --color-flash-success-bg: var(--flash-success);
+    --color-flash-error-bg: var(--flash-error);
+    --color-flash-warning-bg: var(--flash-warning);
+    --color-flash-info-bg: var(--flash-info);
+    --color-flash-warning-text: var(--flash-warning-text);
+    --color-flash-light-text: var(--flash-light-text);
+
+    --color-seo-title: var(--seo-title);
+    --color-seo-url: var(--seo-url);
+    --color-seo-description: var(--seo-description);
+    --color-seo-description-dark: var(--seo-description-dark);
+
+    --color-chart-total-visitors: var(--chart-total-visitors);
+    --color-chart-total-sales: var(--chart-total-sales);
+}
+
+html.dark,
+html[data-theme="dark"] {
+    --surface-body: #020617;
+    --surface-card: #0f172a;
+    --surface-muted: #1e293b;
+    --surface-scrollbar-track: #0f172a;
+    --surface-scrollbar-thumb: #1f2937;
+    --surface-scrollbar-border: #1f2937;
+
+    --text-primary: var(--gray-100);
+    --text-secondary: var(--gray-300);
+    --text-muted: var(--slate-400);
+    --icon-default: var(--gray-300);
+
+    --surface-button-secondary: #111827;
+    --surface-button-secondary-hover: rgba(255, 255, 255, 0.05);
+    --surface-button-transparent-hover: #0f172a;
+
+    --seo-description-dark: var(--gray-300);
+}
+}
+

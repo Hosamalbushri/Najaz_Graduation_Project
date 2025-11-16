@@ -30,7 +30,6 @@ class AdminServiceProvider extends ServiceProvider
         $this->loadRoutesFrom(__DIR__.'/../Routes/citizen-routes.php');
         $this->loadRoutesFrom(__DIR__.'/../Routes/service-routes.php');
 
-
         $this->loadTranslationsFrom(__DIR__.'/../Resources/lang', 'Admin');
 
         $this->loadViewsFrom(__DIR__.'/../Resources/views', 'admin');
@@ -48,7 +47,7 @@ class AdminServiceProvider extends ServiceProvider
     protected function registerConfig()
     {
         $this->mergeConfigFrom(
-            dirname(__DIR__) . '/Config/menu.php', 'menu.admin'
+            dirname(__DIR__).'/Config/menu.php', 'menu.admin'
         );
 
         $this->mergeConfigFrom(

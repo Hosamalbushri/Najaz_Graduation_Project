@@ -1,0 +1,87 @@
+# Citizens CRUD for the admin panel
+extend type Query @guard(with: ["admin-api"]) {
+    citizens(
+        input: FilterCitizenInput
+            @builder(method: "Najaz\\GraphQLAPI\\Queries\\Admin\\Citizen\\FilterCitizen")
+    ): [Citizen!] @paginate(
+        type: "PAGINATOR"
+        defaultCount: 10
+        model: "Najaz\\Citizen\\Models\\Citizen"
+    )
+
+    citizen(id: ID @eq): Citizen @find(model: "Najaz\\Citizen\\Models\\Citizen")
+}
+
+extend type Mutation @guard(with: ["admin-api"]) {
+    createCitizen(
+        input: CitizenInput! @spread
+    ): CitizenResponse @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\Admin\\Citizen\\CitizenMutation@store")
+
+    updateCitizen(
+        id: ID!,
+        input: CitizenInput! @spread
+    ): CitizenResponse @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\Admin\\Citizen\\CitizenMutation@update")
+
+    updateCitizenStatus(
+        id: ID!,
+        status: Boolean,
+        isVerified: Boolean @rename(attribute: "is_verified"),
+        identityVerificationStatus: Boolean @rename(attribute: "identity_verification_status")
+    ): CitizenResponse @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\Admin\\Citizen\\CitizenMutation@updateStatus")
+
+    deleteCitizen(id: ID!): StatusResponse @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\Admin\\Citizen\\CitizenMutation@delete")
+}
+
+input FilterCitizenInput {
+    id: Int
+    citizenTypeId: Int @rename(attribute: "citizen_type_id")
+    nationalId: String @rename(attribute: "national_id")
+    phone: String
+    email: String
+    gender: String
+    name: String
+    status: Boolean
+    isVerified: Boolean @rename(attribute: "is_verified")
+    identityVerificationStatus: Boolean @rename(attribute: "identity_verification_status")
+}
+
+input CitizenInput {
+    firstName: String! @rename(attribute: "first_name")
+    middleName: String! @rename(attribute: "middle_name")
+    lastName: String! @rename(attribute: "last_name")
+    gender: String!
+    email: String
+    phone: String!
+    dateOfBirth: String! @rename(attribute: "date_of_birth")
+    nationalId: String! @rename(attribute: "national_id")
+    citizenTypeId: Int! @rename(attribute: "citizen_type_id")
+    status: Boolean
+    isVerified: Boolean @rename(attribute: "is_verified")
+}
+
+type CitizenResponse {
+    success: Boolean
+    message: String
+    citizen: Citizen
+}
+
+type Citizen {
+    id: ID!
+    firstName: String! @rename(attribute: "first_name")
+    middleName: String! @rename(attribute: "middle_name")
+    lastName: String! @rename(attribute: "last_name")
+    gender: String
+    email: String
+    phone: String
+    nationalId: String @rename(attribute: "national_id")
+    dateOfBirth: String @rename(attribute: "date_of_birth")
+    status: Boolean
+    isVerified: Boolean @rename(attribute: "is_verified")
+    identityVerificationStatus: Boolean @rename(attribute: "identity_verification_status")
+    citizenTypeId: Int @rename(attribute: "citizen_type_id")
+    createdAt: DateTime @rename(attribute: "created_at")
+    updatedAt: DateTime @rename(attribute: "updated_at")
+    citizenType: CitizenType @belongsTo(relation: "citizenType")
+    identityVerifications: [IdentityVerification] @hasMany(relation: "identityVerifications")
+}
+

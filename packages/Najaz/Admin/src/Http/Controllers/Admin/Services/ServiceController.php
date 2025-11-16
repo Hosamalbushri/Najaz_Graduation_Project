@@ -3,9 +3,11 @@
 namespace Najaz\Admin\Http\Controllers\Admin\Services;
 
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 use Najaz\Admin\DataGrids\Services\ServiceDataGrid;
 use Najaz\Citizen\Models\CitizenTypeProxy;
+use Najaz\Service\Models\Service;
 use Najaz\Service\Models\ServiceAttributeGroupProxy;
 use Najaz\Service\Repositories\ServiceRepository;
 use Webkul\Admin\Http\Controllers\Controller;
@@ -36,6 +38,8 @@ class ServiceController extends Controller
      */
     public function create(): View
     {
+        $currentLocale = app()->getLocale();
+
         $attributeGroups = ServiceAttributeGroupProxy::modelClass()::with([
             'translations',
             'fields.translations',
@@ -43,8 +47,11 @@ class ServiceController extends Controller
         ])->orderBy('sort_order')->get();
 
         return view('admin::services.create', [
-            'attributeGroups' => $attributeGroups,
-            'citizenTypeTree' => $this->buildCitizenTypeTree(),
+            'attributeGroupOptions'        => $this->formatAttributeGroupsForFrontend($attributeGroups, $currentLocale),
+            'serviceGroupInitialSelection' => $this->buildServiceGroupInitialSelection(
+                $this->prepareServiceGroupsForFrontend(null, $currentLocale)
+            ),
+            'citizenTypeTree'              => $this->buildCitizenTypeTree(),
         ]);
     }
 
@@ -92,8 +99,12 @@ class ServiceController extends Controller
      */
     public function edit(int $id): View
     {
+        $currentLocale = app()->getLocale();
+
         $service = $this->serviceRepository->with([
-            'attributeGroups',
+            'attributeGroups.translations',
+            'attributeGroups.fields.translations',
+            'attributeGroups.fields.attributeType.translations',
             'citizenTypes',
         ])->findOrFail($id);
 
@@ -105,7 +116,10 @@ class ServiceController extends Controller
 
         return view('admin::services.edit', [
             'service'          => $service,
-            'attributeGroups'  => $attributeGroups,
+            'attributeGroupOptions'        => $this->formatAttributeGroupsForFrontend($attributeGroups, $currentLocale),
+            'serviceGroupInitialSelection' => $this->buildServiceGroupInitialSelection(
+                $this->prepareServiceGroupsForFrontend($service, $currentLocale)
+            ),
             'citizenTypeTree'  => $this->buildCitizenTypeTree(),
         ]);
     }
@@ -163,17 +177,7 @@ class ServiceController extends Controller
         ]);
     }
 
-    /**
-     * Returns the customizable options of the service.
-     */
-    public function customizableOptions(int $id): JsonResponse
-    {
-        $service = $this->serviceRepository->findOrFail($id);
 
-        return new JsonResponse([
-            'data' => $service->customizable_options()->get(),
-        ]);
-    }
 
     protected function buildCitizenTypeTree(): array
     {
@@ -222,5 +226,128 @@ class ServiceController extends Controller
         return new JsonResponse([
             'message' => trans('Admin::app.services.services.index.datagrid.mass-update-success'),
         ]);
+    }
+
+    protected function formatAttributeGroupsForFrontend(Collection $attributeGroups, string $locale): array
+    {
+        return $attributeGroups
+            ->filter(fn ($group) => ($group->fields ?? collect())->count())
+            ->map(function ($group) use ($locale) {
+                $translation = $group->translate($locale);
+                $supportsNotification = $group->group_type === 'citizen'
+                    && ($group->fields ?? collect())->contains(
+                        fn ($field) => strtolower($field->code ?? '') === 'id_number'
+                    );
+
+                return [
+                    'id'                    => $group->id,
+                    'code'                  => $group->code,
+                    'group_type'            => $group->group_type ?? 'general',
+                    'name'                  => $translation?->name ?? $group->code,
+                    'description'           => $translation?->description,
+                    'sort_order'            => $group->sort_order ?? 0,
+                    'is_notifiable'         => false,
+                    'supports_notification' => $supportsNotification,
+                    'fields'                => $group->fields->map(function ($field) use ($locale) {
+                        $fieldTranslation = $field->translate($locale);
+                        $attributeType = $field->attributeType;
+                        $attributeTypeTranslation = $attributeType?->translate($locale);
+
+                        return [
+                            'id'                  => $field->id,
+                            'code'                => $field->code,
+                            'label'               => $fieldTranslation?->label ?? $field->code,
+                            'type'                => $field->type,
+                            'attribute_type_name' => $attributeTypeTranslation?->name ?? $attributeType?->code ?? '',
+                            'sort_order'          => $field->sort_order ?? 0,
+                        ];
+                    })->values(),
+                ];
+            })
+            ->values()
+            ->toArray();
+    }
+
+    protected function prepareServiceGroupsForFrontend(?Service $service, string $locale): Collection
+    {
+        $serviceGroups = ($service?->attributeGroups ?? collect())
+            ->filter(fn ($group) => ($group->fields ?? collect())->count())
+            ->map(function ($group) use ($locale) {
+                $translation = $group->translate($locale);
+                $supportsNotification = $group->group_type === 'citizen'
+                    && ($group->fields ?? collect())->contains(
+                        fn ($field) => strtolower($field->code ?? '') === 'id_number'
+                    );
+
+                return [
+                    'service_attribute_group_id' => $group->id,
+                    'template_id'                => $group->id,
+                    'code'                       => $group->pivot->custom_code ?? $group->code,
+                    'group_type'                 => $group->group_type ?? 'general',
+                    'name'                       => $group->pivot->custom_name ?? ($translation?->name ?? $group->code),
+                    'description'                => $translation?->description,
+                    'sort_order'                 => $group->pivot->sort_order ?? 0,
+                    'is_notifiable'              => (bool) ($group->pivot->is_notifiable ?? false),
+                    'supports_notification'      => $supportsNotification,
+                    'pivot_uid'                  => $group->pivot->pivot_uid ?? '',
+                    'fields'                     => $group->fields->map(function ($field) use ($locale) {
+                        $fieldTranslation = $field->translate($locale);
+                        $attributeType = $field->attributeType;
+                        $attributeTypeTranslation = $attributeType?->translate($locale);
+
+                        return [
+                            'service_attribute_field_id' => $field->id,
+                            'template_field_id'          => $field->id,
+                            'code'                       => $field->code,
+                            'label'                      => $fieldTranslation?->label ?? $field->code,
+                            'type'                       => $field->type,
+                            'attribute_type_name'        => $attributeTypeTranslation?->name ?? $attributeType?->code ?? '',
+                            'sort_order'                 => $field->sort_order ?? 0,
+                        ];
+                    })->values()->toArray(),
+                ];
+            })->values();
+
+        $oldGroupsInput = old('service_attribute_groups');
+
+        if (is_array($oldGroupsInput)) {
+            $serviceGroups = collect($oldGroupsInput)->map(function ($group, $index) {
+                $groupId = isset($group['service_attribute_group_id']) ? (int) $group['service_attribute_group_id'] : 0;
+
+                if (! $groupId) {
+                    return null;
+                }
+
+                $fields = collect($group['fields'] ?? [])->filter();
+
+                if ($fields->isEmpty()) {
+                    return null;
+                }
+
+                return [
+                    'service_attribute_group_id' => $groupId,
+                    'template_id'                => isset($group['template_id']) ? (int) $group['template_id'] : $groupId,
+                    'code'                       => $group['code'] ?? null,
+                    'group_type'                 => $group['group_type'] ?? 'general',
+                    'name'                       => $group['name'] ?? null,
+                    'description'                => $group['description'] ?? null,
+                    'sort_order'                 => isset($group['sort_order']) ? (int) $group['sort_order'] : $index,
+                    'is_notifiable'              => ! empty($group['is_notifiable']),
+                    'fields'                     => $fields->values(),
+                    'supports_notification'      => ! empty($group['supports_notification']),
+                    'pivot_uid'                  => $group['pivot_uid'] ?? '',
+                ];
+            })->filter()->values();
+        }
+
+        return $serviceGroups;
+    }
+
+    protected function buildServiceGroupInitialSelection(Collection $serviceGroups): array
+    {
+        return [
+            'groups' => $serviceGroups->values()->toArray(),
+            'fields' => [],
+        ];
     }
 }

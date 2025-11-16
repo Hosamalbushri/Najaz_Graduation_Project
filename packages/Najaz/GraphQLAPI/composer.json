@@ -1,0 +1,19 @@
+{
+    "name": "najaz/graphql-api",
+    "description": "Najaz specific GraphQL extensions",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Najaz\\GraphQLAPI\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Najaz\\GraphQLAPI\\Providers\\GraphQLAPIServiceProvider"
+            ]
+        }
+    }
+}
+

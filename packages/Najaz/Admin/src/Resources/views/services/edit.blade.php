@@ -79,6 +79,11 @@
                                 <x-admin::form.control-group.label>
                                     @lang('Admin::app.services.services.edit.status')
                                 </x-admin::form.control-group.label>
+                                <x-admin::form.control-group.control
+                                        type="hidden"
+                                        name="status"
+                                        value="0"
+                                />
 
                                 <x-admin::form.control-group.control
                                     type="switch"
@@ -212,8 +217,8 @@
                         </div>
 
                         @include('admin::services.service-data-groups', [
-                            'service' => $service,
-                            'attributeGroups' => $attributeGroups,
+                            'allAttributeGroups' => $attributeGroupOptions,
+                            'initialSelection' => $serviceGroupInitialSelection,
                         ])
 
                     </form>

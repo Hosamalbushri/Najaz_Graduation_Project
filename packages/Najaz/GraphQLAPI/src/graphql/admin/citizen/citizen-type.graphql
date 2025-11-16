@@ -1,0 +1,48 @@
+# Citizen Types management
+extend type Query @guard(with: ["admin-api"]) {
+    citizenTypes(
+        search: String @where(operator: "like", key: "name")
+    ): [CitizenType!] @paginate(
+        type: "PAGINATOR"
+        defaultCount: 10
+        model: "Najaz\\Citizen\\Models\\CitizenType"
+    )
+
+    citizenType(id: ID @eq): CitizenType @find(model: "Najaz\\Citizen\\Models\\CitizenType")
+}
+
+extend type Mutation @guard(with: ["admin-api"]) {
+    createCitizenType(
+        input: CitizenTypeInput! @spread
+    ): CitizenTypeResponse @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\Admin\\Citizen\\CitizenTypeMutation@store")
+
+    updateCitizenType(
+        id: ID!,
+        input: CitizenTypeInput! @spread
+    ): CitizenTypeResponse @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\Admin\\Citizen\\CitizenTypeMutation@update")
+
+    deleteCitizenType(id: ID!): StatusResponse @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\Admin\\Citizen\\CitizenTypeMutation@delete")
+}
+
+input CitizenTypeInput {
+    code: String!
+    name: String!
+}
+
+type CitizenTypeResponse {
+    success: Boolean
+    message: String
+    citizenType: CitizenType
+}
+
+type CitizenType {
+    id: ID!
+    code: String!
+    name: String!
+    isUserDefined: Boolean @rename(attribute: "is_user_defined")
+    createdAt: DateTime @rename(attribute: "created_at")
+    updatedAt: DateTime @rename(attribute: "updated_at")
+    citizens: [Citizen] @hasMany
+    services: [Service] @belongsToMany(relation: "services")
+}
+

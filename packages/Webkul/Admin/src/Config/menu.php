@@ -355,14 +355,14 @@ return [
 //        'icon'       => '',
 //    ],
 //
-//    /**
-//     * Configuration.
-//     */
-//    [
-//        'key'        => 'configuration',
-//        'name'       => 'admin::app.components.layouts.sidebar.configure',
-//        'route'      => 'admin.configuration.index',
-//        'sort'       => 9,
-//        'icon'       => 'icon-configuration',
-//    ],
+    /**
+     * Configuration.
+     */
+    [
+        'key'        => 'configuration',
+        'name'       => 'admin::app.components.layouts.sidebar.configure',
+        'route'      => 'admin.configuration.index',
+        'sort'       => 9,
+        'icon'       => 'icon-configuration',
+    ],
 ];

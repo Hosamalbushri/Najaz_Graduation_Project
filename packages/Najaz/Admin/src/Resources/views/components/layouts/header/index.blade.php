@@ -88,7 +88,7 @@
                         />
                     </button>
                 @else
-                    <button class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-blue-400 text-xs font-semibold leading-6 text-white transition-all hover:bg-blue-500 focus:bg-blue-500 sm:h-9 sm:w-9 sm:text-sm">
+                    <button class="avatar-button">
                         {{ substr($admin->name, 0, 1) }}
                     </button>
                 @endif

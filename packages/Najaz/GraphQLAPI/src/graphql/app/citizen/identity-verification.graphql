@@ -1,0 +1,36 @@
+# Citizen identity verification APIs
+
+extend type Query @guard(with: ["citizen-api"]) {
+    """
+    All identity verification requests submitted by the authenticated citizen.
+    """
+    myIdentityVerifications: [IdentityVerification!]
+        @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\IdentityVerificationQuery@list")
+
+    """
+    Latest identity verification request for the authenticated citizen, if any.
+    """
+    myLatestIdentityVerification: IdentityVerification
+        @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\IdentityVerificationQuery@latest")
+}
+
+extend type Mutation @guard(with: ["citizen-api"]) {
+    """
+    Submit a new identity verification request for the authenticated citizen.
+    Citizen ID is taken from the token, not from the input.
+    """
+    requestIdentityVerification(
+        input: CitizenIdentityVerificationInput! @spread
+    ): IdentityVerificationResponse
+        @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\App\\Citizen\\IdentityVerificationMutation@store")
+}
+
+"""
+Payload for citizen-driven identity verification requests.
+Citizen ID is inferred from the authenticated user.
+"""
+input CitizenIdentityVerificationInput {
+    notes: String
+    documents: [Upload!]
+}
+

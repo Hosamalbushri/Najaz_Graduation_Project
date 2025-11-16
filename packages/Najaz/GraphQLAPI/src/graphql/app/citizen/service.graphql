@@ -1,0 +1,7 @@
+# Citizen service queries restricted to authenticated citizens
+extend type Query @guard(with: ["citizen-api"]) {
+    citizenServices: [Service!] @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ServiceQuery@list")
+
+    citizenService(id: ID!): Service @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ServiceQuery@find")
+}
+

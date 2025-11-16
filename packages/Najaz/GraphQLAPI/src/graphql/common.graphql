@@ -1,0 +1,129 @@
+input CitizenLoginInput {
+    nationalId: String @rename(attribute: "national_id")
+    email: String
+    password: String!
+    remember: Boolean
+    deviceToken: String @rename(attribute: "device_token")
+}
+
+type CitizenLoginResponse {
+    success: Boolean
+    message: String
+    accessToken: String @rename(attribute: "access_token")
+    tokenType: String @rename(attribute: "token_type")
+    expiresIn: Int @rename(attribute: "expires_in")
+    citizen: Citizen
+    services: [Service]
+}
+
+type Service {
+    id: ID!
+    name: String!
+    description: String
+    status: Boolean
+    image: String
+    sortOrder: Int @rename(attribute: "sort_order")
+}
+
+type ServiceAttributeGroup {
+    id: ID!
+    code: String!
+    defaultName: String @rename(attribute: "default_name")
+    groupType: String @rename(attribute: "group_type")
+    sortOrder: Int @rename(attribute: "sort_order")
+    name: String
+    description: String
+    fields: [ServiceAttributeField!]!
+}
+
+type ServiceAttributeField {
+    id: ID!
+    code: String!
+    type: String!
+    label: String
+    validationRules: JSON @rename(attribute: "validation_rules")
+    defaultValue: String @rename(attribute: "default_value")
+    isRequired: Boolean @rename(attribute: "is_required")
+    sortOrder: Int @rename(attribute: "sort_order")
+    attributeType: ServiceAttributeType @belongsTo(relation: "attributeType")
+}
+
+type ServiceAttributeType {
+    id: ID!
+    code: String!
+    type: String!
+    name: String
+    isUserDefined: Boolean @rename(attribute: "is_user_defined")
+    isRequired: Boolean @rename(attribute: "is_required")
+    isUnique: Boolean @rename(attribute: "is_unique")
+    position: Int
+    validation: String
+    regex: String
+    defaultValue: String @rename(attribute: "default_value")
+    defaultName: String @rename(attribute: "default_name")
+    options: [ServiceAttributeTypeOption!]!
+}
+
+type ServiceAttributeTypeOption {
+    id: ID!
+    adminName: String @rename(attribute: "admin_name")
+    label: String
+    sortOrder: Int @rename(attribute: "sort_order")
+}
+
+"""
+High-level form description for a service, tailored for citizen apps.
+"""
+type ServiceForm {
+    groups: [ServiceFormGroup!]!
+}
+
+"""
+Logical section in a service form (e.g. husband_data, wife_data, attachments).
+"""
+type ServiceFormGroup {
+    code: String!
+    label: String!
+    description: String
+    sortOrder: Int
+    pivotUid: String
+    isNotifiable: Boolean
+    customCode: String
+    customName: String
+    fields: [ServiceFormField!]!
+}
+
+"""
+Single input field within a service form group.
+"""
+type ServiceFormField {
+    code: String!
+    label: String!
+    type: String!
+    isRequired: Boolean!
+    defaultValue: String
+    validationRules: JSON
+    sortOrder: Int
+    options: [ServiceFormFieldOption!]
+}
+
+"""
+Selectable option for fields like select/radio.
+"""
+type ServiceFormFieldOption {
+    value: String!
+    label: String!
+}
+
+extend type Service {
+    """
+    High-level form definition for this service, derived from attribute groups,
+    fields, types and options.
+    """
+    form: ServiceForm @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ServiceFormQuery@form")
+}
+
+extend type Citizen {
+    services: [Service] @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\CitizenQuery@services")
+}
+

@@ -1,0 +1,8 @@
+# Najaz-specific schema extensions
+#import ./common.graphql
+#import ./admin/citizen/citizen.graphql
+#import ./admin/citizen/citizen-type.graphql
+#import ./admin/citizen/identity-verification.graphql
+#import ./admin/service/*.graphql
+#import ./app/citizen/*.graphql
+

@@ -1,0 +1,76 @@
+# Identity verification workflow
+extend type Query @guard(with: ["admin-api"]) {
+    identityVerifications(
+        input: FilterIdentityVerificationInput
+            @builder(method: "Najaz\\GraphQLAPI\\Queries\\Admin\\Citizen\\FilterIdentityVerification")
+    ): [IdentityVerification!] @paginate(
+        type: "PAGINATOR"
+        defaultCount: 10
+        model: "Najaz\\Citizen\\Models\\IdentityVerification"
+    )
+
+    identityVerification(id: ID @eq): IdentityVerification @find(model: "Najaz\\Citizen\\Models\\IdentityVerification")
+}
+
+extend type Mutation @guard(with: ["admin-api"]) {
+    createIdentityVerification(
+        input: IdentityVerificationInput! @spread
+    ): IdentityVerificationResponse @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\Admin\\Citizen\\IdentityVerificationMutation@store")
+
+    updateIdentityVerification(
+        id: ID!,
+        input: UpdateIdentityVerificationInput! @spread
+    ): IdentityVerificationResponse @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\Admin\\Citizen\\IdentityVerificationMutation@update")
+
+    deleteIdentityVerification(id: ID!): StatusResponse @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\Admin\\Citizen\\IdentityVerificationMutation@delete")
+}
+
+input FilterIdentityVerificationInput {
+    citizenId: Int @rename(attribute: "citizen_id")
+    status: IdentityVerificationStatus
+}
+
+input IdentityVerificationInput {
+    citizenId: Int! @rename(attribute: "citizen_id")
+    notes: String
+    documents: [Upload!]
+}
+
+input UpdateIdentityVerificationInput {
+    status: IdentityVerificationStatus!
+    notes: String
+}
+
+enum IdentityVerificationStatus {
+    PENDING
+    APPROVED
+    REJECTED
+    NEEDS_MORE_INFO
+}
+
+type IdentityVerificationResponse {
+    success: Boolean
+    message: String
+    verification: IdentityVerification
+}
+
+type IdentityVerification {
+    id: ID!
+    citizenId: Int! @rename(attribute: "citizen_id")
+    status: String!
+    notes: String
+    documents: [String]
+    reviewedBy: Int @rename(attribute: "reviewed_by")
+    reviewedAt: DateTime @rename(attribute: "reviewed_at")
+    createdAt: DateTime @rename(attribute: "created_at")
+    updatedAt: DateTime @rename(attribute: "updated_at")
+    citizen: Citizen @belongsTo
+    reviewer: AdminUser @belongsTo
+}
+
+type AdminUser {
+    id: ID!
+    name: String
+    email: String
+}
+

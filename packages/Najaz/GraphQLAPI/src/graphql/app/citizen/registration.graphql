@@ -1,0 +1,23 @@
+#Shop\Citizen\Registration Related APIs
+extend type Mutation {
+    citizenSignUp(
+        input: CitizenSignUpInput! @spread
+    ): CitizenLoginResponse @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\App\\Citizen\\RegistrationMutation@signUp")
+}
+
+input CitizenSignUpInput {
+    firstName: String! @rename(attribute: "first_name")
+    middleName: String! @rename(attribute: "middle_name")
+    lastName: String! @rename(attribute: "last_name")
+    gender: String!
+    email: String
+    phone: String! @rules(apply: ["required"])
+    nationalId: String! @rename(attribute: "national_id")
+    dateOfBirth: String! @rename(attribute: "date_of_birth")
+    citizenTypeId: Int! @rename(attribute: "citizen_type_id")
+    password: String!
+    passwordConfirmation: String! @rename(attribute: "password_confirmation")
+    remember: Boolean
+    deviceToken: String @rename(attribute: "device_token")
+}
+

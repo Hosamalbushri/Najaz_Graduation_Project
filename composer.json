@@ -19,6 +19,7 @@
         "ext-tokenizer": "*",
         "astrotomic/laravel-translatable": "^11.0.0",
         "bagisto/bagisto-package-generator": "^2.1",
+        "bagisto/graphql-api": "dev-main",
         "bagisto/image-cache": "dev-master",
         "barryvdh/laravel-dompdf": "^2.0.0",
         "diglactic/laravel-breadcrumbs": "^9.0",
@@ -60,8 +61,8 @@
         "phpunit/phpunit": "^11.0",
         "najaz/admin": "@dev",
         "najaz/citizen": "@dev",
-        "najaz/service": "@dev"
-
+        "najaz/service": "@dev",
+        "najaz/graphql-api": "@dev"
     },
     "autoload": {
         "psr-4": {
@@ -102,7 +103,8 @@
             "Webkul\\Theme\\": "packages/Webkul/Theme/src",
             "Webkul\\User\\": "packages/Webkul/User/src",
             "Najaz\\Admin\\": "packages/Najaz/Admin/src",
-            "Najaz\\Citizen\\": "packages/Najaz/Citizen/src"
+            "Najaz\\Citizen\\": "packages/Najaz/Citizen/src",
+            "Najaz\\GraphQLAPI\\": "packages/Najaz/GraphQLAPI/src"
         }
     },
     "autoload-dev": {
@@ -139,7 +141,15 @@
         "options": {
             "symlink": true
         }
-    }],
+    },
+        {
+            "type": "path",
+            "url": "packages/Webkul/GraphQLAPI",
+            "options": {
+                "symlink": true
+            }
+        }
+    ],
     "config": {
         "optimize-autoloader": true,
         "preferred-install": "dist",

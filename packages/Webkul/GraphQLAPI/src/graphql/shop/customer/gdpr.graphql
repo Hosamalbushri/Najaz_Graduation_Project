@@ -1,0 +1,93 @@
+# ── shop/graphql/schema.graphql ──
+
+extend type Query @guard(with: ["api"]) {
+  gdprRequests(
+    input: FilterCustomerGdprRequestInput
+      @builder(method: "Webkul\\GraphQLAPI\\Queries\\Shop\\Customer\\GdprQuary")
+    ): [GDPRDataRequest!] @paginate(
+        type: "PAGINATOR"
+        model: "Webkul\\GDPR\\Models\\GDPRDataRequest"
+        defaultCount: 10
+    )
+
+  gdprRequest(
+    id: ID! @eq
+      @builder(method: "Webkul\\GraphQLAPI\\Queries\\Shop\\Customer\\GdprQuary@getGdprRequest")
+  ): GDPRDataRequest
+    @find(model: "Webkul\\GDPR\\Models\\GDPRDataRequest")
+
+  viewGdprData: GdprViewResponse
+    @field(resolver: "Webkul\\GraphQLAPI\\Queries\\Shop\\Customer\\GdprQuary@viewGdprData")
+}
+
+extend type Mutation @guard(with: ["api"]) {
+  createGdprRequest(
+    input: GdprRequestInput! @spread
+  ): GdprRequestResponse
+    @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\GdprMutation@store")
+
+  revokeGdprRequest(
+      id: ID!
+  ): GdprRequestResponse
+  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\GdprMutation@revoke")
+
+  downloadGdprData: GdprDownloadResponse
+    @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\GdprMutation@downloadGdprData")
+}
+
+input GdprRequestInput {
+  type: GdprRequestInputType!
+  message: String!
+}
+
+enum GdprRequestInputType {
+  UPDATE @enum (value: "update")
+  DELETE @enum (value: "delete")
+}
+
+type GdprRequestResponse {
+  status: Boolean!
+  message: String
+  gdprRequest: GDPRDataRequest
+}
+
+type GdprDownloadResponse {
+  success: Boolean!
+  string: String!
+  download: DownloadInfo!
+}
+
+type DownloadInfo {
+  fileName: String! @rename(attribute: "file_name")
+  extension: String!
+}
+
+type GDPRDataRequest {
+  id: ID!
+  customerId: ID @rename(attribute: "customer_id")
+  email: String
+  status: String
+  type: String
+  message: String
+  revokedAt: DateTime @rename(attribute: "revoked_at")
+  createdAt: DateTime @rename(attribute: "created_at")
+  updatedAt: DateTime @rename(attribute: "updated_at")
+}
+
+input FilterCustomerGdprRequestInput {
+  id: ID
+  customerId: ID @rename(attribute: "customer_id")
+  email: String
+  type: String
+  status: String
+  revokedAt: DateTime @rename(attribute: "revoked_at")
+  createdAt: DateTime @rename(attribute: "created_at")
+  updatedAt: DateTime @rename(attribute: "updated_at")
+}
+
+type GdprViewResponse {
+  customer: Customer
+  address: [Address]
+  order: [Order]
+}
+

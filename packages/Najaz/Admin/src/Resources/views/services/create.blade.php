@@ -45,11 +45,6 @@
                             </div>
                         </div>
 
-                        @php
-                            $service = new \Najaz\Service\Models\Service();
-                            $service->id = 0;
-                        @endphp
-
                         <div class="mt-4 flex gap-2.5 max-xl:flex-wrap">
                             <div class="flex flex-1 flex-col gap-2 max-xl:flex-auto">
                                 <div class="box-shadow rounded bg-white p-4 dark:bg-gray-900">
@@ -214,8 +209,8 @@
                         </div>
 
                         @include('admin::services.service-data-groups', [
-                            'service' => $service,
-                            'attributeGroups' => $attributeGroups,
+                            'allAttributeGroups' => $attributeGroupOptions,
+                            'initialSelection' => $serviceGroupInitialSelection,
                         ])
 
                     </form>

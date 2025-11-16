@@ -1,0 +1,9 @@
+#Shop\Citizen\Session Related APIs
+extend type Mutation {
+    citizenLogin(
+        input: CitizenLoginInput! @spread
+    ): CitizenLoginResponse @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\App\\Citizen\\SessionMutation@login")
+
+    citizenLogout: StatusResponse @guard(with: ["citizen-api"]) @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\App\\Citizen\\SessionMutation@logout")
+}
+
