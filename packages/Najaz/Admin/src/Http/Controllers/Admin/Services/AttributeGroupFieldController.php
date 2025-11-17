@@ -6,7 +6,7 @@ use Illuminate\Http\JsonResponse;
 use Najaz\Service\Repositories\ServiceAttributeFieldRepository;
 use Najaz\Service\Repositories\ServiceAttributeGroupRepository;
 use Najaz\Service\Repositories\ServiceAttributeTypeRepository;
-use Webkul\Admin\Http\Controllers\Controller;
+use Najaz\Admin\Http\Controllers\Controller;
 
 class AttributeGroupFieldController extends Controller
 {

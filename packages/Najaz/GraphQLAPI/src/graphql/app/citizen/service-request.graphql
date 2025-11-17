@@ -1,0 +1,87 @@
+#Shop\Citizen\ServiceRequest Related APIs
+extend type Query @guard(with: ["citizen-api"]) {
+    """
+    جميع طلبات الخدمات التي أرسلها المواطن الحالي.
+    """
+    myServiceRequests(
+        serviceId: Int
+        status: ServiceRequestStatus
+    ): [ServiceRequest!]!
+        @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ServiceRequestQuery@list")
+
+    """
+    طلب خدمة محدد للمواطن الحالي.
+    """
+    myServiceRequest(id: ID!): ServiceRequest
+        @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ServiceRequestQuery@show")
+}
+
+extend type Mutation @guard(with: ["citizen-api"]) {
+    """
+    إنشاء طلب خدمة جديد للمواطن الحالي.
+    """
+    createServiceRequest(
+        input: CreateServiceRequestInput! @spread
+    ): ServiceRequestResponse
+        @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\App\\Citizen\\ServiceRequestMutation@store")
+
+    """
+    تحديث طلب خدمة (للمواطن: فقط notes و form_data).
+    """
+    updateServiceRequest(
+        id: ID!,
+        input: UpdateServiceRequestInput! @spread
+    ): ServiceRequestResponse
+        @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\App\\Citizen\\ServiceRequestMutation@update")
+
+    """
+    إلغاء طلب خدمة.
+    """
+    cancelServiceRequest(id: ID!): StatusResponse
+        @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\App\\Citizen\\ServiceRequestMutation@cancel")
+}
+
+input CreateServiceRequestInput {
+    serviceId: Int! @rename(attribute: "service_id")
+    formData: JSON! @rename(attribute: "form_data")
+    notes: String
+}
+
+input UpdateServiceRequestInput {
+    formData: JSON @rename(attribute: "form_data")
+    notes: String
+}
+
+enum ServiceRequestStatus {
+    PENDING
+    IN_PROGRESS
+    COMPLETED
+    REJECTED
+    CANCELLED
+}
+
+type ServiceRequestResponse {
+    success: Boolean
+    message: String
+    request: ServiceRequest
+}
+
+type ServiceRequest {
+    id: ID!
+    serviceId: Int! @rename(attribute: "service_id")
+    citizenId: Int! @rename(attribute: "citizen_id")
+    status: String!
+    formData: JSON @rename(attribute: "form_data")
+    notes: String
+    adminNotes: String @rename(attribute: "admin_notes")
+    assignedTo: Int @rename(attribute: "assigned_to")
+    submittedAt: DateTime @rename(attribute: "submitted_at")
+    completedAt: DateTime @rename(attribute: "completed_at")
+    createdAt: DateTime @rename(attribute: "created_at")
+    updatedAt: DateTime @rename(attribute: "updated_at")
+    service: Service @belongsTo
+    citizen: Citizen @belongsTo
+    assignedAdmin: AdminUser @belongsTo
+    beneficiaries: [Citizen!]! @belongsToMany
+}
+

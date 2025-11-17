@@ -8,7 +8,7 @@ use Illuminate\View\View;
 use Najaz\Admin\DataGrids\Citizens\IdentityVerificationDataGrid;
 use Najaz\Citizen\Repositories\CitizenRepository;
 use Najaz\Citizen\Repositories\IdentityVerificationRepository;
-use Webkul\Admin\Http\Controllers\Controller;
+use Najaz\Admin\Http\Controllers\Controller;
 
 class IdentityVerificationController extends Controller
 {

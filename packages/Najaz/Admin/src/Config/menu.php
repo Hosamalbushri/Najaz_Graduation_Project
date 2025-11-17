@@ -65,4 +65,11 @@ return [
         'sort'  => 2,
         'icon'  => 'icon-sales',
     ],
+    [
+        'key'   => 'service-requests',
+        'name'  => 'Admin::app.components.layouts.sidebar.service-requests',
+        'route' => 'admin.service-requests.index',
+        'sort'  => 3,
+        'icon'  => 'icon-sales',
+    ],
 ];

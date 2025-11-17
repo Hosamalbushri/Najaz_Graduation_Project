@@ -7,7 +7,7 @@ use Illuminate\View\View;
 use Najaz\Admin\DataGrids\Services\AttributeGroupDataGrid;
 use Najaz\Service\Repositories\ServiceAttributeFieldRepository;
 use Najaz\Service\Repositories\ServiceAttributeGroupRepository;
-use Webkul\Admin\Http\Controllers\Controller;
+use Najaz\Admin\Http\Controllers\Controller;
 use Webkul\Attribute\Enums\ValidationEnum;
 
 class AttributeGroupController extends Controller

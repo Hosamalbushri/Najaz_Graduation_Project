@@ -1,0 +1,30 @@
+{
+    "name": "najaz/request",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Najaz",
+            "email": "support@webkul.com"
+        }
+    ],
+    "require": {
+    },
+    "autoload": {
+        "psr-4": {
+            "Najaz\\Request\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Najaz\\Request\\Providers\\RequestServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev"
+}
+

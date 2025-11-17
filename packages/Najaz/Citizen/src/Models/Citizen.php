@@ -5,6 +5,7 @@ namespace Najaz\Citizen\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Najaz\Citizen\Contracts\Citizen as CitizenContract;
 
@@ -81,5 +82,19 @@ class Citizen extends Model implements CitizenContract
     public function identityVerifications(): HasMany
     {
         return $this->hasMany(IdentityVerificationProxy::modelClass(), 'citizen_id');
+    }
+
+    /**
+     * Get service requests where this citizen is a beneficiary.
+     */
+    public function serviceRequestsAsBeneficiary(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            \Najaz\Request\Models\ServiceRequestProxy::modelClass(),
+            'service_request_beneficiaries',
+            'citizen_id',
+            'service_request_id'
+        )->withPivot('group_code')
+            ->withTimestamps();
     }
 }

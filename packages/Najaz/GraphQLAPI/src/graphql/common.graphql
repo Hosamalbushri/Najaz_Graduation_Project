@@ -111,8 +111,8 @@ type ServiceFormField {
 Selectable option for fields like select/radio.
 """
 type ServiceFormFieldOption {
-    value: String!
-    label: String!
+    la    value: String!
+bel: String!
 }
 
 extend type Service {

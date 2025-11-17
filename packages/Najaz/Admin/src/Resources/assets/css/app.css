@@ -656,3 +656,21 @@
     @apply ring-2;
     --tw-ring-color: rgba(37, 99, 235, 0.3);
 }
+.login-form-box {
+    @apply box-shadow flex w-[400px] max-w-full flex-col rounded-md bg-white dark:bg-gray-900;
+}
+.login-label {
+    @apply text-sm text-gray-700 dark:text-gray-200 mb-1;
+}
+
+.login-input {
+    @apply w-[320px] max-w-full rounded-md border border-gray-300 dark:border-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-600;
+}
+
+.login-error {
+    @apply mt-1 text-xs text-red-500;
+}
+
+.login-buttons-colors {
+    @apply bg-violet-600 border border-violet-700 text-white font-semibold transition-all cursor-pointer hover:bg-violet-700 focus:bg-violet-700;
+}

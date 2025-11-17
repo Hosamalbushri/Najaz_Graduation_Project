@@ -5,9 +5,9 @@ namespace Najaz\Admin\Http\Controllers\Admin\Citizens;
 use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
 use Najaz\Admin\DataGrids\Citizens\CitizenDateGrid;
+use Najaz\Admin\Http\Controllers\Controller;
 use Najaz\Citizen\Repositories\CitizenRepository;
 use Najaz\Citizen\Repositories\CitizenTypeRepository;
-use Webkul\Admin\Http\Controllers\Controller;
 use Webkul\Core\Rules\PhoneNumber;
 
 class CitizenController extends Controller

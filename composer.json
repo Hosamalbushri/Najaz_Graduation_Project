@@ -62,6 +62,7 @@
         "najaz/admin": "@dev",
         "najaz/citizen": "@dev",
         "najaz/service": "@dev",
+        "najaz/request": "@dev",
         "najaz/graphql-api": "@dev"
     },
     "autoload": {
@@ -104,6 +105,7 @@
             "Webkul\\User\\": "packages/Webkul/User/src",
             "Najaz\\Admin\\": "packages/Najaz/Admin/src",
             "Najaz\\Citizen\\": "packages/Najaz/Citizen/src",
+            "Najaz\\Request\\": "packages/Najaz/Request/src",
             "Najaz\\GraphQLAPI\\": "packages/Najaz/GraphQLAPI/src"
         }
     },

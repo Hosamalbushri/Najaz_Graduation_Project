@@ -10,7 +10,7 @@ use Najaz\Service\Enums\ServiceAttributeTypeEnum;
 use Najaz\Service\Enums\ValidationEnum;
 use Najaz\Service\Repositories\ServiceAttributeTypeOptionRepository;
 use Najaz\Service\Repositories\ServiceAttributeTypeRepository;
-use Webkul\Admin\Http\Controllers\Controller;
+use Najaz\Admin\Http\Controllers\Controller;
 use Webkul\Core\Rules\Code;
 
 class ServiceAttributeTypeController extends Controller

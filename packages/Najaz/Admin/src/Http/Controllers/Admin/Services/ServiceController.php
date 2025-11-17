@@ -10,7 +10,7 @@ use Najaz\Citizen\Models\CitizenTypeProxy;
 use Najaz\Service\Models\Service;
 use Najaz\Service\Models\ServiceAttributeGroupProxy;
 use Najaz\Service\Repositories\ServiceRepository;
-use Webkul\Admin\Http\Controllers\Controller;
+use Najaz\Admin\Http\Controllers\Controller;
 
 class ServiceController extends Controller
 {

@@ -60,4 +60,30 @@ return [
             ],
         ],
     ],
+    [
+        'key'   => 'service-requests',
+        'name'  => 'Service Requests',
+        'route' => 'admin.service-requests.index',
+        'sort'  => 5,
+        'children' => [
+            [
+                'key'   => 'service-requests.view',
+                'name'  => 'View Service Requests',
+                'route' => 'admin.service-requests.index',
+                'sort'  => 1,
+            ],
+            [
+                'key'   => 'service-requests.update',
+                'name'  => 'Update Service Request',
+                'route' => 'admin.service-requests.update-status',
+                'sort'  => 2,
+            ],
+            [
+                'key'   => 'service-requests.cancel',
+                'name'  => 'Cancel Service Request',
+                'route' => 'admin.service-requests.cancel',
+                'sort'  => 3,
+            ],
+        ],
+    ],
 ];

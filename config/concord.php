@@ -43,6 +43,7 @@ return [
         \Webkul\Theme\Providers\ModuleServiceProvider::class,
         \Webkul\User\Providers\ModuleServiceProvider::class,
         \Najaz\Citizen\Providers\ModuleServiceProvider::class,
+        \Najaz\Request\Providers\ModuleServiceProvider::class,
     ],
 
 ];
