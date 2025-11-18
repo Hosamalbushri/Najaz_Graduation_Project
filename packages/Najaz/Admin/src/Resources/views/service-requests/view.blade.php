@@ -62,6 +62,27 @@
                     </a>
                 </div>
             @endif
+
+            @if (
+                $request->service 
+                && $request->service->documentTemplate 
+                && $request->service->documentTemplate->is_active
+            )
+                <a
+                    href="{{ route('admin.service-requests.download-document', $request->id) }}"
+                    class="primary-button px-1 py-1.5"
+                    target="_blank"
+                >
+                    <span
+                        class="icon-download text-2xl"
+                        role="presentation"
+                        tabindex="0"
+                    >
+                    </span>
+
+                    @lang('Admin::app.service-requests.view.download-document')
+                </a>
+            @endif
         </div>
     </div>
 

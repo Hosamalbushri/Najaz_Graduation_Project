@@ -5,7 +5,9 @@ namespace Najaz\Admin\Http\Controllers\Admin\ServiceRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
 use Najaz\Admin\Http\Controllers\Controller;
+use Najaz\Request\Models\ServiceRequestProxy;
 use Najaz\Request\Repositories\ServiceRequestRepository;
+use Najaz\Service\Services\DocumentTemplateService;
 
 class ServiceRequestController extends Controller
 {
@@ -35,8 +37,13 @@ class ServiceRequestController extends Controller
      */
     public function view(int $id): View
     {
-        $request = $this->serviceRequestRepository->with(['service', 'citizen', 'assignedAdmin', 'beneficiaries', 'formData'])
-            ->findOrFail($id);
+        $request = $this->serviceRequestRepository->with([
+            'service.documentTemplate',
+            'citizen',
+            'assignedAdmin',
+            'beneficiaries',
+            'formData'
+        ])->findOrFail($id);
 
         return view('admin::service-requests.view', compact('request'));
     }
@@ -168,5 +175,24 @@ class ServiceRequestController extends Controller
         }
 
         return response()->json($requests);
+    }
+
+    /**
+     * Download document PDF for service request.
+     */
+    public function downloadDocument(int $id)
+    {
+        try {
+            $serviceRequest = ServiceRequestProxy::modelClass()::with(['service.documentTemplate'])
+                ->findOrFail($id);
+
+            $documentService = new DocumentTemplateService();
+
+            return $documentService->generateAndDownloadPDF($serviceRequest);
+        } catch (\Exception $e) {
+            session()->flash('error', $e->getMessage());
+
+            return redirect()->back();
+        }
     }
 }

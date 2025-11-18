@@ -312,11 +312,49 @@ class ServiceRequestRepository extends Repository
 
             // Only save if there's data for this group
             if ($hasData) {
-                ServiceRequestFormData::create([
+                // Extract fields data for this group
+                $groupFieldsData = [];
+                
+                if (isset($formData[$groupCode]) && is_array($formData[$groupCode]) && !empty($formData[$groupCode])) {
+                    // Nested structure - use it directly
+                    $groupFieldsData = $formData[$groupCode];
+                } else {
+                    // Flat structure - extract fields that belong to this group
+                    foreach ($group->fields as $field) {
+                        $fieldCode = $field->code;
+                        if (isset($formData[$fieldCode])) {
+                            $groupFieldsData[$fieldCode] = $formData[$fieldCode];
+                        }
+                    }
+                }
+
+                \Log::info('ServiceRequestRepository - saveFormData:', [
+                    'group_code' => $groupCode,
+                    'group_name' => $groupName,
+                    'has_data' => $hasData,
+                    'form_data_keys' => array_keys($formData),
+                    'form_data_group' => $formData[$groupCode] ?? 'not set',
+                    'group_fields_data' => $groupFieldsData,
+                    'group_fields_data_empty' => empty($groupFieldsData),
+                    'group_fields_data_count' => count($groupFieldsData),
+                ]);
+
+                // Always save the record, even if fields_data is empty (for structure)
+                // But make sure we save the data if it exists
+                $fieldsDataToSave = !empty($groupFieldsData) ? $groupFieldsData : null;
+                
+                $record = ServiceRequestFormData::create([
                     'service_request_id' => $request->id,
                     'group_code'        => $groupCode,
                     'group_name'        => $groupName,
+                    'fields_data'       => $fieldsDataToSave,
                     'sort_order'        => $sortOrder++,
+                ]);
+
+                \Log::info('ServiceRequestRepository - saveFormData - Record Created:', [
+                    'record_id' => $record->id,
+                    'fields_data_saved' => $record->fields_data,
+                    'fields_data_type' => gettype($record->fields_data),
                 ]);
             }
         }

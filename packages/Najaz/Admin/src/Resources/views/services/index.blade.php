@@ -9,6 +9,12 @@
         </p>
 
         <div class="flex items-center gap-x-2.5">
+            <a
+                href="{{ route('admin.services.document-templates.index') }}"
+                class="transparent-button hover:bg-gray-200 dark:text-white dark:hover:bg-gray-800"
+            >
+                @lang('Admin::app.services.document-templates.index.title')
+            </a>
             @if (bouncer()->hasPermission('services.create'))
                 <a
                     href="{{ route('admin.services.create') }}"

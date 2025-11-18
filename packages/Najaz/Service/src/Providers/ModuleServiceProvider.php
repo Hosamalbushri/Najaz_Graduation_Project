@@ -20,5 +20,6 @@ class ModuleServiceProvider extends BaseModuleServiceProvider
         \Najaz\Service\Models\ServiceAttributeTypeTranslation::class,
         \Najaz\Service\Models\ServiceAttributeTypeOption::class,
         \Najaz\Service\Models\ServiceAttributeTypeOptionTranslation::class,
+        \Najaz\Service\Models\ServiceDocumentTemplate::class,
     ];
 }

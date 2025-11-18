@@ -5,6 +5,7 @@ use Najaz\Admin\Http\Controllers\Admin\Services\AttributeGroupController;
 use Najaz\Admin\Http\Controllers\Admin\Services\AttributeGroupFieldController;
 use Najaz\Admin\Http\Controllers\Admin\Services\ServiceController;
 use Najaz\Admin\Http\Controllers\Admin\Services\ServiceAttributeTypeController;
+use Najaz\Admin\Http\Controllers\Admin\Services\DocumentTemplateController;
 
 Route::group(['middleware' => ['web', 'admin'], 'prefix' => 'admin/services'], function () {
     Route::controller(ServiceController::class)->group(function () {
@@ -17,6 +18,19 @@ Route::group(['middleware' => ['web', 'admin'], 'prefix' => 'admin/services'], f
         Route::post('mass-delete', 'massDestroy')->name('admin.services.mass_delete');
         Route::post('mass-update', 'massUpdate')->name('admin.services.mass_update');
         Route::get('{id}/customizable-options', 'customizableOptions')->name('admin.services.customizable-options');
+        Route::post('{id}/document-template', 'storeDocumentTemplate')->name('admin.services.document-template.store');
+    });
+
+    // Document Templates Routes
+    Route::group(['prefix' => 'document-templates'], function () {
+        Route::controller(DocumentTemplateController::class)->group(function () {
+            Route::get('', 'index')->name('admin.services.document-templates.index');
+            Route::get('services-without-templates', 'getServicesWithoutTemplates')->name('admin.services.document-templates.services-without-templates');
+            Route::post('', 'store')->name('admin.services.document-templates.store');
+            Route::get('{id}/edit', 'edit')->name('admin.services.document-templates.edit');
+            Route::put('{id}', 'update')->name('admin.services.document-templates.update');
+            Route::delete('{id}', 'destroy')->name('admin.services.document-templates.delete');
+        });
     });
 });
 

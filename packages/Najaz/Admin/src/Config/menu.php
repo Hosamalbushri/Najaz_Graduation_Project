@@ -59,6 +59,13 @@ return [
         'icon'  => 'icon-sales',
     ],
     [
+        'key'   => 'services.document-templates',
+        'name'  => 'Admin::app.components.layouts.sidebar.document-templates',
+        'route' => 'admin.services.document-templates.index',
+        'sort'  => 3,
+        'icon'  => 'icon-sales',
+    ],
+    [
         'key'   => 'services.attribute-groups.attribute-types',
         'name'  => 'Admin::app.components.layouts.sidebar.attribute-types',
         'route' => 'admin.attribute-types.index',

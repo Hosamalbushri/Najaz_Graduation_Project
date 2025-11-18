@@ -5,6 +5,7 @@ namespace Najaz\Service\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Najaz\Citizen\Models\CitizenTypeProxy;
 use Najaz\Service\Contracts\Service as ServiceContract;
 
@@ -68,5 +69,13 @@ class Service extends Model implements ServiceContract
             'service_id',
             'citizen_type_id'
         )->withTimestamps();
+    }
+
+    /**
+     * Get the document template for this service.
+     */
+    public function documentTemplate(): HasOne
+    {
+        return $this->hasOne(ServiceDocumentTemplateProxy::modelClass(), 'service_id');
     }
 }

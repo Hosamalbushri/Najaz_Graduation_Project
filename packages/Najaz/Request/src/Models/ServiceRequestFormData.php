@@ -27,7 +27,17 @@ class ServiceRequestFormData extends Model
         'service_request_id',
         'group_code',
         'group_name',
+        'fields_data',
         'sort_order',
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'fields_data' => 'array',
     ];
 
     /**

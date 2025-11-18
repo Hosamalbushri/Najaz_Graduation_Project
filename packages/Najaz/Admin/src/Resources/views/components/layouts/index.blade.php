@@ -122,15 +122,15 @@
                     </div>
                 </div>
 
-                <!-- Powered By -->
-                <div class="mt-auto">
-                    <div class="border-t border-[var(--border-muted)] bg-surface-card py-2 text-center text-xs sm:text-sm text-text-secondary">
-                        @lang('admin::app.components.layouts.powered-by.description', [
-                            'bagisto' => '<a class="text-brand hover:underline" href="https://bagisto.com/en/">Bagisto</a>',
-                            'webkul' => '<a class="text-brand hover:underline" href="https://webkul.com/">Webkul</a>',
-                        ])
-                    </div>
-                </div>
+{{--                <!-- Powered By -->--}}
+{{--                <div class="mt-auto">--}}
+{{--                    <div class="border-t border-[var(--border-muted)] bg-surface-card py-2 text-center text-xs sm:text-sm text-text-secondary">--}}
+{{--                        @lang('admin::app.components.layouts.powered-by.description', [--}}
+{{--                            'bagisto' => '<a class="text-brand hover:underline" href="https://bagisto.com/en/">Bagisto</a>',--}}
+{{--                            'webkul' => '<a class="text-brand hover:underline" href="https://webkul.com/">Webkul</a>',--}}
+{{--                        ])--}}
+{{--                    </div>--}}
+{{--                </div>--}}
             </div>
         </div>
 

@@ -18,6 +18,8 @@ Route::group(['middleware' => ['web', 'admin'], 'prefix' => 'admin/service-reque
         Route::post('assign/{id}', 'assign')->name('admin.service-requests.assign');
 
         Route::get('search', 'search')->name('admin.service-requests.search');
+
+        Route::get('{id}/download-document', 'downloadDocument')->name('admin.service-requests.download-document');
     });
 });
 

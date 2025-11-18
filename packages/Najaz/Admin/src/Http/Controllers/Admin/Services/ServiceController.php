@@ -9,6 +9,7 @@ use Najaz\Admin\DataGrids\Services\ServiceDataGrid;
 use Najaz\Citizen\Models\CitizenTypeProxy;
 use Najaz\Service\Models\Service;
 use Najaz\Service\Models\ServiceAttributeGroupProxy;
+use Najaz\Service\Models\ServiceDocumentTemplateProxy;
 use Najaz\Service\Repositories\ServiceRepository;
 use Najaz\Admin\Http\Controllers\Controller;
 
@@ -114,8 +115,15 @@ class ServiceController extends Controller
             'fields.attributeType.translations',
         ])->orderBy('sort_order')->get();
 
+        $documentTemplate = $service->documentTemplate;
+
+        // Build available fields list from service attribute groups
+        $availableFields = $this->buildAvailableFieldsForTemplate($service, $currentLocale);
+
         return view('admin::services.edit', [
             'service'          => $service,
+            'documentTemplate' => $documentTemplate,
+            'availableFields'  => $availableFields,
             'attributeGroupOptions'        => $this->formatAttributeGroupsForFrontend($attributeGroups, $currentLocale),
             'serviceGroupInitialSelection' => $this->buildServiceGroupInitialSelection(
                 $this->prepareServiceGroupsForFrontend($service, $currentLocale)
@@ -349,5 +357,141 @@ class ServiceController extends Controller
             'groups' => $serviceGroups->values()->toArray(),
             'fields' => [],
         ];
+    }
+
+    /**
+     * Store or update document template for a service.
+     */
+    public function storeDocumentTemplate(int $id): JsonResponse
+    {
+        $this->validate(request(), [
+            'template_content' => 'required|string',
+            'used_fields'     => 'nullable|array',
+            'header_image'    => 'nullable|string|max:2048',
+            'footer_text'     => 'nullable|string|max:500',
+            'is_active'       => 'nullable|boolean',
+        ]);
+
+        $service = $this->serviceRepository->findOrFail($id);
+
+        // Get used_fields and ensure it's an array
+        $usedFields = request()->input('used_fields', []);
+        
+        // Debug: Log the received data
+        \Log::info('Received used_fields:', ['used_fields' => $usedFields, 'type' => gettype($usedFields)]);
+        
+        // Handle JSON string if sent as string
+        if (is_string($usedFields)) {
+            $usedFields = json_decode($usedFields, true) ?? [];
+        }
+        
+        if (! is_array($usedFields)) {
+            $usedFields = [];
+        }
+
+        \Log::info('Processed used_fields:', ['used_fields' => $usedFields]);
+
+        $template = ServiceDocumentTemplateProxy::modelClass()::updateOrCreate(
+            ['service_id' => $service->id],
+            [
+                'template_content' => request()->input('template_content'),
+                'used_fields'      => $usedFields,
+                'header_image'     => request()->input('header_image'),
+                'footer_text'      => request()->input('footer_text'),
+                'is_active'        => request()->input('is_active', true),
+            ]
+        );
+
+        \Log::info('Template saved:', ['template_id' => $template->id, 'used_fields' => $template->used_fields]);
+
+        // Build available fields list
+        $currentLocale = app()->getLocale();
+        $availableFields = $this->buildAvailableFieldsForTemplate($service, $currentLocale);
+        $template->available_fields = $availableFields;
+        $template->save();
+
+        return new JsonResponse([
+            'message' => trans('Admin::app.services.services.document-template.save-success'),
+            'data'    => $template->fresh(),
+        ]);
+    }
+
+    /**
+     * Build available fields list for document template.
+     */
+    protected function buildAvailableFieldsForTemplate(Service $service, string $locale): array
+    {
+        $service->load(['attributeGroups.fields.translations', 'attributeGroups.translations']);
+
+        $fields = [];
+
+        // Add citizen basic fields
+        $fields[] = [
+            'code'  => 'citizen_first_name',
+            'label' => trans('Admin::app.services.services.document-template.fields.citizen_first_name'),
+            'group' => 'citizen',
+        ];
+        $fields[] = [
+            'code'  => 'citizen_middle_name',
+            'label' => trans('Admin::app.services.services.document-template.fields.citizen_middle_name'),
+            'group' => 'citizen',
+        ];
+        $fields[] = [
+            'code'  => 'citizen_last_name',
+            'label' => trans('Admin::app.services.services.document-template.fields.citizen_last_name'),
+            'group' => 'citizen',
+        ];
+        $fields[] = [
+            'code'  => 'citizen_national_id',
+            'label' => trans('Admin::app.services.services.document-template.fields.citizen_national_id'),
+            'group' => 'citizen',
+        ];
+        $fields[] = [
+            'code'  => 'citizen_type_name',
+            'label' => trans('Admin::app.services.services.document-template.fields.citizen_type_name'),
+            'group' => 'citizen',
+        ];
+        $fields[] = [
+            'code'  => 'request_increment_id',
+            'label' => trans('Admin::app.services.services.document-template.fields.request_increment_id'),
+            'group' => 'request',
+        ];
+        $fields[] = [
+            'code'  => 'request_date',
+            'label' => trans('Admin::app.services.services.document-template.fields.request_date'),
+            'group' => 'request',
+        ];
+        $fields[] = [
+            'code'  => 'current_date',
+            'label' => trans('Admin::app.services.services.document-template.fields.current_date'),
+            'group' => 'system',
+        ];
+
+        // Add fields from service attribute groups
+        foreach ($service->attributeGroups as $group) {
+            $groupCode = $group->pivot->custom_code ?? $group->code;
+            $groupTranslation = $group->translate($locale);
+            $groupName = $group->pivot->custom_name ?? ($groupTranslation?->name ?? $group->code);
+
+            foreach ($group->fields as $field) {
+                $fieldTranslation = $field->translate($locale);
+                $fieldLabel = $fieldTranslation?->label ?? $field->code;
+
+                $fields[] = [
+                    'code'  => $groupCode . '.' . $field->code,
+                    'label' => $groupName . ' - ' . $fieldLabel,
+                    'group' => $groupCode,
+                ];
+
+                // Also add flat field code
+                $fields[] = [
+                    'code'  => $field->code,
+                    'label' => $fieldLabel,
+                    'group' => $groupCode,
+                ];
+            }
+        }
+
+        return $fields;
     }
 }

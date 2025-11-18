@@ -2,20 +2,5 @@
 
 namespace Najaz\Service\Contracts;
 
-interface Service {}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+interface ServiceDocumentTemplate {}
 
