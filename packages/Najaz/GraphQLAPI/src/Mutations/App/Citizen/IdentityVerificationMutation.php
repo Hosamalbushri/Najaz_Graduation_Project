@@ -33,6 +33,12 @@ class IdentityVerificationMutation
             'documents'  => $documents ?: null,
         ];
 
+        // Handle face video upload
+        if (isset($args['face_video']) && $args['face_video'] instanceof UploadedFile) {
+            $video = $args['face_video'];
+            $payload['face_video'] = $video->store("citizens/{$citizen->id}/identity-verifications/videos", 'public');
+        }
+
         $verification = $this->identityVerificationRepository
             ->create($payload)
             ->fresh(['citizen']);
@@ -50,6 +56,7 @@ class IdentityVerificationMutation
             'notes'       => ['nullable', 'string'],
             'documents'   => ['nullable', 'array'],
             'documents.*' => ['file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
+            'face_video'  => ['nullable', 'file', 'mimes:mp4,mov,avi,webm', 'max:10240'], // 10MB max for video
         ])->validated();
     }
 

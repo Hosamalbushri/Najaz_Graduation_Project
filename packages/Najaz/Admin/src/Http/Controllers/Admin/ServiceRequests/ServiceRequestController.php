@@ -5,19 +5,26 @@ namespace Najaz\Admin\Http\Controllers\Admin\ServiceRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
 use Najaz\Admin\Http\Controllers\Controller;
+use Najaz\Citizen\Repositories\CitizenRepository;
 use Najaz\Request\Models\ServiceRequestProxy;
+use Najaz\Request\Repositories\ServiceRequestAdminNoteRepository;
 use Najaz\Request\Repositories\ServiceRequestRepository;
 use Najaz\Service\Services\DocumentTemplateService;
+use Webkul\Core\Traits\PDFHandler;
 
 class ServiceRequestController extends Controller
 {
+    use PDFHandler;
+
     /**
      * Create a new controller instance.
      *
      * @return void
      */
     public function __construct(
-        protected ServiceRequestRepository $serviceRequestRepository
+        protected ServiceRequestRepository $serviceRequestRepository,
+        protected CitizenRepository $citizenRepository,
+        protected ServiceRequestAdminNoteRepository $adminNoteRepository
     ) {}
 
     /**
@@ -39,116 +46,171 @@ class ServiceRequestController extends Controller
     {
         $request = $this->serviceRequestRepository->with([
             'service.documentTemplate',
+            'service.attributeGroups.fields',
             'citizen',
-            'assignedAdmin',
             'beneficiaries',
-            'formData'
+            'formData',
+            'adminNotes.admin',
         ])->findOrFail($id);
 
-        return view('admin::service-requests.view', compact('request'));
+        // Generate document content if template exists and is active
+        $documentContent = null;
+        $template = $request->service->documentTemplate;
+
+        if ($template && $template->is_active) {
+            try {
+                $documentService = new DocumentTemplateService;
+                $fieldValues = $documentService->getFieldValues($request);
+                $documentContent = $documentService->replacePlaceholders($template->template_content, $fieldValues);
+            } catch (\Exception $e) {
+                \Log::error('Error generating document content in view: '.$e->getMessage());
+            }
+        }
+
+        // Build field labels map for translations
+        $fieldLabelsMap = [];
+        $locale = app()->getLocale();
+
+        if ($request->service && $request->service->attributeGroups) {
+            foreach ($request->service->attributeGroups as $group) {
+                $groupCode = $group->pivot->custom_code ?? $group->code;
+
+                foreach ($group->fields as $field) {
+                    $fieldTranslation = $field->translate($locale);
+                    $fieldLabel = $fieldTranslation?->label ?? $field->code;
+
+                    // Map both flat and nested field codes
+                    $fieldLabelsMap[$field->code] = $fieldLabel;
+                    $fieldLabelsMap[$groupCode.'.'.$field->code] = $fieldLabel;
+                }
+            }
+        }
+
+        // Build national ID to citizen ID map
+        $nationalIdToCitizenMap = [];
+        $nationalIdFieldCodes = ['national_id', 'citizen_id', 'nationalid', 'citizenid', 'id_number', 'idnumber', 'national_number', 'identity_number'];
+
+        // Collect all national IDs from form data
+        $nationalIds = [];
+        foreach ($request->formData as $formData) {
+            if ($formData->fields_data && is_array($formData->fields_data)) {
+                foreach ($formData->fields_data as $fieldCode => $fieldValue) {
+                    $fieldCodeLower = strtolower($fieldCode);
+                    if (in_array($fieldCodeLower, $nationalIdFieldCodes) && ! empty($fieldValue)) {
+                        $nationalId = preg_replace('/[^0-9]/', '', (string) $fieldValue);
+                        if (! empty($nationalId)) {
+                            $nationalIds[] = $nationalId;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Find citizens by national IDs
+        if (! empty($nationalIds)) {
+            $citizens = $this->citizenRepository->getModel()
+                ->whereIn('national_id', array_unique($nationalIds))
+                ->get();
+
+            foreach ($citizens as $citizen) {
+                $nationalIdToCitizenMap[$citizen->national_id] = $citizen->id;
+            }
+        }
+
+        // Get locale name from locale code
+        $localeName = $request->locale;
+        if ($request->locale) {
+            $locale = core()->getAllLocales()->where('code', $request->locale)->first();
+            if ($locale) {
+                $localeName = $locale->name;
+            }
+        }
+
+        return view('admin::service-requests.view', compact('request', 'documentContent', 'template', 'fieldLabelsMap', 'nationalIdToCitizenMap', 'localeName'));
     }
 
     /**
      * Update status action for the specified resource.
      */
-    public function updateStatus(int $id): JsonResponse
+    public function updateStatus(int $id)
     {
         $validatedData = $this->validate(request(), [
-            'status' => 'required|string|in:pending,in_progress,completed,rejected,cancelled',
+            'status'           => 'required|string|in:pending,in_progress,completed,rejected,canceled',
+            'rejection_reason' => 'required_if:status,rejected|nullable|string',
         ]);
 
         try {
-            $this->serviceRequestRepository->updateStatus($id, $validatedData['status']);
+            $updateData = ['status' => $validatedData['status']];
+
+            // Add rejection reason if status is rejected
+            if ($validatedData['status'] === 'rejected') {
+                $updateData['rejection_reason'] = $validatedData['rejection_reason'] ?? null;
+            } else {
+                // Clear rejection reason if status is not rejected
+                $updateData['rejection_reason'] = null;
+            }
+
+            // Set completed_at if status is completed
+            if ($validatedData['status'] === 'completed') {
+                $updateData['completed_at'] = now();
+            }
+
+            $request = $this->serviceRequestRepository->update($updateData, $id);
 
             session()->flash('success', trans('Admin::app.service-requests.view.status-update-success'));
 
-            return response()->json([
-                'message' => trans('Admin::app.service-requests.view.status-update-success'),
-            ]);
+            return redirect()->route('admin.service-requests.view', $request->id);
+
         } catch (\Exception $e) {
             session()->flash('error', $e->getMessage());
 
-            return response()->json([
-                'message' => $e->getMessage(),
-            ], 500);
+            return redirect()->back();
         }
     }
 
     /**
      * Cancel action for the specified resource.
      */
-    public function cancel(int $id): JsonResponse
+    public function cancel(int $id)
     {
         try {
-            $this->serviceRequestRepository->cancelRequest($id);
+            $request = $this->serviceRequestRepository->cancelRequest($id);
 
             session()->flash('success', trans('Admin::app.service-requests.view.cancel-success'));
 
-            return response()->json([
-                'message' => trans('Admin::app.service-requests.view.cancel-success'),
-            ]);
+            return redirect()->route('admin.service-requests.view', $request->id);
         } catch (\Exception $e) {
             session()->flash('error', $e->getMessage());
 
-            return response()->json([
-                'message' => $e->getMessage(),
-            ], 500);
+            return redirect()->back();
         }
     }
 
     /**
      * Add admin notes to the request.
      */
-    public function addNotes(int $id): JsonResponse
+    public function addNotes(int $id)
     {
         $validatedData = $this->validate(request(), [
-            'admin_notes' => 'required|string',
+            'admin_notes'      => 'required|string',
+            'citizen_notified' => 'sometimes|boolean',
         ]);
 
         try {
-            $this->serviceRequestRepository->update([
-                'admin_notes' => $validatedData['admin_notes'],
-            ], $id);
+            $this->adminNoteRepository->create([
+                'service_request_id' => $id,
+                'note'               => $validatedData['admin_notes'],
+                'citizen_notified'   => $validatedData['citizen_notified'] ?? false,
+                'admin_id'           => auth()->guard('admin')->id(),
+            ]);
 
             session()->flash('success', trans('Admin::app.service-requests.view.notes-success'));
 
-            return response()->json([
-                'message' => trans('Admin::app.service-requests.view.notes-success'),
-            ]);
+            return redirect()->route('admin.service-requests.view', $id);
         } catch (\Exception $e) {
             session()->flash('error', $e->getMessage());
 
-            return response()->json([
-                'message' => $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    /**
-     * Assign request to admin.
-     */
-    public function assign(int $id): JsonResponse
-    {
-        $validatedData = $this->validate(request(), [
-            'assigned_to' => 'required|integer|exists:admins,id',
-        ]);
-
-        try {
-            $this->serviceRequestRepository->update([
-                'assigned_to' => $validatedData['assigned_to'],
-            ], $id);
-
-            session()->flash('success', trans('Admin::app.service-requests.view.assign-success'));
-
-            return response()->json([
-                'message' => trans('Admin::app.service-requests.view.assign-success'),
-            ]);
-        } catch (\Exception $e) {
-            session()->flash('error', $e->getMessage());
-
-            return response()->json([
-                'message' => $e->getMessage(),
-            ], 500);
+            return redirect()->back();
         }
     }
 
@@ -178,17 +240,35 @@ class ServiceRequestController extends Controller
     }
 
     /**
-     * Download document PDF for service request.
+     * Print and download the document for the specified resource.
+     *
+     * @return \Illuminate\Http\Response
      */
-    public function downloadDocument(int $id)
+    public function printDocument(int $id)
     {
         try {
             $serviceRequest = ServiceRequestProxy::modelClass()::with(['service.documentTemplate'])
                 ->findOrFail($id);
 
-            $documentService = new DocumentTemplateService();
+            $template = $serviceRequest->service->documentTemplate;
 
-            return $documentService->generateAndDownloadPDF($serviceRequest);
+            if (! $template || ! $template->is_active) {
+                session()->flash('error', trans('Admin::app.service-requests.view.template-not-found'));
+
+                return redirect()->back();
+            }
+
+            // Generate document content using DocumentTemplateService
+            $documentService = new DocumentTemplateService;
+
+            // Get field values and replace placeholders
+            $fieldValues = $documentService->getFieldValues($serviceRequest);
+            $content = $documentService->replacePlaceholders($template->template_content, $fieldValues);
+
+            return $this->downloadPDF(
+                view('admin::service-requests.pdf', compact('serviceRequest', 'template', 'content'))->render(),
+                'document-'.$serviceRequest->increment_id.'-'.$serviceRequest->created_at->format('d-m-Y')
+            );
         } catch (\Exception $e) {
             session()->flash('error', $e->getMessage());
 

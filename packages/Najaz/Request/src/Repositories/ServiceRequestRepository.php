@@ -83,8 +83,6 @@ class ServiceRequestRepository extends Repository
                 'citizen_national_id' => $citizen->national_id,
                 'citizen_type_name'  => $citizenTypeName,
                 'locale'             => app()->getLocale(), // اللغة الافتراضية
-                'notes'              => $data['notes'] ?? null,
-                'submitted_at'       => now(),
             ]);
 
             // Save form data in separate table
@@ -127,7 +125,7 @@ class ServiceRequestRepository extends Repository
             DB::commit();
         }
 
-        return $request->fresh(['service', 'assignedAdmin', 'beneficiaries', 'formData']);
+        return $request->fresh(['service', 'beneficiaries', 'formData']);
     }
 
     /**
@@ -180,7 +178,7 @@ class ServiceRequestRepository extends Repository
             DB::commit();
         }
 
-        return $request->fresh(['service', 'assignedAdmin', 'beneficiaries', 'formData']);
+        return $request->fresh(['service', 'beneficiaries', 'formData']);
     }
 
     /**
@@ -199,7 +197,7 @@ class ServiceRequestRepository extends Repository
             Event::dispatch('service.request.cancel.before', $request);
 
             $request = $this->update([
-                'status' => 'cancelled',
+                'status' => 'canceled',
             ], $id);
 
             Event::dispatch('service.request.cancel.after', $request);
@@ -224,7 +222,7 @@ class ServiceRequestRepository extends Repository
             DB::commit();
         }
 
-        return $request->fresh(['service', 'assignedAdmin', 'beneficiaries', 'formData']);
+        return $request->fresh(['service', 'beneficiaries', 'formData']);
     }
 
     /**
@@ -284,8 +282,8 @@ class ServiceRequestRepository extends Repository
      */
     protected function saveFormData($request, $service, array $formData): void
     {
-        // Load attribute groups with pivot data
-        $service->load('attributeGroups.fields');
+        // Load attribute groups with pivot data and options
+        $service->load('attributeGroups.fields.attributeType.options');
 
         $sortOrder = 0;
 
@@ -316,14 +314,15 @@ class ServiceRequestRepository extends Repository
                 $groupFieldsData = [];
                 
                 if (isset($formData[$groupCode]) && is_array($formData[$groupCode]) && !empty($formData[$groupCode])) {
-                    // Nested structure - use it directly
-                    $groupFieldsData = $formData[$groupCode];
+                    // Nested structure - convert option IDs to labels
+                    $groupFieldsData = $this->convertOptionIdsToLabels($formData[$groupCode], $group->fields);
                 } else {
-                    // Flat structure - extract fields that belong to this group
+                    // Flat structure - extract fields that belong to this group and convert option IDs to labels
                     foreach ($group->fields as $field) {
                         $fieldCode = $field->code;
                         if (isset($formData[$fieldCode])) {
-                            $groupFieldsData[$fieldCode] = $formData[$fieldCode];
+                            $value = $formData[$fieldCode];
+                            $groupFieldsData[$fieldCode] = $this->convertFieldOptionIdToLabel($field, $value);
                         }
                     }
                 }
@@ -478,8 +477,8 @@ class ServiceRequestRepository extends Repository
      */
     protected function validateFormData($service, array $formData): void
     {
-        // Load all fields from all attribute groups
-        $service->load('attributeGroups.fields');
+        // Load all fields from all attribute groups with attribute types and options
+        $service->load('attributeGroups.fields.attributeType.options');
 
         $missingFields = [];
         $invalidFields = [];
@@ -505,6 +504,30 @@ class ServiceRequestRepository extends Repository
                             'group'     => $groupName,
                             'groupCode' => $groupCode,
                         ];
+                    }
+                }
+
+                // Validate select/multiselect/checkbox option IDs
+                if ($value !== null && $field->attributeType) {
+                    $attributeType = $field->attributeType;
+                    
+                    if (in_array($attributeType->type, ['select', 'multiselect', 'checkbox'])) {
+                        $validationResult = $this->validateSelectOptionIds(
+                            $value,
+                            $attributeType,
+                            $fieldCode,
+                            $fieldLabel
+                        );
+
+                        if ($validationResult !== true) {
+                            $invalidFields[] = [
+                                'code'    => $fieldCode,
+                                'label'   => $fieldLabel,
+                                'group'   => $groupName,
+                                'message' => $validationResult,
+                            ];
+                            continue; // Skip other validations if option ID is invalid
+                        }
                     }
                 }
 
@@ -558,6 +581,64 @@ class ServiceRequestRepository extends Repository
         if (! empty($errors)) {
             throw new CustomException(implode(' | ', $errors));
         }
+    }
+
+    /**
+     * Validate select/multiselect/checkbox option IDs.
+     *
+     * @param  mixed  $value
+     * @param  mixed  $attributeType
+     * @param  string  $fieldCode
+     * @param  string  $fieldLabel
+     * @return bool|string
+     */
+    protected function validateSelectOptionIds($value, $attributeType, string $fieldCode, string $fieldLabel)
+    {
+        // Load options if not loaded
+        if (! $attributeType->relationLoaded('options')) {
+            $attributeType->load('options');
+        }
+
+        // Get valid option IDs
+        $validOptionIds = $attributeType->options->pluck('id')->map(function ($id) {
+            return (string) $id;
+        })->toArray();
+
+        if (empty($validOptionIds)) {
+            // If no options exist, skip validation
+            return true;
+        }
+
+        // Validate based on field type
+        if (in_array($attributeType->type, ['multiselect', 'checkbox'])) {
+            // Multiselect/Checkbox: value should be an array
+            if (! is_array($value)) {
+                // If single value, convert to array
+                $value = [$value];
+            }
+
+            // Check each value in the array
+            $invalidValues = [];
+            foreach ($value as $val) {
+                $valStr = (string) $val;
+                if (! in_array($valStr, $validOptionIds)) {
+                    $invalidValues[] = $valStr;
+                }
+            }
+
+            if (! empty($invalidValues)) {
+                $invalidList = implode(', ', $invalidValues);
+                return "القيم التالية غير صحيحة في حقل {$fieldLabel}: {$invalidList}";
+            }
+        } else {
+            // Select: value should be a single ID
+            $valueStr = (string) $value;
+            if (! in_array($valueStr, $validOptionIds)) {
+                return "القيمة '{$valueStr}' غير صحيحة في حقل {$fieldLabel}";
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -733,5 +814,84 @@ class ServiceRequestRepository extends Repository
         }
 
         return null;
+    }
+
+    /**
+     * Convert option IDs to labels for fields in a group.
+     *
+     * @param  array  $groupData
+     * @param  \Illuminate\Support\Collection  $fields
+     * @return array
+     */
+    protected function convertOptionIdsToLabels(array $groupData, $fields): array
+    {
+        $convertedData = [];
+
+        foreach ($groupData as $fieldCode => $value) {
+            $field = $fields->firstWhere('code', $fieldCode);
+            
+            if ($field) {
+                $convertedData[$fieldCode] = $this->convertFieldOptionIdToLabel($field, $value);
+            } else {
+                // If field not found, keep original value
+                $convertedData[$fieldCode] = $value;
+            }
+        }
+
+        return $convertedData;
+    }
+
+    /**
+     * Convert option ID to label for a specific field.
+     *
+     * @param  mixed  $field
+     * @param  mixed  $value
+     * @return mixed
+     */
+    protected function convertFieldOptionIdToLabel($field, $value)
+    {
+        // Only convert if field has attributeType with options
+        if (! $field->attributeType || ! in_array($field->attributeType->type, ['select', 'multiselect', 'checkbox'])) {
+            return $value;
+        }
+
+        $attributeType = $field->attributeType;
+
+        // Load options if not loaded
+        if (! $attributeType->relationLoaded('options')) {
+            $attributeType->load('options');
+        }
+
+        if ($attributeType->options->isEmpty()) {
+            return $value;
+        }
+
+        $locale = app()->getLocale();
+
+        // Create map of option ID to label
+        $optionMap = [];
+        foreach ($attributeType->options as $option) {
+            $optionTranslation = $option->translate($locale);
+            $optionMap[(string) $option->id] = $optionTranslation?->label ?? $option->admin_name ?? '';
+        }
+
+        // Convert based on field type
+        if (in_array($attributeType->type, ['multiselect', 'checkbox'])) {
+            // Array of values
+            if (is_array($value)) {
+                return array_map(function ($val) use ($optionMap) {
+                    $valStr = (string) $val;
+                    return $optionMap[$valStr] ?? $val;
+                }, $value);
+            } else {
+                // Single value as string/number
+                $valStr = (string) $value;
+                return $optionMap[$valStr] ?? $value;
+            }
+        } else {
+            // Select: single value
+            $valStr = (string) $value;
+            return $optionMap[$valStr] ?? $value;
+        }
     }
 }

@@ -32,5 +32,6 @@ Citizen ID is inferred from the authenticated user.
 input CitizenIdentityVerificationInput {
     notes: String
     documents: [Upload!]
+    face_video: Upload
 }
 

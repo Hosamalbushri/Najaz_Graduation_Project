@@ -20,7 +20,8 @@ return [
         ],
 
         'identity_verification' => [
-            'submitted' => 'Identity verification request submitted successfully.',
+            'submitted'   => 'Identity verification request submitted successfully.',
+            'update_error' => 'Error updating identity verification: :message',
         ],
 
         'service_request' => [

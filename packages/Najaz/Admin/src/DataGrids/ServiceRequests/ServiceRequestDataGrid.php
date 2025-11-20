@@ -17,7 +17,6 @@ class ServiceRequestDataGrid extends DataGrid
     {
         $queryBuilder = DB::table('service_requests')
             ->leftJoin('services', 'service_requests.service_id', '=', 'services.id')
-            ->leftJoin('admins', 'service_requests.assigned_to', '=', 'admins.id')
             ->select(
                 'service_requests.id',
                 'service_requests.increment_id',
@@ -29,10 +28,8 @@ class ServiceRequestDataGrid extends DataGrid
                 'service_requests.citizen_type_name',
                 'service_requests.locale',
                 'service_requests.created_at',
-                'service_requests.submitted_at',
                 'service_requests.completed_at',
-                'services.name as service_name',
-                DB::raw('CONCAT('.DB::getTablePrefix().'admins.name, " ", '.DB::getTablePrefix().'admins.name) as assigned_admin_name')
+                'services.name as service_name'
             );
 
         $this->addFilter('status', 'service_requests.status');
@@ -94,16 +91,16 @@ class ServiceRequestDataGrid extends DataGrid
                         return '<p class="label-pending">'.trans('Admin::app.service-requests.index.datagrid.pending').'</p>';
 
                     case 'in_progress':
-                        return '<p class="label-processing">'.trans('Admin::app.service-requests.index.datagrid.in-progress').'</p>';
+                        return '<p class="label-in_progress">'.trans('Admin::app.service-requests.index.datagrid.in-progress').'</p>';
 
                     case 'completed':
                         return '<p class="label-active">'.trans('Admin::app.service-requests.index.datagrid.completed').'</p>';
 
                     case 'rejected':
-                        return '<p class="label-canceled">'.trans('Admin::app.service-requests.index.datagrid.rejected').'</p>';
+                        return '<p class="label-rejected">'.trans('Admin::app.service-requests.index.datagrid.rejected').'</p>';
 
-                    case 'cancelled':
-                        return '<p class="label-canceled">'.trans('Admin::app.service-requests.index.datagrid.cancelled').'</p>';
+                    case 'canceled':
+                        return '<p class="label-canceled">'.trans('Admin::app.service-requests.index.datagrid.canceled').'</p>';
 
                     default:
                         return '<p class="label-pending">'.$row->status.'</p>';

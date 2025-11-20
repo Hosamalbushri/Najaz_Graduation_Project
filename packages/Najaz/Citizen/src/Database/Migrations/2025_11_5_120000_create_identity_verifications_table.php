@@ -16,6 +16,7 @@ return new class extends Migration
             $table->integer('citizen_id')->unsigned();
             $table->enum('status', ['pending', 'approved', 'rejected', 'needs_more_info'])->default('pending');
             $table->json('documents')->nullable();
+            $table->string('face_video')->nullable();
             $table->text('notes')->nullable();
             $table->integer('reviewed_by')->unsigned()->nullable();
             $table->timestamp('reviewed_at')->nullable();

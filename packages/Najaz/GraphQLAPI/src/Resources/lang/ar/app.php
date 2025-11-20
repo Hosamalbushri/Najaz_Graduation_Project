@@ -20,7 +20,8 @@ return [
         ],
 
         'identity_verification' => [
-            'submitted' => 'تم إرسال طلب توثيق الهوية بنجاح.',
+            'submitted'   => 'تم إرسال طلب توثيق الهوية بنجاح.',
+            'update_error' => 'خطأ في تحديث توثيق الهوية: :message',
         ],
 
         'service_request' => [

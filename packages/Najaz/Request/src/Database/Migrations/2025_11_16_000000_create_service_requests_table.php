@@ -22,16 +22,11 @@ return new class extends Migration
             $table->string('citizen_type_name')->nullable();
             $table->string('status')->default('pending');
             $table->string('locale')->nullable(); // اللغة الافتراضية
-            $table->text('notes')->nullable();
-            $table->text('admin_notes')->nullable(); // ملاحظات من الأدمن
-            $table->unsignedInteger('assigned_to')->nullable(); // موظف معين للطلب
-            $table->timestamp('submitted_at')->nullable();
             $table->timestamp('completed_at')->nullable();
             $table->timestamps();
 
             $table->foreign('service_id')->references('id')->on('services')->onDelete('set null');
             $table->foreign('citizen_id')->references('id')->on('citizens')->onDelete('set null');
-            $table->foreign('assigned_to')->references('id')->on('admins')->onDelete('set null');
 
             $table->index(['service_id', 'citizen_id']);
             $table->index('status');

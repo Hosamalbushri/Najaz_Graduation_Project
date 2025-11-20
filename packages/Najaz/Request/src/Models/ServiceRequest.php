@@ -33,16 +33,13 @@ class ServiceRequest extends Model implements ServiceRequestContract
         'service_id',
         'citizen_id',
         'status',
+        'rejection_reason',
         'citizen_first_name',
         'citizen_middle_name',
         'citizen_last_name',
         'citizen_national_id',
         'citizen_type_name',
         'locale',
-        'notes',
-        'admin_notes',
-        'assigned_to',
-        'submitted_at',
         'completed_at',
     ];
 
@@ -52,7 +49,6 @@ class ServiceRequest extends Model implements ServiceRequestContract
      * @var array
      */
     protected $casts = [
-        'submitted_at' => 'datetime',
         'completed_at' => 'datetime',
     ];
 
@@ -73,15 +69,7 @@ class ServiceRequest extends Model implements ServiceRequestContract
     }
 
     /**
-     * Get the admin assigned to this request.
-     */
-    public function assignedAdmin(): BelongsTo
-    {
-        return $this->belongsTo(Admin::class, 'assigned_to');
-    }
-
-    /**
-     * Get the beneficiaries (parties) of this service request.
+     * Get the related parties of this service request.
      */
     public function beneficiaries(): BelongsToMany
     {
@@ -100,6 +88,14 @@ class ServiceRequest extends Model implements ServiceRequestContract
     public function formData(): HasMany
     {
         return $this->hasMany(ServiceRequestFormData::class, 'service_request_id');
+    }
+
+    /**
+     * Get the admin notes for this service request.
+     */
+    public function adminNotes(): HasMany
+    {
+        return $this->hasMany(ServiceRequestAdminNote::class, 'service_request_id');
     }
 }
 

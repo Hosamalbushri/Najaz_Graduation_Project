@@ -68,76 +68,187 @@
                 </div>
 
                 <!-- Content -->
-                <div class="mt-3.5 flex gap-2.5 max-xl:flex-wrap">
-                    <!-- Left Component -->
-                    <div class="flex flex-1 flex-col gap-2 max-xl:flex-auto">
-                        <!-- Documents Section -->
-                        <div class="box-shadow rounded bg-white p-4 dark:bg-gray-900">
-                            <p class="text-lg font-bold text-gray-800 dark:text-white mb-4">
-                                @lang('Admin::app.citizens.identity-verifications.show.documents')
+                <div class="mt-3.5">
+                    <!-- Comparison Section - Professional Design -->
+                    <!-- Comparison Section - Video in one column, ID images in another -->
+                    <x-admin::accordion>
+                        <x-slot:header>
+                            <p class="w-full p-2.5 text-base font-semibold text-gray-800 dark:text-white">
+                                @lang('Admin::app.citizens.identity-verifications.show.comparison-view')
                             </p>
+                        </x-slot:header>
 
-                            <template
-                                v-if="! verification || !verification.documents || verification.documents.length === 0">
-                                <div class="flex items-center gap-5 py-2.5">
-                                    <img
-                                        src="{{ bagisto_asset('images/settings/address.svg') }}"
-                                        class="h-20 w-20 dark:mix-blend-exclusion dark:invert"
-                                    />
+                        <x-slot:content>
+                            <div class="grid grid-cols-2 gap-4 items-start">                                <!-- Face Video Column -->
+                                <div class="flex flex-col h-full">
+                                    <div class="mb-2 flex items-center gap-2">
+                                        <span class="icon-video text-xl text-gray-600 dark:text-gray-400"></span>
+                                        <p class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                            @lang('Admin::app.citizens.identity-verifications.show.face-video')
+                                        </p>
+                                    </div>
 
-                                    <div class="flex flex-col gap-1.5">
-                                        <p class="text-base font-semibold text-gray-400">
-                                            @lang('Admin::app.citizens.identity-verifications.show.no-documents')
+                                    @if(empty($faceVideoArray))
+                                        <div class="flex h-[280px] items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
+                                            <div class="flex flex-col items-center gap-3 text-center">
+                                                <span class="icon-video text-4xl text-gray-400"></span>
+                                                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                                    @lang('Admin::app.citizens.identity-verifications.show.no-face-video')
+                                                </p>
+                                            </div>
+                                        </div>
+                                    @else
+                                        <div class="relative h-[280px] overflow-hidden rounded-lg border-2 border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
+                                            <video
+                                                class="h-full w-full object-contain"
+                                                controls
+                                                controlsList="nodownload"
+                                                preload="metadata"
+                                            >
+                                                <source src="{{ asset('storage/' . $verification->face_video) }}" type="video/mp4">
+                                                <source src="{{ asset('storage/' . $verification->face_video) }}" type="video/webm">
+                                                <source src="{{ asset('storage/' . $verification->face_video) }}" type="video/ogg">
+                                                <p class="text-sm text-gray-500 dark:text-gray-400 p-4">
+                                                    @lang('Admin::app.citizens.identity-verifications.show.video-not-supported')
+                                                </p>
+                                            </video>
+                                        </div>
+                                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400 truncate text-center">
+                                            {{ basename($verification->face_video ?? '') }}
+                                        </p>
+                                    @endif
+                                </div>
+
+                                <!-- ID Images Column (Front + Back stacked) -->
+                                <div class="flex flex-col gap-4">
+                                    <!-- Front ID Card Section -->
+                                    <div class="flex flex-col">
+                                        <div class="mb-2 flex items-center gap-2">
+                                            <span class="icon-image text-xl text-gray-600 dark:text-gray-400"></span>
+                                            <p class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                                @lang('Admin::app.citizens.identity-verifications.show.front-id')
+                            </p>
+                                        </div>
+
+                                        <template v-if="!verification || !verification.documents || verification.documents.length === 0">
+                                            <div class="flex min-h-[80px] items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
+                                                <div class="flex flex-col items-center gap-1.5 text-center">
+                                                    <span class="icon-image text-2xl text-gray-400"></span>
+                                                    <p class="text-xs font-medium text-gray-500 dark:text-gray-400">
+                                                        @lang('Admin::app.citizens.identity-verifications.show.no-front-id')
                                         </p>
                                     </div>
                                 </div>
                             </template>
 
                             <template v-else>
-                                <div class="grid grid-cols-2 gap-4">
                                     <div
-                                        v-for="(document, index) in verification.documents"
-                                        :key="index"
-                                        class="relative"
+                                                    v-if="isImage(verification.documents[0])"
+                                                    class="group relative overflow-hidden rounded-lg border-2 border-gray-200 bg-gray-50 transition-all hover:border-blue-400 hover:shadow-lg dark:border-gray-700 dark:bg-gray-800 dark:hover:border-blue-500 cursor-pointer"
+                                                    @click="openImageModal(getDocumentUrl(verification.documents[0]))"
                                     >
                                         <img
-                                            v-if="isImage(document)"
-                                            :src="getDocumentUrl(document)"
-                                            class="w-full h-48 object-cover rounded border border-gray-300 cursor-pointer"
-                                            @click="openImageModal(getDocumentUrl(document))"
-                                        />
-
-                                        <a
+                                                        :src="getDocumentUrl(verification.documents[0])"
+                                                        class="h-[80px] w-full object-contain transition-transform duration-300 group-hover:scale-105"
+                                                />
+                                                <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 transition-all group-hover:bg-opacity-10">
+                                                    <span class="icon-zoom-in text-xl text-white opacity-0 transition-opacity group-hover:opacity-100"></span>
+                                                </div>
+                                            </div>
+                                            <div
                                             v-else
-                                            :href="getDocumentUrl(document)"
-                                            target="_blank"
-                                            class="flex items-center justify-center h-48 border border-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-800"
-                                        >
-                                            <span class="icon-document text-4xl text-gray-400"></span>
-                                        </a>
+                                                    class="flex min-h-[80px] items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 cursor-pointer"
+                                                    @click="openImageModal(getDocumentUrl(verification.documents[0]))"
+                                            >
+                                                <div class="flex flex-col items-center gap-1.5 text-center">
+                                                    <span class="icon-document text-2xl text-gray-400"></span>
+                                                    <p class="text-xs font-medium text-gray-500 dark:text-gray-400">
+                                                        @{{ getDocumentName(verification.documents[0]) }}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400 truncate text-center">
+                                                @{{ getDocumentName(verification.documents[0]) }}
+                                            </p>
+                                        </template>
+                                    </div>
 
-                                        <p class="mt-2 text-sm text-gray-600 dark:text-gray-300 truncate">
-                                            @{{ getDocumentName(document) }}
+                                    <!-- Back ID Card Section -->
+                                    <div class="flex flex-col">
+                                        <div class="mb-2 flex items-center gap-2">
+                                            <span class="icon-image text-xl text-gray-600 dark:text-gray-400"></span>
+                                            <p class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                                @lang('Admin::app.citizens.identity-verifications.show.back-id')
+                                            </p>
+                                        </div>
+
+                                        <template v-if="!verification || !verification.documents || verification.documents.length < 2">
+                                            <div class="flex min-h-[80px] items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
+                                                <div class="flex flex-col items-center gap-1.5 text-center">
+                                                    <span class="icon-image text-2xl text-gray-400"></span>
+                                                    <p class="text-xs font-medium text-gray-500 dark:text-gray-400">
+                                                        @lang('Admin::app.citizens.identity-verifications.show.no-back-id')
                                         </p>
                                     </div>
                                 </div>
                             </template>
+
+                                        <template v-else>
+                                            <div
+                                                    v-if="isImage(verification.documents[1])"
+                                                    class="group relative overflow-hidden rounded-lg border-2 border-gray-200 bg-gray-50 transition-all hover:border-blue-400 hover:shadow-lg dark:border-gray-700 dark:bg-gray-800 dark:hover:border-blue-500 cursor-pointer"
+                                                    @click="openImageModal(getDocumentUrl(verification.documents[1]))"
+                                            >
+                                                <img
+                                                        :src="getDocumentUrl(verification.documents[1])"
+                                                        class="h-[80px] w-full object-contain transition-transform duration-300 group-hover:scale-105"
+                                                />
+                                                <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 transition-all group-hover:bg-opacity-10">
+                                                    <span class="icon-zoom-in text-xl text-white opacity-0 transition-opacity group-hover:opacity-100"></span>
+                                                </div>
+                                            </div>
+                                            <div
+                                                    v-else
+                                                    class="flex min-h-[80px] items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 cursor-pointer"
+                                                    @click="openImageModal(getDocumentUrl(verification.documents[1]))"
+                                            >
+                                                <div class="flex flex-col items-center gap-1.5 text-center">
+                                                    <span class="icon-document text-2xl text-gray-400"></span>
+                                                    <p class="text-xs font-medium text-gray-500 dark:text-gray-400">
+                                                        @{{ getDocumentName(verification.documents[1]) }}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400 truncate text-center">
+                                                @{{ getDocumentName(verification.documents[1]) }}
+                                            </p>
+                                        </template>
+                                    </div>
                         </div>
                     </div>
-
-                    <!-- Right Component -->
-                    <div class="flex w-[360px] max-w-full flex-col gap-2 max-sm:w-full">
-                        <!-- Citizen Information -->
+                        </x-slot:content>
+                    </x-admin::accordion>
+                    <!-- Citizen Information & Additional Documents -->
+                    <div class="mt-2.5">
                         <x-admin::accordion>
                             <x-slot:header>
                                 <p class="w-full p-2.5 text-base font-semibold text-gray-800 dark:text-white">
-                                    @lang('Admin::app.citizens.identity-verifications.show.citizen-info')
+                                    @lang('Admin::app.citizens.identity-verifications.show.citizen-info-and-documents')
                                 </p>
                             </x-slot:header>
 
                             <x-slot:content>
+                                <div class="grid grid-cols-2 gap-4">                                    <!-- Citizen Information Column -->
+                                    <div class="flex flex-col">
+                                        <div class="mb-3 flex items-center gap-2">
+                                            <span class="icon-user text-xl text-gray-600 dark:text-gray-400"></span>
+                                            <p class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                                @lang('Admin::app.citizens.identity-verifications.show.citizen-info')
+                                            </p>
+                                        </div>
+
                                 <template v-if="verification && verification.citizen">
-                                    <div class="grid gap-y-2.5">
+                                            <div class="grid gap-y-2.5 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
                                         <p class="break-all font-semibold text-gray-800 dark:text-white">
                                             @{{ `${verification.citizen.first_name} ${verification.citizen.middle_name
                                             || ''} ${verification.citizen.last_name}` }}
@@ -167,9 +278,90 @@
                                         </p>
                                     </div>
                                 </template>
+
+                                        <template v-else>
+                                            <div class="flex items-center gap-5 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
+                                                <span class="icon-user text-4xl text-gray-400"></span>
+                                                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                                    @lang('Admin::app.citizens.identity-verifications.show.no-citizen-info')
+                                                </p>
+                                            </div>
+                                        </template>
+                                    </div>
+
+                                    <!-- Additional Documents Column -->
+                                    <div class="flex flex-col">
+                                        <div class="mb-3 flex items-center gap-2">
+                                            <span class="icon-document text-xl text-gray-600 dark:text-gray-400"></span>
+                                            <p class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                                @lang('Admin::app.citizens.identity-verifications.show.additional-documents')
+                                            </p>
+                                        </div>
+
+                                        <template
+                                            v-if="!verification || !verification.documents || verification.documents.length <= 2">
+                                            <div class="flex min-h-[200px] items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
+                                                <div class="flex flex-col items-center gap-3 text-center">
+                                                    <span class="icon-document text-4xl text-gray-400"></span>
+                                                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                                        @lang('Admin::app.citizens.identity-verifications.show.no-additional-documents')
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </template>
+
+                                        <template v-else>
+                                            <div class="max-h-[500px] space-y-3 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800">
+                                                <div
+                                                    v-for="(document, index) in verification.documents.slice(2)"
+                                                    :key="index + 2"
+                                                    class="group relative overflow-hidden rounded-lg border border-gray-300 bg-white transition-all hover:border-blue-400 hover:shadow-md dark:border-gray-600 dark:bg-gray-700 dark:hover:border-blue-500"
+                                                >
+                                                    <div class="relative h-32 w-full overflow-hidden">
+                                                        <img
+                                                            v-if="isImage(document)"
+                                                            :src="getDocumentUrl(document)"
+                                                            class="h-full w-full object-contain cursor-pointer transition-transform duration-300 group-hover:scale-105"
+                                                            @click="openImageModal(getDocumentUrl(document))"
+                                                        />
+                                                        <div
+                                                            v-else
+                                                            class="flex h-full w-full items-center justify-center bg-gray-50 dark:bg-gray-800"
+                                                        >
+                                                            <a
+                                                                :href="getDocumentUrl(document)"
+                                                                target="_blank"
+                                                                class="flex flex-col items-center gap-2 text-center"
+                                                            >
+                                                                <span class="icon-document text-4xl text-gray-400"></span>
+                                                                <span class="text-xs text-gray-500 dark:text-gray-400">
+                                                                    @{{ getDocumentName(document) }}
+                                                                </span>
+                                                            </a>
+                                                        </div>
+                                                        <div
+                                                            v-if="isImage(document)"
+                                                            class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 transition-all group-hover:bg-opacity-10"
+                                                        >
+                                                            <span class="icon-zoom-in text-2xl text-white opacity-0 transition-opacity group-hover:opacity-100"></span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="border-t border-gray-200 bg-gray-50 px-2 py-1.5 dark:border-gray-600 dark:bg-gray-800">
+                                                        <p class="truncate text-xs font-medium text-gray-700 dark:text-gray-300">
+                                                            @{{ getDocumentName(document) }}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
                             </x-slot:content>
                         </x-admin::accordion>
+                    </div>
 
+                    <!-- Verification Details & Actions -->
+                    <div class="mt-2.5 flex w-full flex-col gap-2">
                         <!-- Verification Details -->
                         <x-admin::accordion>
                             <x-slot:header>
@@ -254,11 +446,14 @@
                     </x-slot:header>
 
                     <x-slot:content>
+                        <div class="flex items-center justify-center p-4">
                         <img
                             :src="selectedImage"
-                            class="w-full h-auto"
+                                class="max-w-full max-h-[80vh] h-auto object-contain rounded-lg"
                             v-if="selectedImage"
+                                alt="Document Preview"
                         />
+                        </div>
                     </x-slot:content>
                 </x-admin::modal>
         </script>

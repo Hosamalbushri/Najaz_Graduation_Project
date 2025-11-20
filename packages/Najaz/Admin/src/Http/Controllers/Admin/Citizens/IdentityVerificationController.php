@@ -41,7 +41,17 @@ class IdentityVerificationController extends Controller
             ->with(['citizen.citizenType', 'reviewer'])
             ->findOrFail($id);
 
-        return view('admin::citizens.identity-verifications.show', compact('verification'));
+        // Format face video for x-admin::media.videos component
+        $faceVideoArray = [];
+        if ($verification->face_video) {
+            $faceVideoArray[] = [
+                'id' => 'face_video_1',
+                'url' => asset('storage/' . $verification->face_video),
+                'path' => $verification->face_video,
+            ];
+        }
+
+        return view('admin::citizens.identity-verifications.show', compact('verification', 'faceVideoArray'));
     }
 
     /**
@@ -53,6 +63,7 @@ class IdentityVerificationController extends Controller
             'citizen_id'  => 'required|exists:citizens,id',
             'documents'   => 'nullable|array',
             'documents.*' => 'file|mimes:jpg,jpeg,png,pdf|max:5120',
+            'face_video'  => 'nullable|file|mimes:mp4,mov,avi,webm|max:10240', // 10MB max for video
             'notes'       => 'nullable|string',
         ]);
 
@@ -68,6 +79,13 @@ class IdentityVerificationController extends Controller
                 $documents[] = $path;
             }
             $data['documents'] = $documents;
+        }
+
+        // Handle face video upload
+        if (request()->hasFile('face_video')) {
+            $citizenId = $data['citizen_id'];
+            $video = request()->file('face_video');
+            $data['face_video'] = $video->store("citizens/{$citizenId}/identity-verifications/videos", 'public');
         }
 
         $verification = $this->identityVerificationRepository->create($data);
@@ -88,28 +106,13 @@ class IdentityVerificationController extends Controller
             'notes'  => 'nullable|string',
         ]);
 
-        $verification = $this->identityVerificationRepository->findOrFail($id);
-
         $data = request()->only(['status', 'notes']);
 
-        // If status is being changed to approved/rejected, set reviewer info
-        if (in_array($data['status'], ['approved', 'rejected', 'needs_more_info'])) {
-            $data['reviewed_by'] = auth()->guard('admin')->id();
-            $data['reviewed_at'] = now();
-        }
-
-        // If approved, update citizen's identity_verification_status
-        if ($data['status'] == 'approved') {
-            $citizen = $verification->citizen;
-            $citizen->identity_verification_status = 1;
-            $citizen->save();
-        }
-
-        $verification = $this->identityVerificationRepository->update($data, $id);
+        $verification = $this->identityVerificationRepository->updateVerificationStatus($data, $id);
 
         return new JsonResponse([
             'message' => trans('Admin::app.citizens.identity-verifications.index.update-success'),
-            'data'    => $verification->fresh(['citizen', 'reviewer']),
+            'data'    => $verification,
         ]);
     }
 
@@ -125,6 +128,11 @@ class IdentityVerificationController extends Controller
             foreach ($verification->documents as $document) {
                 Storage::disk('public')->delete($document);
             }
+        }
+
+        // Delete face video if exists
+        if ($verification->face_video) {
+            Storage::disk('public')->delete($verification->face_video);
         }
 
         $this->identityVerificationRepository->delete($id);

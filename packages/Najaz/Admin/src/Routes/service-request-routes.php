@@ -15,11 +15,10 @@ Route::group(['middleware' => ['web', 'admin'], 'prefix' => 'admin/service-reque
 
         Route::post('add-notes/{id}', 'addNotes')->name('admin.service-requests.add-notes');
 
-        Route::post('assign/{id}', 'assign')->name('admin.service-requests.assign');
 
         Route::get('search', 'search')->name('admin.service-requests.search');
 
-        Route::get('{id}/download-document', 'downloadDocument')->name('admin.service-requests.download-document');
+        Route::get('print/{id}', 'printDocument')->name('admin.service-requests.print');
     });
 });
 

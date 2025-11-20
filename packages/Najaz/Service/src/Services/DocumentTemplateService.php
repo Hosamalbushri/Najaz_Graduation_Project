@@ -67,7 +67,7 @@ class DocumentTemplateService
      * @param  ServiceRequest  $serviceRequest
      * @return array
      */
-    protected function getFieldValues(ServiceRequest $serviceRequest): array
+    public function getFieldValues(ServiceRequest $serviceRequest): array
     {
         $values = [];
 
@@ -150,12 +150,13 @@ class DocumentTemplateService
 
     /**
      * Replace placeholders in template content.
+     * Supports both old format {{field_code}} and new format <code data-field="field_code">
      *
      * @param  string  $content
      * @param  array  $fieldValues
      * @return string
      */
-    protected function replacePlaceholders(string $content, array $fieldValues): string
+    public function replacePlaceholders(string $content, array $fieldValues): string
     {
         \Log::info('DocumentTemplateService - Replace Placeholders Start:', [
             'content_length' => strlen($content),
@@ -163,10 +164,14 @@ class DocumentTemplateService
             'field_values_keys' => array_keys($fieldValues),
         ]);
 
-        // Find all placeholders in the content first
+        // First, replace <code data-field="field_code"> tags with field values
+        // This handles the new HTML format with code tags
+        $content = $this->replaceCodeTags($content, $fieldValues);
+
+        // Then, handle legacy {{field_code}} format for backward compatibility
         preg_match_all('/\{\{([^}]+)\}\}/', $content, $matches);
         
-        \Log::info('DocumentTemplateService - Found Placeholders:', [
+        \Log::info('DocumentTemplateService - Found Legacy Placeholders:', [
             'matches' => $matches[1] ?? [],
         ]);
 
@@ -178,16 +183,15 @@ class DocumentTemplateService
                 // Check if we have this field in our values
                 if (isset($fieldValues[$fieldCode])) {
                     $stringValue = is_null($fieldValues[$fieldCode]) ? '' : (string) $fieldValues[$fieldCode];
-                    // Use str_replace (not str_ireplace) for exact match
                     $content = str_replace($placeholder, $stringValue, $content);
-                    \Log::info('DocumentTemplateService - Replaced:', [
+                    \Log::info('DocumentTemplateService - Replaced Legacy Placeholder:', [
                         'placeholder' => $placeholder,
                         'value' => $stringValue,
                     ]);
                 } else {
                     // If field not found, replace with empty string
                     $content = str_replace($placeholder, '', $content);
-                    \Log::warning('DocumentTemplateService - Placeholder not found:', [
+                    \Log::warning('DocumentTemplateService - Legacy Placeholder not found:', [
                         'placeholder' => $placeholder,
                         'field_code' => $fieldCode,
                     ]);
@@ -212,6 +216,64 @@ class DocumentTemplateService
         ]);
 
         return $content;
+    }
+
+    /**
+     * Replace <code data-field="field_code"> tags with field values.
+     *
+     * @param  string  $content
+     * @param  array  $fieldValues
+     * @return string
+     */
+    protected function replaceCodeTags(string $content, array $fieldValues): string
+    {
+        // Use regex to find and replace <code data-field="field_code"> tags
+        // This is more reliable than DOMDocument for partial HTML fragments
+        
+        // Pattern to match <code data-field="field_code">content</code>
+        // Handles various formats: <code data-field="...">, <code class="..." data-field="...">, etc.
+        $pattern = '/<code[^>]*\s+data-field=["\']([^"\']+)["\'][^>]*>(.*?)<\/code>/is';
+        
+        $result = preg_replace_callback($pattern, function ($matches) use ($fieldValues) {
+            $fieldCode = trim($matches[1]);
+            $originalContent = $matches[0]; // Full match including the tag
+            
+            // Get the field value
+            $fieldValue = '';
+            if (isset($fieldValues[$fieldCode])) {
+                $fieldValue = is_null($fieldValues[$fieldCode]) ? '' : (string) $fieldValues[$fieldCode];
+            }
+            
+            // Escape HTML in field value to prevent XSS, but preserve line breaks
+            $fieldValue = htmlspecialchars($fieldValue, ENT_QUOTES, 'UTF-8');
+            
+            \Log::info('DocumentTemplateService - Replaced Code Tag:', [
+                'field_code' => $fieldCode,
+                'value' => $fieldValue,
+                'original_tag' => $originalContent,
+            ]);
+            
+            return $fieldValue;
+        }, $content);
+        
+        // Also handle self-closing tags (though unlikely in our case)
+        $patternSelfClosing = '/<code[^>]*\s+data-field=["\']([^"\']+)["\'][^>]*\s*\/>/is';
+        $result = preg_replace_callback($patternSelfClosing, function ($matches) use ($fieldValues) {
+            $fieldCode = trim($matches[1]);
+            
+            // Get the field value
+            $fieldValue = '';
+            if (isset($fieldValues[$fieldCode])) {
+                $fieldValue = is_null($fieldValues[$fieldCode]) ? '' : (string) $fieldValues[$fieldCode];
+            }
+            
+            // Escape HTML in field value
+            $fieldValue = htmlspecialchars($fieldValue, ENT_QUOTES, 'UTF-8');
+            
+            return $fieldValue;
+        }, $result);
+        
+        return $result;
     }
 
     /**
@@ -262,6 +324,41 @@ class DocumentTemplateService
             text-align: center;
             font-size: 12px;
             color: #666;
+        }
+        /* Field placeholder styling - for display before replacement */
+        code.field-placeholder {
+            display: inline-block;
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border: 2px solid #86efac;
+            border-radius: 6px;
+            padding: 4px 10px;
+            margin: 0 2px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            font-weight: 600;
+            color: #166534;
+            box-shadow: 0 2px 4px rgba(34, 197, 94, 0.1);
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            pointer-events: none;
+            contenteditable: false;
+            position: relative;
+        }
+        code.field-placeholder::before {
+            content: '[';
+            color: #16a34a;
+            font-weight: bold;
+        }
+        code.field-placeholder::after {
+            content: ']';
+            color: #16a34a;
+            font-weight: bold;
+        }
+        code.field-placeholder:hover {
+            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+            border-color: #4ade80;
         }
     </style>
 </head>

@@ -128,7 +128,7 @@ class CategoryRepository extends Repository
     }
 
     /**
-     * Specify category tree.
+     * Specify category tree.[
      *
      * @return \Webkul\Category\Contracts\Category
      */

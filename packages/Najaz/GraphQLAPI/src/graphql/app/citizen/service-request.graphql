@@ -73,15 +73,11 @@ type ServiceRequest {
     status: String!
     formData: JSON @rename(attribute: "form_data")
     notes: String
-    adminNotes: String @rename(attribute: "admin_notes")
-    assignedTo: Int @rename(attribute: "assigned_to")
-    submittedAt: DateTime @rename(attribute: "submitted_at")
     completedAt: DateTime @rename(attribute: "completed_at")
     createdAt: DateTime @rename(attribute: "created_at")
     updatedAt: DateTime @rename(attribute: "updated_at")
     service: Service @belongsTo
     citizen: Citizen @belongsTo
-    assignedAdmin: AdminUser @belongsTo
     beneficiaries: [Citizen!]! @belongsToMany
 }
 

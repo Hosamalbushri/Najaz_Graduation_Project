@@ -27,6 +27,7 @@ class IdentityVerification extends Model implements IdentityVerificationContract
         'citizen_id',
         'status',
         'documents',
+        'face_video',
         'notes',
         'reviewed_by',
         'reviewed_at',
@@ -57,6 +58,9 @@ class IdentityVerification extends Model implements IdentityVerificationContract
         return $this->belongsTo(\Webkul\User\Models\Admin::class, 'reviewed_by');
     }
 }
+
+
+
 
 
 

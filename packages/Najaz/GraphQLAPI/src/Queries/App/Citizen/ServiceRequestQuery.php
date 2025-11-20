@@ -23,7 +23,7 @@ class ServiceRequestQuery
                         $subQ->where('citizens.id', $citizen->id);
                     });
             })
-            ->with(['service', 'assignedAdmin', 'beneficiaries']);
+            ->with(['service', 'beneficiaries']);
 
         if (isset($args['service_id'])) {
             $query->where('service_id', $args['service_id']);
@@ -54,7 +54,7 @@ class ServiceRequestQuery
                         $subQ->where('citizens.id', $citizen->id);
                     });
             })
-            ->with(['service', 'assignedAdmin', 'beneficiaries'])
+            ->with(['service', 'beneficiaries'])
             ->first();
 
         if (! $request) {

@@ -468,6 +468,8 @@
     .label-fraud,
     .label-pending_payment,
     .label-completed,
+    .label-in_progress,
+    .label-rejected,
     .label-active {
         @apply text-[12px] text-white font-semibold py-px px-1.5 max-w-max rounded-[35px];
     }
@@ -486,7 +488,8 @@
         background-color: var(--status-success);
     }
 
-    .label-closed {
+    .label-closed ,
+    .label-rejected {
         background-color: var(--status-closed);
     }
 
@@ -495,7 +498,8 @@
         background-color: var(--status-danger);
     }
 
-    .label-info {
+    .label-info ,
+    .label-in_progress{
         background-color: var(--status-info);
     }
 

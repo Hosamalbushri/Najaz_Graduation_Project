@@ -34,6 +34,7 @@ input IdentityVerificationInput {
     citizenId: Int! @rename(attribute: "citizen_id")
     notes: String
     documents: [Upload!]
+    face_video: Upload
 }
 
 input UpdateIdentityVerificationInput {
@@ -60,6 +61,7 @@ type IdentityVerification {
     status: String!
     notes: String
     documents: [String]
+    face_video: String
     reviewedBy: Int @rename(attribute: "reviewed_by")
     reviewedAt: DateTime @rename(attribute: "reviewed_at")
     createdAt: DateTime @rename(attribute: "created_at")
