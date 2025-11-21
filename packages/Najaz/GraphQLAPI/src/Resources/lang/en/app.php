@@ -20,8 +20,21 @@ return [
         ],
 
         'identity_verification' => [
-            'submitted'   => 'Identity verification request submitted successfully.',
+            'submitted'    => 'Identity verification request submitted successfully.',
             'update_error' => 'Error updating identity verification: :message',
+            'already_exists' => 'You already have an identity verification request. Each citizen can have only one verification request.',
+            'updated' => 'Identity verification documents updated successfully.',
+            'deleted' => 'Identity verification request deleted successfully.',
+            'unauthorized' => 'You are not authorized to perform this action.',
+            'update_not_allowed' => 'Identity verification can only be updated when status is pending or rejected.',
+            'delete_not_allowed' => 'Identity verification can only be deleted when status is pending.',
+            'no_files_to_update' => 'Please provide at least one file (documents or face video) to update.',
+        ],
+
+        'profile' => [
+            'updated' => 'Profile updated successfully.',
+            'identity_locked' => 'Your identity is verified. You cannot update identity-related fields (name, national ID, date of birth, gender).',
+            'invalid_current_password' => 'Current password is incorrect.',
         ],
 
         'service_request' => [

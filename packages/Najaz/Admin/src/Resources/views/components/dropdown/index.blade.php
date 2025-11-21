@@ -148,7 +148,11 @@
                 },
 
                 handleFocusOut(e) {
-                    if (! this.$el.contains(e.target) || (this.closeOnClick && this.$el.children[1].contains(e.target))) {
+                    if (!this.$el || !e || !e.target) {
+                        return;
+                    }
+                    
+                    if (!this.$el.contains(e.target) || (this.closeOnClick && this.$el.children && this.$el.children[1] && this.$el.children[1].contains(e.target))) {
                         this.isActive = false;
                     }
                 },

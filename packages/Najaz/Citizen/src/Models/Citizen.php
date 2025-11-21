@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Najaz\Citizen\Contracts\Citizen as CitizenContract;
 
 class Citizen extends Model implements CitizenContract
@@ -77,11 +78,12 @@ class Citizen extends Model implements CitizenContract
     }
 
     /**
-     * Get the identity verifications for the citizen.
+     * Get the identity verification for the citizen.
+     * Each citizen can have only one identity verification.
      */
-    public function identityVerifications(): HasMany
+    public function identityVerification(): HasOne
     {
-        return $this->hasMany(IdentityVerificationProxy::modelClass(), 'citizen_id');
+        return $this->hasOne(IdentityVerificationProxy::modelClass(), 'citizen_id');
     }
 
     /**

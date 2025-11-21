@@ -86,4 +86,24 @@ return [
             ],
         ],
     ],
+    [
+        'key'   => 'serviceNotifications',
+        'name'  => 'Service Notifications',
+        'route' => 'admin.service-notifications.index',
+        'sort'  => 6,
+        'children' => [
+            [
+                'key'   => 'serviceNotifications.view',
+                'name'  => 'View Service Notifications',
+                'route' => 'admin.service-notifications.index',
+                'sort'  => 1,
+            ],
+            [
+                'key'   => 'serviceNotifications.update',
+                'name'  => 'Update Service Notifications',
+                'route' => 'admin.service-notifications.mark_read',
+                'sort'  => 2,
+            ],
+        ],
+    ],
 ];

@@ -1,0 +1,34 @@
+# Citizen Profile APIs
+extend type Query @guard(with: ["citizen-api"]) {
+    """
+    Get the authenticated citizen's profile information.
+    """
+    myProfile: Citizen
+        @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ProfileQuery@profile")
+}
+
+extend type Mutation @guard(with: ["citizen-api"]) {
+    """
+    Update the authenticated citizen's profile.
+    If identity is verified, identity-related fields (name, national_id, date_of_birth, gender) cannot be updated.
+    """
+    updateMyProfile(
+        input: UpdateProfileInput! @spread
+    ): CitizenResponse
+        @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\App\\Citizen\\ProfileMutation@updateProfile")
+}
+
+input UpdateProfileInput {
+    firstName: String @rename(attribute: "first_name")
+    middleName: String @rename(attribute: "middle_name")
+    lastName: String @rename(attribute: "last_name")
+    gender: String
+    email: String
+    phone: String
+    dateOfBirth: String @rename(attribute: "date_of_birth")
+    nationalId: String @rename(attribute: "national_id")
+    currentPassword: String @rename(attribute: "current_password")
+    newPassword: String @rename(attribute: "new_password")
+    newPasswordConfirmation: String @rename(attribute: "new_password_confirmation")
+}
+

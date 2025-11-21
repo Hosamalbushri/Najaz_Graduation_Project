@@ -99,10 +99,6 @@ class IdentityVerificationDataGrid extends DataGrid
                     'label' => trans('Admin::app.citizens.identity-verifications.index.datagrid.status-rejected'),
                     'value' => 'rejected',
                 ],
-                [
-                    'label' => trans('Admin::app.citizens.identity-verifications.index.datagrid.status-needs-more-info'),
-                    'value' => 'needs_more_info',
-                ],
             ],
             'sortable'   => true,
             'closure'    => function ($row) {
@@ -113,8 +109,6 @@ class IdentityVerificationDataGrid extends DataGrid
                         return '<p class="label-active">'.trans('Admin::app.citizens.identity-verifications.index.datagrid.status-approved').'</p>';
                     case 'rejected':
                         return '<p class="label-canceled">'.trans('Admin::app.citizens.identity-verifications.index.datagrid.status-rejected').'</p>';
-                    case 'needs_more_info':
-                        return '<p class="label-canceled">'.trans('Admin::app.citizens.identity-verifications.index.datagrid.status-needs-more-info').'</p>';
                     default:
                         return $row->status;
                 }

@@ -7,7 +7,8 @@ use Najaz\Citizen\Models\IdentityVerification;
 class IdentityVerificationQuery
 {
     /**
-     * List all identity verification requests for the authenticated citizen.
+     * Get the identity verification request for the authenticated citizen.
+     * Since each citizen can have only one verification, this returns a single item or null.
      *
      * @return \Illuminate\Support\Collection
      */
@@ -15,21 +16,20 @@ class IdentityVerificationQuery
     {
         $citizen = najaz_graphql()->authorize('citizen-api');
 
-        return $citizen->identityVerifications()
-            ->orderByDesc('created_at')
-            ->get();
+        $verification = $citizen->identityVerification;
+
+        return $verification ? collect([$verification]) : collect();
     }
 
     /**
-     * Get the latest identity verification request for the authenticated citizen.
+     * Get the identity verification request for the authenticated citizen.
+     * Since each citizen can have only one verification, this is the same as list().
      */
     public function latest(): ?IdentityVerification
     {
         $citizen = najaz_graphql()->authorize('citizen-api');
 
-        return $citizen->identityVerifications()
-            ->orderByDesc('created_at')
-            ->first();
+        return $citizen->identityVerification;
     }
 }
 

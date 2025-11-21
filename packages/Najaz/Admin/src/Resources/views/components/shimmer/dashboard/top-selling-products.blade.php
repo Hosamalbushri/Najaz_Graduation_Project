@@ -8,19 +8,16 @@
     <div class="flex flex-col">
         @for ($i = 1; $i <= 3; $i++)
             <div class="flex gap-2.5 border-b p-4 last:border-b-0 dark:border-gray-800">
-                <!-- Product Image -->
+                <!-- Service Image -->
                 <div class="shimmer h-[65px] w-[65px] rounded"></div>
 
-                <!-- Product Details -->
+                <!-- Service Details -->
                 <div class="flex w-[251px] flex-col gap-1.5">
-                    <!-- Product Name -->
+                    <!-- Service Name -->
                     <div class="shimmer h-[17px] w-full"></div>
 
                     <div class="flex justify-between">
-                        <!-- Product Price -->
-                        <div class="shimmer h-[17px] w-[52px]"></div>
-
-                        <!-- Grand Total -->
+                        <!-- Requests Count -->
                         <div class="shimmer h-[17px] w-[72px]"></div>
                     </div>
                 </div>

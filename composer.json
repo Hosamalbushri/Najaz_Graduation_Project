@@ -63,7 +63,8 @@
         "najaz/citizen": "@dev",
         "najaz/service": "@dev",
         "najaz/request": "@dev",
-        "najaz/graphql-api": "@dev"
+        "najaz/graphql-api": "@dev",
+        "najaz/notification": "@dev"
     },
     "autoload": {
         "psr-4": {
@@ -106,7 +107,8 @@
             "Najaz\\Admin\\": "packages/Najaz/Admin/src",
             "Najaz\\Citizen\\": "packages/Najaz/Citizen/src",
             "Najaz\\Request\\": "packages/Najaz/Request/src",
-            "Najaz\\GraphQLAPI\\": "packages/Najaz/GraphQLAPI/src"
+            "Najaz\\GraphQLAPI\\": "packages/Najaz/GraphQLAPI/src",
+            "Najaz\\Notification\\": "packages/Najaz/Notification/src"
         }
     },
     "autoload-dev": {

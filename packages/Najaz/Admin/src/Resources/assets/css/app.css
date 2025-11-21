@@ -10,6 +10,13 @@
     font-style: normal;
     font-display: block;
 }
+@font-face {
+    font-family: "najaz";
+    src: url("../fonts/najaz.woff?jwnnow") format("woff");
+    font-weight: normal;
+    font-style: normal;
+    font-display: block;
+}
 
 @layer components {
     ::selection {
@@ -58,6 +65,48 @@
         -moz-osx-font-smoothing: grayscale;
         line-height: 1 !important;
     }
+
+    [class^="custom-icon-"],
+    [class*=" custom-icon-"] {
+        /* use !important to prevent issues with browser extensions that change fonts */
+        font-family: "najaz" !important;
+        speak: never;
+        font-style: normal;
+        font-weight: normal;
+        font-variant: normal;
+        text-transform: none;
+        line-height: 1;
+        color: var(--icon-default);
+
+        /* Better Font Rendering =========== */
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        line-height: 1 !important;
+    }
+    .custom-icon-info-circled:before { content: '\e800'; } /* '' */
+    .custom-icon-info-circled-1:before { content: '\e801'; } /* '' */
+    .custom-icon-users-1:before { content: '\e802'; } /* '' */
+    .custom-icon-videocam-1:before { content: '\e803'; } /* '' */
+    .custom-icon-camera:before { content: '\e804'; } /* '' */
+    .custom-icon-doc-text-inv:before { content: '\e805'; } /* '' */
+    .custom-icon-user-1:before { content: '\e806'; } /* '' */
+    .custom-icon-user-2:before { content: '\e807'; } /* '' */
+    .custom-icon-user-3:before { content: '\e808'; } /* '' */
+    .custom-icon-tag:before { content: '\e809'; } /* '' */
+    .custom-icon-camera-outline:before { content: '\e80a'; } /* '' */
+    .custom-icon-camera-1:before { content: '\e80b'; } /* '' */
+    .custom-icon-videocam-2:before { content: '\e80c'; } /* '' */
+    .custom-icon-hammer:before { content: '\e80d'; } /* '' */
+    .custom-icon-camera-2:before { content: '\e80e'; } /* '' */
+    .custom-icon-town-hall:before { content: '\e83c'; } /* '' */
+    .custom-icon-videocam:before { content: '\f03a'; } /* '' */
+    .custom-icon-user:before { content: '\f061'; } /* '' */
+    .custom-icon-user-male:before { content: '\f062'; } /* '' */
+    .custom-icon-users:before { content: '\f064'; } /* '' */
+    .custom-icon-bank:before { content: '\f19c'; } /* '' */
+    .custom-icon-id-badge:before { content: '\f2c1'; } /* '' */
+    .custom-icon-vcard:before { content: '\e80f'; } /* '' */
+
 
     .box-shadow {
         @apply border-[1px] dark:border-gray-800 shadow-[0px_0px_0px_0px_rgba(0,0,0,0.03),0px_1px_1px_0px_rgba(0,0,0,0.03),0px_3px_3px_0px_rgba(0,0,0,0.03),0px_6px_4px_0px_rgba(0,0,0,0.02),0px_11px_4px_0px_rgba(0,0,0,0.00),0px_17px_5px_0px_rgba(0,0,0,0.00)];

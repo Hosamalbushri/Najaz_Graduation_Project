@@ -13,28 +13,19 @@ extend type Query @guard(with: ["admin-api"]) {
 }
 
 extend type Mutation @guard(with: ["admin-api"]) {
-    createIdentityVerification(
-        input: IdentityVerificationInput! @spread
-    ): IdentityVerificationResponse @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\Admin\\Citizen\\IdentityVerificationMutation@store")
-
+    """
+    Update identity verification status (approve/reject).
+    Admin can only update status and notes, not documents.
+    """
     updateIdentityVerification(
         id: ID!,
         input: UpdateIdentityVerificationInput! @spread
     ): IdentityVerificationResponse @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\Admin\\Citizen\\IdentityVerificationMutation@update")
-
-    deleteIdentityVerification(id: ID!): StatusResponse @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\Admin\\Citizen\\IdentityVerificationMutation@delete")
 }
 
 input FilterIdentityVerificationInput {
     citizenId: Int @rename(attribute: "citizen_id")
     status: IdentityVerificationStatus
-}
-
-input IdentityVerificationInput {
-    citizenId: Int! @rename(attribute: "citizen_id")
-    notes: String
-    documents: [Upload!]
-    face_video: Upload
 }
 
 input UpdateIdentityVerificationInput {

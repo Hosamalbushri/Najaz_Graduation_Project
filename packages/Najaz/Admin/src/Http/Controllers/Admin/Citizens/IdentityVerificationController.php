@@ -3,6 +3,7 @@
 namespace Najaz\Admin\Http\Controllers\Admin\Citizens;
 
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Najaz\Admin\DataGrids\Citizens\IdentityVerificationDataGrid;
@@ -70,6 +71,18 @@ class IdentityVerificationController extends Controller
         $data = request()->only(['citizen_id', 'notes']);
         $data['status'] = 'pending';
 
+        // Check if citizen already has an identity verification
+        $existingVerification = $this->identityVerificationRepository
+            ->where('citizen_id', $data['citizen_id'])
+            ->first();
+
+        if ($existingVerification) {
+            return new JsonResponse([
+                'message' => trans('Admin::app.citizens.identity-verifications.index.already-exists'),
+                'data'    => $existingVerification,
+            ], 422);
+        }
+
         // Handle file uploads
         if (request()->hasFile('documents')) {
             $documents = [];
@@ -90,6 +103,8 @@ class IdentityVerificationController extends Controller
 
         $verification = $this->identityVerificationRepository->create($data);
 
+        Event::dispatch('identity.verification.created', $verification);
+
         return new JsonResponse([
             'message' => trans('Admin::app.citizens.identity-verifications.index.create-success'),
             'data'    => $verification,
@@ -101,10 +116,20 @@ class IdentityVerificationController extends Controller
      */
     public function update(int $id): JsonResponse
     {
-        $this->validate(request(), [
-            'status' => 'required|in:pending,approved,rejected,needs_more_info',
-            'notes'  => 'nullable|string',
-        ]);
+        $status = request()->input('status');
+
+        $rules = [
+            'status' => 'required|in:approved,rejected',
+        ];
+
+        // Notes is required when status is rejected
+        if ($status === 'rejected') {
+            $rules['notes'] = 'required|string';
+        } else {
+            $rules['notes'] = 'nullable|string';
+        }
+
+        $this->validate(request(), $rules);
 
         $data = request()->only(['status', 'notes']);
 

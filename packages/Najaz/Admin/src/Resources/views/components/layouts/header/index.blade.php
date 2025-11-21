@@ -12,7 +12,7 @@
         </i>
 
         <!-- Logo -->
-        <a href="{{ route('admin.dashboard.index') }}" class="flex-shrink-0">
+        <a href="{{ route('najaz.admin.dashboard.index') }}" class="flex-shrink-0">
             @if ($logo = core()->getConfigData('general.design.admin_logo.logo_image'))
                 <img
                     class="h-8 w-auto sm:h-10"
@@ -558,37 +558,56 @@
             </x-slot>
 
             <!-- Notification Content -->
-            <x-slot:content class="min-w-[250px] max-w-[250px] !p-0">
+            <x-slot:content class="min-w-[320px] max-w-[320px] !p-0">
                 <!-- Header -->
                 <div class="border-b p-3 text-base font-semibold text-gray-600 dark:border-gray-800 dark:text-gray-300">
-                    @lang('admin::app.notifications.title', ['read' => 0])
+                    @lang('Admin::app.notifications.title')
                 </div>
 
                 <!-- Content -->
                 <div class="grid">
                     <a
-                        class="flex items-start gap-1.5 border-b p-3 last:border-b-0 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-950"
+                        class="flex items-start gap-2 border-b p-4 last:border-b-0 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-950"
                         v-for="notification in notifications"
-                        :href="'{{ route('admin.notification.viewed_notification', ':orderId') }}'.replace(':orderId', notification.order_id)"
+                        :key="notification.id"
+                        :href="'{{ route('admin.service-notifications.viewed', 0) }}'.replace('/0', '/' + notification.id)"
                     >
                         <!-- Notification Icon -->
                         <span
-                            v-if="notification.order.status in notificationStatusIcon"
                             class="h-fit"
-                            :class="notificationStatusIcon[notification.order.status]"
+                            :class="getNotificationIcon(notification)"
                         >
                         </span>
 
-                        <div class="grid">
-                            <!-- Order Id & Status -->
-                            <p class="text-gray-800 dark:text-white">
-                                #@{{ notification.order.id }}
-                                @{{ orderTypeMessages[notification.order.status] }}
+                        <div class="grid flex-1 gap-1.5">
+                            <!-- Notification Title with Status -->
+                            <p class="flex items-center justify-between gap-2 text-base text-gray-800 dark:text-white">
+                                <span v-if="notification.type === 'service_request'">
+                                    @lang('Admin::app.notifications.service-request')
+                                    <span v-if="notification.service_request">#@{{ notification.service_request.increment_id || notification.service_request.id }}</span>
+                                </span>
+                                <span v-else-if="notification.type === 'identity_verification'">
+                                    @lang('Admin::app.notifications.identity-verification')
+                                    <span v-if="notification.identity_verification">#@{{ notification.identity_verification.id }}</span>
+                                </span>
+                                <span v-else></span>
+                                
+                                <!-- Status inline - fixed position -->
+                                <span 
+                                    v-if="getNotificationStatus(notification)"
+                                    class="flex items-center gap-1.5 flex-shrink-0"
+                                >
+                                    <span
+                                        :class="getStatusBadgeClass(notification) + ' text-[10px]'"
+                                    >
+                                        @{{ getNotificationStatus(notification) }}
+                                    </span>
+                                </span>
                             </p>
 
-                            <!-- Created Date In humand Readable Format -->
+                            <!-- Created Date -->
                             <p class="text-xs text-gray-600 dark:text-gray-300">
-                                @{{ notification.order.datetime }}
+                                @{{ notification.datetime }}
                             </p>
                         </div>
                     </a>
@@ -597,10 +616,10 @@
                 <!-- Footer -->
                 <div class="flex h-[47px] justify-between gap-1.5 border-t px-6 py-4 dark:border-gray-800">
                     <a
-                        href="{{ route('admin.notification.index') }}"
+                        href="{{ route('admin.service-notifications.index') }}"
                         class="cursor-pointer text-xs font-semibold text-blue-600 transition-all hover:underline"
                     >
-                        @lang('admin::app.notifications.view-all')
+                        @lang('Admin::app.notifications.view-all')
                     </a>
 
                     <a
@@ -608,7 +627,7 @@
                         v-if="notifications?.length"
                         @click="readAll()"
                     >
-                        @lang('admin::app.notifications.read-all')
+                        @lang('Admin::app.notifications.read-all')
                     </a>
                 </div>
             </x-slot>
@@ -627,62 +646,22 @@
                 data() {
                     return {
                         notifications: [],
-
-                        ordertype: {
-                            pending: {
-                                icon: 'icon-information',
-                                message: "@lang('admin::app.notifications.order-status-messages.pending-payment')"
-                            },
-
-                            processing: {
-                                icon: 'icon-processing',
-                                message: "@lang('admin::app.notifications.order-status-messages.processing')",
-                            },
-
-                            canceled: {
-                                icon: 'icon-cancel-1',
-                                message: "@lang('admin::app.notifications.order-status-messages.canceled')"
-                            },
-
-                            completed: {
-                                icon: 'icon-done',
-                                message: "@lang('admin::app.notifications.order-status-messages.completed')"
-                            },
-
-                            closed: {
-                                icon: 'icon-cancel-1',
-                                message: "@lang('admin::app.notifications.order-status-messages.closed')"
-                            },
-
-                            pending_payment: {
-                                icon: "icon-information",
-                                message: "@lang('admin::app.notifications.order-status-messages.pending-payment')"
-                            },
-                        },
-
                         totalUnRead: 0,
-
-                        orderTypeMessages: {
-                        {{ \Webkul\Sales\Models\Order::STATUS_PENDING }}: "@lang('admin::app.notifications.order-status-messages.pending')",
-                        {{ \Webkul\Sales\Models\Order::STATUS_CANCELED }}: "@lang('admin::app.notifications.order-status-messages.canceled')",
-                        {{ \Webkul\Sales\Models\Order::STATUS_CLOSED }}: "@lang('admin::app.notifications.order-status-messages.closed')",
-                        {{ \Webkul\Sales\Models\Order::STATUS_COMPLETED }}: "@lang('admin::app.notifications.order-status-messages.completed')",
-                        {{ \Webkul\Sales\Models\Order::STATUS_PROCESSING }}: "@lang('admin::app.notifications.order-status-messages.processing')",
-                        {{ \Webkul\Sales\Models\Order::STATUS_PENDING_PAYMENT }}: "@lang('admin::app.notifications.order-status-messages.pending-payment')",
-                        }
+                        statusTranslations: {
+                            // Service Request statuses
+                            'pending': "@lang('Admin::app.notifications.status.pending')",
+                            'in_progress': "@lang('Admin::app.notifications.status.in_progress')",
+                            'in-progress': "@lang('Admin::app.notifications.status.in-progress')",
+                            'completed': "@lang('Admin::app.notifications.status.completed')",
+                            'rejected': "@lang('Admin::app.notifications.status.rejected')",
+                            'cancelled': "@lang('Admin::app.notifications.status.cancelled')",
+                            'canceled': "@lang('Admin::app.notifications.status.canceled')",
+                            // Identity Verification statuses
+                            'approved': "@lang('Admin::app.notifications.status.approved')",
+                            'needs_more_info': "@lang('Admin::app.notifications.status.needs_more_info')",
+                            'needs-more-info': "@lang('Admin::app.notifications.status.needs-more-info')",
+                        },
                     }
-                },
-
-                computed: {
-                    notificationStatusIcon() {
-                        return {
-                            pending: 'icon-information rounded-full bg-amber-100 text-2xl text-amber-600 dark:!text-amber-600',
-                            closed: 'icon-repeat rounded-full bg-red-100 text-2xl text-red-600 dark:!text-red-600',
-                            completed: 'icon-done rounded-full bg-blue-100 text-2xl text-blue-600 dark:!text-blue-600',
-                            canceled: 'icon-cancel-1 rounded-full bg-red-100 text-2xl text-red-600 dark:!text-red-600',
-                            processing: 'icon-sort-right rounded-full bg-green-100 text-2xl text-green-600 dark:!text-green-600',
-                        };
-                    },
                 },
 
                 mounted() {
@@ -691,32 +670,111 @@
 
                 methods: {
                     getNotification() {
-                        this.$axios.get('{{ route('admin.notification.get_notification') }}', {
+                        this.$axios.get('{{ route('admin.service-notifications.get_notifications') }}', {
                                 params: {
                                     limit: 5,
                                     read: 0
                                 }
                             })
                             .then((response) => {
-                                this.notifications = response.data.search_results.data;
+                                this.notifications = response.data.search_results.data || [];
 
-                                this.totalUnRead =   response.data.total_unread;
+                                this.totalUnRead = response.data.total_unread || 0;
                             })
                             .catch(error => console.log(error))
                     },
 
                     readAll() {
-                        this.$axios.post('{{ route('admin.notification.read_all') }}')
+                        this.$axios.post('{{ route('admin.service-notifications.read_all') }}')
                             .then((response) => {
-                                this.notifications = response.data.search_results.data;
+                                this.notifications = response.data.search_results.data || [];
 
-                                this.totalUnRead = response.data.total_unread;
+                                this.totalUnRead = response.data.total_unread || 0;
 
-                            this.$emitter.emit('add-flash', { type: 'success', message: response.data.success_message });
-                        })
-                        .catch((error) => {});
+                                this.$emitter.emit('add-flash', { type: 'success', message: response.data.success_message });
+                            })
+                            .catch((error) => {});
+                    },
+
+
+                    getNotificationIcon(notification) {
+                        if (notification.type === 'service_request') {
+                            return 'custom-icon-tag   text-xl text-blue-600 dark:!text-blue-600';
+                        } else if (notification.type === 'identity_verification') {
+                            return 'custom-icon-vcard text-xl text-green-600 dark:!text-green-600';
+                        }
+                        return 'custom-icon-info-circled-1 rounded-full bg-gray-100 text-2xl text-gray-600 dark:!text-gray-600';
+                    },
+
+                    getNotificationStatus(notification) {
+                        let status = null;
+                        
+                        if (notification.type === 'service_request' && notification.service_request) {
+                            status = notification.service_request.status;
+                        } else if (notification.type === 'identity_verification' && notification.identity_verification) {
+                            status = notification.identity_verification.status;
+                        }
+                        
+                        if (!status) return null;
+                        
+                        // Translate status
+                        return this.statusTranslations[status] || status;
+                    },
+
+                    getStatusBadgeClass(notification) {
+                        let status = null;
+                        
+                        if (notification.type === 'service_request' && notification.service_request) {
+                            status = notification.service_request.status;
+                        } else if (notification.type === 'identity_verification' && notification.identity_verification) {
+                            status = notification.identity_verification.status;
+                        }
+                        
+                        if (!status) return 'label-pending';
+
+                        // Normalize status (handle both snake_case and kebab-case)
+                        const normalizedStatus = status.toLowerCase().replace(/-/g, '_');
+
+                        // Service Request status badge classes
+                        if (notification.type === 'service_request') {
+                            switch (normalizedStatus) {
+                                case 'pending':
+                                    return 'label-pending';
+                                case 'in_progress':
+                                    return 'label-in_progress';
+                                case 'completed':
+                                    return 'label-completed';
+                                case 'rejected':
+                                    return 'label-rejected';
+                                case 'cancelled':
+                                case 'canceled':
+                                    return 'label-canceled';
+                                default:
+                                    return 'label-pending';
+                            }
+                        }
+
+                        // Identity Verification status badge classes
+                        if (notification.type === 'identity_verification') {
+                            switch (normalizedStatus) {
+                                case 'pending':
+                                    return 'label-pending';
+                                case 'approved':
+                                    return 'label-active';
+                                case 'rejected':
+                                    return 'label-rejected';
+                                case 'needs_more_info':
+                                    return 'label-pending';
+                                default:
+                                    return 'label-pending';
+                            }
+                        }
+
+                        return 'label-pending';
+                    },
+
                 },
-            },
+
         });
     </script>
 

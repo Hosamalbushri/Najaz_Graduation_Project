@@ -1,0 +1,30 @@
+{
+    "name": "najaz/notification",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Najaz",
+            "email": "support@webkul.com"
+        }
+    ],
+    "require": {
+    },
+    "autoload": {
+        "psr-4": {
+            "Najaz\\Notification\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Najaz\\Notification\\Providers\\NotificationServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev"
+}
+

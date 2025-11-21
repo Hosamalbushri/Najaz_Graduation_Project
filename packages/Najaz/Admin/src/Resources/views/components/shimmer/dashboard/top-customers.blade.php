@@ -10,18 +10,15 @@
             <div class="flex gap-8 border-b p-4 last:border-b-0 dark:border-gray-800">
                 <div class="flex h-[38px] w-full justify-between gap-1.5">
                     <div class="flex flex-col gap-y-1">
-                        <!-- Customer Name -->
+                        <!-- Citizen Name -->
                         <div class="shimmer h-[19px] w-[137px]"></div>
 
-                        <!-- Customer Email -->
+                        <!-- National ID -->
                         <div class="shimmer h-[19px] w-[137px]"></div>
                     </div>
 
                     <div class="flex flex-col gap-y-1">
-                        <!-- Grand Total -->
-                        <div class="shimmer h-[19px] w-[72px]"></div>
-
-                        <!-- TOtal Orders count -->
+                        <!-- Requests Count -->
                         <div class="shimmer h-[19px] w-[72px]"></div>
                     </div>
                 </div>

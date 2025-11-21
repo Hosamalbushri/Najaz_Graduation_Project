@@ -82,6 +82,6 @@ type Citizen {
     createdAt: DateTime @rename(attribute: "created_at")
     updatedAt: DateTime @rename(attribute: "updated_at")
     citizenType: CitizenType @belongsTo(relation: "citizenType")
-    identityVerifications: [IdentityVerification] @hasMany(relation: "identityVerifications")
+    identityVerification: IdentityVerification @hasOne(relation: "identityVerification")
 }
 

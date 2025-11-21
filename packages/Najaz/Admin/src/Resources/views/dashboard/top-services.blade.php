@@ -1,25 +1,25 @@
-<!-- Top Selling Products Vue Component -->
-<v-dashboard-top-selling-products>
+<!-- Top Services Vue Component -->
+<v-dashboard-top-services>
     <!-- Shimmer -->
     <x-admin::shimmer.dashboard.top-selling-products />
-</v-dashboard-top-selling-products>
+</v-dashboard-top-services>
 
 @pushOnce('scripts')
     <script
         type="text/x-template"
-        id="v-dashboard-top-selling-products-template"
+        id="v-dashboard-top-services-template"
     >
         <!-- Shimmer -->
         <template v-if="isLoading">
             <x-admin::shimmer.dashboard.top-selling-products />
         </template>
 
-        <!-- Total Sales Section -->
+        <!-- Top Services Section -->
         <template v-else>
             <div class="border-b dark:border-gray-800">
                 <div class="flex items-center justify-between p-4">
                     <p class="text-base font-semibold text-gray-600 dark:text-gray-300">
-                        @lang('admin::app.dashboard.index.top-selling-products')
+                        @lang('Admin::app.dashboard.index.top-requested-services')
                     </p>
 
                     <p class="text-xs font-semibold text-gray-400">
@@ -27,21 +27,21 @@
                     </p>
                 </div>
 
-                <!-- Top Selling Products Details -->
+                <!-- Top Services Details -->
                 <div
                     class="flex flex-col"
                     v-if="report.statistics.length"
                 >
                     <a
-{{--                        :href="`{{route('admin.catalog.products.edit', '')}}/${item.id}`"--}}
+                        :href="getServiceEditUrl(item.id)"
                         class="flex gap-2.5 border-b p-4 transition-all last:border-b-0 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-950"
                         v-for="item in report.statistics"
                     >
-                        <!-- Product Item -->
+                        <!-- Service Item -->
                         <img
-                            v-if="item.images?.length"
+                            v-if="item.image"
                             class="relative h-[65px] max-h-[65px] w-full max-w-[65px] overflow-hidden rounded"
-                            :src="item.images[0]?.url"
+                            :src="item.image"
                         />
 
                         <div
@@ -51,11 +51,11 @@
                             <img src="{{ bagisto_asset('images/product-placeholders/front.svg')}}">
                             
                             <p class="absolute bottom-1.5 w-full text-center text-[6px] font-semibold text-gray-400">
-                                @lang('admin::app.dashboard.index.product-image')
+                                @lang('Admin::app.dashboard.index.service-image')
                             </p>
                         </div>
 
-                        <!-- Product Details -->
+                        <!-- Service Details -->
                         <div class="flex w-full flex-col gap-1.5">
                             <p
                                 class="text-gray-600 dark:text-gray-300"
@@ -64,19 +64,15 @@
                             </p>
 
                             <div class="flex justify-between">
-                                <p class="font-semibold text-gray-600 dark:text-gray-300">
-                                    @{{ item.formatted_price }}
-                                </p>
-
                                 <p class="text-base font-semibold text-gray-800 dark:text-white">
-                                    @{{ item.formatted_revenue }}
+                                    @{{ item.requests_count }} @lang('Admin::app.dashboard.index.requests')
                                 </p>
                             </div>
                         </div>
                     </a>
                 </div>
 
-                <!-- Empty Product Design -->
+                <!-- Empty Service Design -->
                 <div
                     class="flex flex-col gap-8 p-4"
                     v-else
@@ -91,11 +87,11 @@
                         <!-- Add Variants Information -->
                         <div class="flex flex-col items-center">
                             <p class="text-base font-semibold text-gray-400">
-                                @lang('admin::app.dashboard.index.add-product')
+                                @lang('Admin::app.dashboard.index.add-service')
                             </p>
 
                             <p class="text-gray-400">
-                                @lang('admin::app.dashboard.index.product-info')
+                                @lang('Admin::app.dashboard.index.service-info')
                             </p>
                         </div>
                     </div>
@@ -105,8 +101,8 @@
     </script>
 
     <script type="module">
-        app.component('v-dashboard-top-selling-products', {
-            template: '#v-dashboard-top-selling-products-template',
+        app.component('v-dashboard-top-services', {
+            template: '#v-dashboard-top-services-template',
 
             data() {
                 return {
@@ -128,9 +124,9 @@
 
                     var filters = Object.assign({}, filters);
 
-                    filters.type = 'top-selling-products';
+                    filters.type = 'top-services';
 
-                    this.$axios.get("{{ route('admin.dashboard.stats') }}", {
+                    this.$axios.get("{{ route('najaz.admin.dashboard.stats') }}", {
                             params: filters
                         })
                         .then(response => {
@@ -139,8 +135,15 @@
                             this.isLoading = false;
                         })
                         .catch(error => {});
+                },
+
+                getServiceEditUrl(id) {
+                    if (!id) return '#';
+                    // Build URL: /admin/services/{id}/edit
+                    return `/admin/services/${id}/edit`;
                 }
             }
         });
     </script>
 @endPushOnce
+

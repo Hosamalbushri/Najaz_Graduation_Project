@@ -27,14 +27,10 @@
                         type="select"
                         name="status"
                         id="status"
-                        ::value="verification.status"
+                        ::value="selectedStatus"
                         rules="required"
                         :label="trans('Admin::app.citizens.identity-verifications.show.update-status')"
                     >
-                        <option value="pending">
-                            @lang('Admin::app.citizens.identity-verifications.index.datagrid.status-pending')
-                        </option>
-
                         <option value="approved">
                             @lang('Admin::app.citizens.identity-verifications.index.datagrid.status-approved')
                         </option>
@@ -42,19 +38,15 @@
                         <option value="rejected">
                             @lang('Admin::app.citizens.identity-verifications.index.datagrid.status-rejected')
                         </option>
-
-                        <option value="needs_more_info">
-                            @lang('Admin::app.citizens.identity-verifications.index.datagrid.status-needs-more-info')
-                        </option>
                     </x-admin::form.control-group.control>
 
                     <x-admin::form.control-group.error control-name="status" />
                 </x-admin::form.control-group>
 
-                <!-- Notes -->
-                <x-admin::form.control-group>
-                    <x-admin::form.control-group.label>
-                        @lang('Admin::app.citizens.identity-verifications.show.notes')
+                <!-- Notes - Show only when rejected -->
+                <x-admin::form.control-group v-if="selectedStatus === 'rejected'">
+                    <x-admin::form.control-group.label class="required">
+                        @lang('Admin::app.citizens.identity-verifications.show.reason')
                     </x-admin::form.control-group.label>
 
                     <x-admin::form.control-group.control
@@ -62,8 +54,9 @@
                         name="notes"
                         id="notes"
                         ::value="verification.notes"
-                        :label="trans('Admin::app.citizens.identity-verifications.show.notes')"
-                        :placeholder="trans('Admin::app.citizens.identity-verifications.show.notes-placeholder')"
+                        ::rules="selectedStatus === 'rejected' ? 'required' : ''"
+                        :label="trans('Admin::app.citizens.identity-verifications.show.reason')"
+                        :placeholder="trans('Admin::app.citizens.identity-verifications.show.reason-placeholder')"
                         rows="4"
                     />
 
@@ -91,9 +84,36 @@
             emits: ['update-verification'],
 
             data() {
+                // Get current status, but if it's pending, default to approved
+                const currentStatus = this.verification.status;
+                const validStatuses = ['approved', 'rejected'];
+                const defaultStatus = validStatuses.includes(currentStatus) ? currentStatus : 'approved';
+
                 return {
                     isLoading: false,
+                    selectedStatus: defaultStatus,
                 };
+            },
+
+            watch: {
+                'verification.status'(newStatus) {
+                    const validStatuses = ['approved', 'rejected'];
+                    if (validStatuses.includes(newStatus)) {
+                        this.selectedStatus = newStatus;
+                    }
+                }
+            },
+
+            mounted() {
+                // Watch for changes in the status select field
+                this.$nextTick(() => {
+                    const statusSelect = document.getElementById('status');
+                    if (statusSelect) {
+                        statusSelect.addEventListener('change', (event) => {
+                            this.selectedStatus = event.target.value;
+                        });
+                    }
+                });
             },
 
             methods: {

@@ -1,17 +1,17 @@
 <x-admin::layouts>
     <x-slot:title>
-        @lang('admin::app.dashboard.index.title')
+        @lang('Admin::app.dashboard.index.title')
     </x-slot>
 
     <!-- User Details Section -->
     <div class="mb-5 flex items-center justify-between gap-4 max-sm:flex-wrap">
         <div class="grid gap-1.5">
             <p class="text-xl font-bold !leading-normal text-gray-800 dark:text-white">
-                @lang('admin::app.dashboard.index.user-name', ['user_name' => auth()->guard('admin')->user()->name])
+                @lang('Admin::app.dashboard.index.user-name', ['user_name' => auth()->guard('admin')->user()->name])
             </p>
 
             <p class="!leading-normal text-gray-600 dark:text-gray-300">
-                @lang('admin::app.dashboard.index.user-info')
+                @lang('Admin::app.dashboard.index.user-info')
             </p>
         </div>
 
@@ -35,7 +35,7 @@
             <!-- Overall Details -->
             <div class="flex flex-col gap-2">
                 <p class="text-base font-semibold text-gray-600 dark:text-gray-300">
-                    @lang('admin::app.dashboard.index.overall-details')
+                    @lang('Admin::app.dashboard.index.overall-details')
                 </p>
 
                 <!-- Over All Details Section -->
@@ -49,7 +49,7 @@
             <!-- Todays Details -->
             <div class="flex flex-col gap-2">
                 <p class="text-base font-semibold text-gray-600 dark:text-gray-300">
-                    @lang('admin::app.dashboard.index.today-details')
+                    @lang('Admin::app.dashboard.index.today-details')
                 </p>
 
                 <!-- Todays Details Section -->
@@ -57,44 +57,24 @@
             </div>
 
             {!! view_render_event('bagisto.admin.dashboard.todays_details.after') !!}
-
-            {!! view_render_event('bagisto.admin.dashboard.stock_threshold.before') !!}
-
-            <!-- Stock Threshold -->
-            <div class="flex flex-col gap-2">
-                <p class="text-base font-semibold text-gray-600 dark:text-gray-300">
-                    @lang('admin::app.dashboard.index.stock-threshold')
-                </p>
-
-                <!-- Products List -->  
-                @include('admin::dashboard.stock-threshold-products')
-            </div>
-            
-            {!! view_render_event('bagisto.admin.dashboard.stock_threshold.after') !!}
         </div>
 
         <!-- Right Section -->
         <div class="flex w-[360px] max-w-full flex-col gap-2 max-sm:w-full">
             <!-- First Component -->
             <p class="text-base font-semibold text-gray-600 dark:text-gray-300">
-                @lang('admin::app.dashboard.index.store-stats')
+                @lang('Admin::app.dashboard.index.store-stats')
             </p>
 
             {!! view_render_event('bagisto.admin.dashboard.store_stats.before') !!}
 
-            <!-- Store Stats -->
+            <!-- Stats -->
             <div class="box-shadow rounded bg-white dark:bg-gray-900">
-                <!-- Total Sales Details -->
-                @include('admin::dashboard.total-sales')
+                <!-- Top Services -->
+                @include('admin::dashboard.top-services')
 
-                <!-- Total Visitors Details -->
-                @include('admin::dashboard.total-visitors')
-
-                <!-- Top Selling Products -->
-                @include('admin::dashboard.top-selling-products')
-
-                <!-- Top Customers -->
-                @include('admin::dashboard.top-customers')
+                <!-- Top Citizens -->
+                @include('admin::dashboard.top-citizens')
             </div>
 
             {!! view_render_event('bagisto.admin.dashboard.store_stats.after') !!}
@@ -113,36 +93,11 @@
             id="v-dashboard-filters-template"
         >
             <div class="flex gap-1.5">
-                <template v-if="channels.length > 2">
-                    <x-admin::dropdown position="bottom-right">
-                        <x-slot:toggle>
-                            <button
-                                type="button"
-                                class="inline-flex w-full cursor-pointer appearance-none items-center justify-between gap-x-2 rounded-md border bg-white px-2.5 py-1.5 text-center text-sm leading-6 text-gray-600 transition-all marker:shadow hover:border-gray-400 focus:border-gray-400 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-400 dark:focus:border-gray-400"
-                            >
-                                @{{ channels.find(channel => channel.code == filters.channel).name }}
-                                
-                                <span class="icon-sort-down text-2xl"></span>
-                            </button>
-                        </x-slot>
-
-                        <x-slot:menu class="!p-0 shadow-[0_5px_20px_rgba(0,0,0,0.15)] dark:border-gray-800">
-                            <x-admin::dropdown.menu.item
-                                v-for="channel in channels"
-                                ::class="{'bg-gray-100 dark:bg-gray-950': channel.code == filters.channel}"
-                                @click="filters.channel = channel.code"
-                            >
-                                @{{ channel.name }}
-                            </x-admin::dropdown.menu.item>
-                        </x-slot>
-                    </x-admin::dropdown>
-                </template>
-
                 <x-admin::flat-picker.date class="!w-[140px]" ::allow-input="false">
                     <input
                         class="flex min-h-[39px] w-full rounded-md border px-3 py-2 text-sm text-gray-600 transition-all hover:border-gray-400 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-400"
                         v-model="filters.start"
-                        placeholder="@lang('admin::app.dashboard.index.start-date')"
+                        placeholder="@lang('Admin::app.dashboard.index.start-date')"
                     />
                 </x-admin::flat-picker.date>
 
@@ -150,7 +105,7 @@
                     <input
                         class="flex min-h-[39px] w-full rounded-md border px-3 py-2 text-sm text-gray-600 transition-all hover:border-gray-400 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-400"
                         v-model="filters.end"
-                        placeholder="@lang('admin::app.dashboard.index.end-date')"
+                        placeholder="@lang('Admin::app.dashboard.index.end-date')"
                     />
                 </x-admin::flat-picker.date>
             </div>
@@ -162,19 +117,8 @@
 
                 data() {
                     return {
-                        channels: [
-                            {
-                                name: "@lang('admin::app.dashboard.index.all-channels')",
-                                code: ''
-                            },
-                            ...@json(core()->getAllChannels()),
-                        ],
-                        
                         filters: {
-                            channel: '',
-
                             start: "{{ $startDate->format('Y-m-d') }}",
-                            
                             end: "{{ $endDate->format('Y-m-d') }}",
                         }
                     }

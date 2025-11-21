@@ -23,6 +23,25 @@ extend type Mutation @guard(with: ["citizen-api"]) {
         input: CitizenIdentityVerificationInput! @spread
     ): IdentityVerificationResponse
         @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\App\\Citizen\\IdentityVerificationMutation@store")
+
+    """
+    Update identity verification documents (documents and face video only).
+    Allowed only when status is pending or rejected.
+    """
+    updateMyIdentityVerification(
+        id: ID!,
+        input: UpdateCitizenIdentityVerificationInput! @spread
+    ): IdentityVerificationResponse
+        @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\App\\Citizen\\IdentityVerificationMutation@update")
+
+    """
+    Delete identity verification request.
+    Allowed only when status is pending.
+    """
+    deleteMyIdentityVerification(
+        id: ID!
+    ): StatusResponse
+        @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\App\\Citizen\\IdentityVerificationMutation@delete")
 }
 
 """
@@ -30,7 +49,15 @@ Payload for citizen-driven identity verification requests.
 Citizen ID is inferred from the authenticated user.
 """
 input CitizenIdentityVerificationInput {
-    notes: String
+    front_document: Upload
+    back_document: Upload
+    documents: [Upload!]
+    face_video: Upload
+}
+
+input UpdateCitizenIdentityVerificationInput {
+    front_document: Upload
+    back_document: Upload
     documents: [Upload!]
     face_video: Upload
 }

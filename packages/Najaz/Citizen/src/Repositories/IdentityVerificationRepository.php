@@ -59,26 +59,23 @@ class IdentityVerificationRepository extends Repository
 
             Event::dispatch('identity.verification.update-status.before', [$id, $data]);
 
-            // If status is being changed to approved/rejected/needs_more_info, set reviewer info
-            if (isset($data['status']) && in_array($data['status'], ['approved', 'rejected', 'needs_more_info'])) {
+            // If status is being changed to approved/rejected, set reviewer info
+            if (isset($data['status']) && in_array($data['status'], ['approved', 'rejected'])) {
                 $data['reviewed_by'] = Auth::guard('admin')->id();
                 $data['reviewed_at'] = now();
             }
 
-            // If approved, update citizen's identity_verification_status
-            if (isset($data['status']) && $data['status'] == 'approved') {
+            // Update citizen's identity_verification_status based on the new status
+            if (isset($data['status'])) {
                 $citizen = $verification->citizen;
                 if ($citizen) {
+                    if ($data['status'] == 'approved') {
+                        // If approved, set identity_verification_status to true (verified)
                     $citizen->identity_verification_status = 1;
-                    $citizen->save();
-                }
-            }
-
-            // If status changed from approved to something else, reset citizen's identity_verification_status
-            if (isset($data['status']) && $verification->status == 'approved' && $data['status'] != 'approved') {
-                $citizen = $verification->citizen;
-                if ($citizen) {
+                    } elseif ($data['status'] === 'rejected') {
+                        // If rejected or needs more info, set identity_verification_status to false (not verified)
                     $citizen->identity_verification_status = 0;
+                    }
                     $citizen->save();
                 }
             }

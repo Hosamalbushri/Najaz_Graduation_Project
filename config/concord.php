@@ -44,6 +44,7 @@ return [
         \Webkul\User\Providers\ModuleServiceProvider::class,
         \Najaz\Citizen\Providers\ModuleServiceProvider::class,
         \Najaz\Request\Providers\ModuleServiceProvider::class,
+        \Najaz\Notification\Providers\ModuleServiceProvider::class,
     ],
 
 ];
