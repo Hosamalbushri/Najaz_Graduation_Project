@@ -1,0 +1,4 @@
+# Aggregate schema that pulls in the upstream Bagisto GraphQL API as well as
+# Najaz-specific GraphQL modules.
+#import ../packages/Webkul/GraphQLAPI/src/graphql/schema.graphql
+#import ../packages/Najaz/GraphQLAPI/src/graphql/schema.graphql

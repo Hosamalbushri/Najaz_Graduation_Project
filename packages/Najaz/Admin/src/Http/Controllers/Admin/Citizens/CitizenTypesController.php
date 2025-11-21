@@ -89,20 +89,6 @@ class CitizenTypesController extends Controller
      */
     public function destroy(int $id): JsonResponse
     {
-        $citizenType = $this->citizenTypeRepository->findOrFail($id);
-
-        if (! $citizenType->is_user_defined) {
-            return new JsonResponse([
-                'message' => trans('Admin::app.citizens.types.index.edit.type-default'),
-            ], 400);
-        }
-
-        if ($citizenType->citizens->count()) {
-            return new JsonResponse([
-                'message' => trans('Admin::app.citizens.types.index.edit.citizen-associate'),
-            ], 400);
-        }
-
         try {
             Event::dispatch('citizen.citizen_type.delete.before', $id);
 
@@ -114,10 +100,11 @@ class CitizenTypesController extends Controller
                 'message' => trans('Admin::app.citizens.types.index.edit.delete-success'),
             ]);
         } catch (\Exception $e) {
-        }
+            $statusCode = str_contains($e->getMessage(), 'type-default') || str_contains($e->getMessage(), 'citizen-associate') ? 400 : 500;
 
-        return new JsonResponse([
-            'message' => trans('Admin::app.citizens.types.index.edit.delete-failed'),
-        ], 500);
+            return new JsonResponse([
+                'message' => $e->getMessage() ?: trans('Admin::app.citizens.types.index.edit.delete-failed'),
+            ], $statusCode);
+        }
     }
 }

@@ -59,6 +59,7 @@
                                     rules="required"
                                     :label="trans('Admin::app.citizens.citizens.view.edit.first-name')"
                                     :placeholder="trans('Admin::app.citizens.citizens.view.edit.first-name')"
+                                    ::disabled="isIdentityVerified"
                                 />
 
                                 <x-admin::form.control-group.error control-name="first_name" />
@@ -78,6 +79,7 @@
                                     ::value="citizen.middle_name"
                                     :label="trans('Admin::app.citizens.citizens.view.edit.middle-name')"
                                     :placeholder="trans('Admin::app.citizens.citizens.view.edit.middle-name')"
+                                    ::disabled="isIdentityVerified"
                                 />
 
                                 <x-admin::form.control-group.error control-name="middle_name" />
@@ -97,6 +99,7 @@
                                     rules="required"
                                     :label="trans('Admin::app.citizens.citizens.view.edit.last-name')"
                                     :placeholder="trans('Admin::app.citizens.citizens.view.edit.last-name')"
+                                    ::disabled="isIdentityVerified"
                                 />
 
                                 <x-admin::form.control-group.error control-name="last_name" />
@@ -117,6 +120,7 @@
                                 rules="required"
                                 :label="trans('Admin::app.citizens.citizens.view.edit.national-id')"
                                 :placeholder="trans('Admin::app.citizens.citizens.view.edit.national-id')"
+                                ::disabled="isIdentityVerified"
                             />
 
                             <x-admin::form.control-group.error control-name="national_id" />
@@ -179,6 +183,7 @@
                                     ::value="citizen.date_of_birth"
                                     :label="trans('Admin::app.citizens.citizens.view.edit.date-of-birth')"
                                     :placeholder="trans('Admin::app.citizens.citizens.view.edit.date-of-birth')"
+                                    ::disabled="isIdentityVerified"
                                 />
 
                                 <x-admin::form.control-group.error control-name="date_of_birth" />
@@ -197,6 +202,7 @@
                                     id="gender"
                                     rules="required"
                                     :label="trans('Admin::app.citizens.citizens.view.edit.gender')"
+                                    ::disabled="isIdentityVerified"
                                 >
                                     <option value="Male">
                                         @lang('Admin::app.citizens.citizens.view.edit.male')
@@ -259,6 +265,17 @@
                             </x-admin::form.control-group>
                         </div>
 
+                        <!-- Identity Verified Notice -->
+                        <div
+                            v-if="isIdentityVerified"
+                            class="mt-4 flex items-start gap-2 rounded-md border border-yellow-200 bg-yellow-50 p-3 dark:border-yellow-800 dark:bg-yellow-900/20"
+                        >
+                            <span class="icon-info text-xl text-yellow-600 dark:text-yellow-400"></span>
+                            <p class="text-sm text-yellow-800 dark:text-yellow-200">
+                                @lang('Admin::app.citizens.citizens.view.edit.identity-verified-notice')
+                            </p>
+                        </div>
+
                         {!! view_render_event('bagisto.admin.citizens.citizens.view.edit.after', ['citizen' => $citizen]) !!}
                     </x-slot>
 
@@ -267,7 +284,7 @@
                         <!-- Save Button -->
                         <x-admin::button
                             button-type="submit"
-                            class="primary-button justify-center"
+                            class="primary-button w-full justify-center text-base"
                             :title="trans('Admin::app.citizens.citizens.view.edit.save-btn')"
                             ::loading="isLoading"
                             ::disabled="isLoading"
@@ -294,6 +311,26 @@
 
                     isLoading: false,
                 };
+            },
+
+            computed: {
+                isIdentityVerified() {
+                    if (!this.citizen) {
+                        return false;
+                    }
+
+                    // Check if identity_verification_status is true (1)
+                    if (this.citizen.identity_verification_status === 1 || this.citizen.identity_verification_status === true) {
+                        return true;
+                    }
+
+                    // Check if identityVerification exists and status is 'approved'
+                    if (this.citizen.identity_verification && this.citizen.identity_verification.status === 'approved') {
+                        return true;
+                    }
+
+                    return false;
+                },
             },
 
             methods: {

@@ -57,32 +57,23 @@ class CitizenTypeMutation
     {
         $id = (int) $args['id'];
 
-        $citizenType = $this->citizenTypeRepository->findOrFail($id);
+        try {
+            Event::dispatch('citizen.citizen_type.delete.before', $id);
 
-        if (! $citizenType->is_user_defined) {
+            $this->citizenTypeRepository->delete($id);
+
+            Event::dispatch('citizen.citizen_type.delete.after', $id);
+
+            return [
+                'success' => true,
+                'message' => trans('Admin::app.citizens.types.index.edit.delete-success'),
+            ];
+        } catch (\Exception $e) {
             return [
                 'success' => false,
-                'message' => trans('Admin::app.citizens.types.index.edit.type-default'),
+                'message' => $e->getMessage() ?: trans('Admin::app.citizens.types.index.edit.delete-failed'),
             ];
         }
-
-        if ($citizenType->citizens()->count()) {
-            return [
-                'success' => false,
-                'message' => trans('Admin::app.citizens.types.index.edit.citizen-associate'),
-            ];
-        }
-
-        Event::dispatch('citizen.citizen_type.delete.before', $id);
-
-        $this->citizenTypeRepository->delete($id);
-
-        Event::dispatch('citizen.citizen_type.delete.after', $id);
-
-        return [
-            'success' => true,
-            'message' => trans('Admin::app.citizens.types.index.edit.delete-success'),
-        ];
     }
 
     /**

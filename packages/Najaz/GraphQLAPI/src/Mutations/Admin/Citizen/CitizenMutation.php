@@ -80,14 +80,19 @@ class CitizenMutation
     {
         $id = (int) $args['id'];
 
-        $this->citizenRepository->findOrFail($id);
+        try {
+            $this->citizenRepository->delete($id);
 
-        $this->citizenRepository->delete($id);
-
-        return [
-            'success' => true,
-            'message' => trans('Admin::app.citizens.citizens.view.delete-success'),
-        ];
+            return [
+                'success' => true,
+                'message' => trans('Admin::app.citizens.citizens.view.delete-success'),
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => $e->getMessage() ?: trans('Admin::app.citizens.citizens.view.delete-failed'),
+            ];
+        }
     }
 
     /**

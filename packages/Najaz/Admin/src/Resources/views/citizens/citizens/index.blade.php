@@ -3,12 +3,16 @@
         @lang('Admin::app.citizens.citizens.index.title')
     </x-slot>
 
+    {!! view_render_event('bagisto.admin.citizens.citizens.index.header.before') !!}
+
     <div class="flex items-center justify-between">
         <p class="text-xl font-bold text-gray-800 dark:text-white">
             @lang('Admin::app.citizens.citizens.index.title')
         </p>
 
         <div class="flex items-center gap-x-2.5">
+            {!! view_render_event('bagisto.admin.citizens.citizens.index.actions.before') !!}
+
             <!-- Export Modal -->
             <x-admin::datagrid.export src="{{ route('admin.citizens.index') }}" />
 
@@ -34,8 +38,12 @@
                     </button>
                 @endif
             </div>
+
+            {!! view_render_event('bagisto.admin.citizens.citizens.index.actions.after') !!}
         </div>
     </div>
+
+    {!! view_render_event('bagisto.admin.citizens.citizens.index.header.after') !!}
 
     {!! view_render_event('bagisto.admin.citizens.citizens.list.before') !!}
 
@@ -216,4 +224,8 @@
     </x-admin::datagrid>
 
     {!! view_render_event('bagisto.admin.citizens.citizens.list.after') !!}
+
+    {!! view_render_event('bagisto.admin.citizens.citizens.index.footer.before') !!}
+
+    {!! view_render_event('bagisto.admin.citizens.citizens.index.footer.after') !!}
 </x-admin::layouts>

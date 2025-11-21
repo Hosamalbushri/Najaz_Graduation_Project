@@ -87,6 +87,14 @@ class Citizen extends Model implements CitizenContract
     }
 
     /**
+     * Get service requests submitted by this citizen.
+     */
+    public function serviceRequests(): HasMany
+    {
+        return $this->hasMany(\Najaz\Request\Models\ServiceRequestProxy::modelClass(), 'citizen_id');
+    }
+
+    /**
      * Get service requests where this citizen is a beneficiary.
      */
     public function serviceRequestsAsBeneficiary(): BelongsToMany
@@ -98,5 +106,13 @@ class Citizen extends Model implements CitizenContract
             'service_request_id'
         )->withPivot('group_code')
             ->withTimestamps();
+    }
+
+    /**
+     * Get notes for this citizen.
+     */
+    public function notes(): HasMany
+    {
+        return $this->hasMany(\Najaz\Citizen\Models\CitizenNoteProxy::modelClass(), 'citizen_id');
     }
 }

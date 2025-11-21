@@ -22,7 +22,7 @@ input UpdateProfileInput {
     firstName: String @rename(attribute: "first_name")
     middleName: String @rename(attribute: "middle_name")
     lastName: String @rename(attribute: "last_name")
-    gender: String
+    gender: Gender
     email: String
     phone: String
     dateOfBirth: String @rename(attribute: "date_of_birth")

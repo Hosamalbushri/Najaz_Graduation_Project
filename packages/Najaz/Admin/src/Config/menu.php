@@ -56,7 +56,7 @@ return [
         'name'  => 'Admin::app.components.layouts.sidebar.citizens',
         'route' => 'admin.citizens.index',
         'sort'  => 3,
-        'icon'  => 'custom-icon-users',
+        'icon'  => 'custom-icon-users text-xl',
     ],
     [
         'key'   => 'citizens.citizens',

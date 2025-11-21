@@ -22,6 +22,10 @@ return [
                     'delete-success'        => 'Selected data successfully deleted',
                     'email'                 => 'Email',
                     'gender'                => 'Gender',
+                    'gender-types'          => [
+                        'Male'   => 'Male',
+                        'Female' => 'Female',
+                    ],
                     'id'                    => 'Citizen ID',
                     'id-value'              => 'ID - :id',
                     'identity-verified'     => 'Identity Verified',
@@ -74,6 +78,43 @@ return [
                     'delete-account'             => 'Delete Account',
                     'account-delete-confirmation' => 'Are you sure you want to delete this account?',
 
+                    'service-requests' => [
+                        'count' => 'Service Requests (:count)',
+                        'empty' => 'No service requests found',
+                    ],
+
+                    'beneficiary-service-requests' => [
+                        'count' => 'Beneficiary Service Requests (:count)',
+                        'empty' => 'No beneficiary service requests found',
+                    ],
+
+                    'identity-verification' => [
+                        'title'         => 'Identity Verification',
+                        'status'        => 'Status',
+                        'reviewed-at'   => 'Reviewed At',
+                        'reviewed-by'   => 'Reviewed By',
+                        'notes'         => 'Notes',
+                        'documents'     => 'Documents',
+                        'view-document' => 'View Document',
+                        'face-video'    => 'Face Video',
+                        'view-video'    => 'View Video',
+                        'view-details'  => 'View Full Details',
+                        'empty'         => 'No identity verification found',
+                    ],
+
+                    'notes' => [
+                        'add-note'              => 'Add Note',
+                        'note'                  => 'Note',
+                        'note-placeholder'      => 'Enter your note here...',
+                        'notify-citizen'        => 'Notify Citizen',
+                        'submit-btn-title'       => 'Submit Note',
+                        'citizen-notified'      => 'Citizen notified on: :date',
+                        'citizen-not-notified'  => 'Citizen not notified on: :date',
+                        'empty'                 => 'No notes available',
+                    ],
+
+                    'note-created-success' => 'Note created successfully',
+
                     'edit' => [
                         'title'               => 'Edit Citizen',
                         'edit-btn'            => 'Edit',
@@ -93,8 +134,13 @@ return [
                         'verified'            => 'Verified',
                         'save-btn'            => 'Save',
                         'update-success'      => 'Citizen updated successfully',
+                        'identity-locked'      => 'Identity is verified. Personal information cannot be modified.',
+                        'identity-locked-message' => 'This citizen\'s identity has been verified. Personal information fields (name, national ID, date of birth, gender) cannot be modified.',
+                        'identity-verified-notice' => 'Personal information fields are locked because they were used for identity verification.',
                     ],
                     'delete-success'          => 'Citizen deleted successfully',
+                    'delete-has-relationships' => 'Cannot delete citizen. The citizen has associated service requests, notes, or identity verification records.',
+                    'delete-failed'           => 'Failed to delete citizen. Please try again.',
                 ],
             ],
         ],
@@ -116,7 +162,7 @@ return [
                     'delete-success'    => 'Citizen type deleted successfully',
                     'delete-failed'     => 'Failed to delete citizen type',
                     'type-default'      => 'Cannot delete default citizen type',
-                    'citizen-associate' => 'Cannot delete citizen type because it is associated with citizens',
+                    'citizen-associate' => 'Cannot delete citizen type because it is associated with citizens or services',
                 ],
                 'datagrid' => [
                     'id'                  => 'ID',
@@ -165,6 +211,7 @@ return [
                 'face-video' => 'Face Video',
                 'no-face-video' => 'No face video uploaded',
                 'video-not-supported' => 'Your browser does not support the video tag.',
+                'approve-face-video-warning' => 'By approving this verification, the face video will be permanently deleted. Are you sure you want to continue?',
                 'front-id' => 'Front ID Card',
                 'back-id' => 'Back ID Card',
                 'no-front-id' => 'No front ID card uploaded',
@@ -556,6 +603,7 @@ return [
                 'completed' => 'Completed',
                 'rejected' => 'Rejected',
                 'cancelled' => 'Cancelled',
+                'canceled' => 'Cancelled',
                 'service' => 'Service',
                 'citizen' => 'Citizen',
                 'national-id' => 'National ID',
@@ -563,6 +611,7 @@ return [
                 'assigned-to' => 'Assigned To',
                 'unassigned' => 'Unassigned',
                 'date' => 'Date',
+                'completed-at' => 'Completed At',
                 'view' => 'View',
             ],
         ],

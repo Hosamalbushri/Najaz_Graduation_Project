@@ -102,7 +102,7 @@
                                         </p>
 
                                         <p class="text-gray-600 dark:text-gray-300">
-                                            @{{ "@lang('Admin::app.citizens.citizens.view.gender')".replace(':gender',verification.citizen.gender ?? 'N/A') }}
+                                            @{{ getGenderLabel() }}
                                         </p>
 
                                         <p class="text-gray-600 dark:text-gray-300">
@@ -154,8 +154,10 @@
                                                             class="w-full h-auto max-h-[400px] object-contain pointer-events-auto"
                                                             :src="'{{ asset('storage/' . ($verification->face_video ?? '')) }}'"
                                                             controls
+                                                            controlsList="nodownload"
                                                             muted
                                                             playsinline
+                                                            preload="none"
                                                             @click.stop
                                                         ></video>
                                                         <div class="absolute inset-0 pointer-events-none flex items-center justify-center bg-black bg-opacity-0 transition-all group-hover:bg-opacity-10">
@@ -183,7 +185,7 @@
                                                             <span class="icon-image text-2xl text-gray-400"></span>
                                                             <p class="text-xs font-medium text-gray-500 dark:text-gray-400">
                                                                 @lang('Admin::app.citizens.identity-verifications.show.no-front-id')
-                                                    </p>
+                                                            </p>
                                                 </div>
                                             </div>
                                         </template>
@@ -267,35 +269,52 @@
 
                     <!-- Right Component -->
                     <div class="flex w-[360px] max-w-full flex-col gap-2 max-sm:w-full">
-                        <!-- Verification Details -->
-                        <x-admin::accordion>
-                            <x-slot:header>
-                                <p class="p-2.5 text-base font-semibold text-gray-600 dark:text-gray-300">
-                                    @lang('Admin::app.citizens.identity-verifications.show.verification-details')
-                                </p>
-                            </x-slot:header>
+                        {!! view_render_event('bagisto.admin.citizens.identity-verifications.show.card.accordion.verification.before') !!}
 
-                            <x-slot:content>
-                                <template v-if="verification">
+                        <!-- Verification Details -->
+                        <template v-if="! verification">
+                            <x-admin::shimmer.accordion class="h-[271px] w-[360px]"/>
+                        </template>
+
+                        <template v-else>
+                            <x-admin::accordion>
+                                <x-slot:header>
+                                    <div class="flex w-full">
+                                        <p class="w-full p-2.5 text-base font-semibold text-gray-800 dark:text-white">
+                                            @lang('Admin::app.citizens.identity-verifications.show.verification-details')
+                                        </p>
+                                    </div>
+                                </x-slot:header>
+
+                                <x-slot:content>
                                     <div class="grid gap-y-2.5">
+                                        {!! view_render_event('bagisto.admin.citizens.identity-verifications.show.card.accordion.verification.content.before') !!}
+
+                                        <!-- Status -->
                                         <div>
-                                            <p class="text-sm font-semibold text-gray-800 dark:text-white">
+                                            <p class="text-sm font-semibold text-gray-800 dark:text-white mb-1">
                                                 @lang('Admin::app.citizens.identity-verifications.show.status')
                                             </p>
                                             <p v-html="getStatusLabel(verification.status)"></p>
                                         </div>
 
+                                        {!! view_render_event('bagisto.admin.citizens.identity-verifications.show.card.accordion.verification.status.after') !!}
+
+                                        <!-- Notes -->
                                         <div v-if="verification.notes && verification.status !== 'approved'">
-                                            <p class="text-sm font-semibold text-gray-800 dark:text-white">
+                                            <p class="text-sm font-semibold text-gray-800 dark:text-white mb-1">
                                                 @lang('Admin::app.citizens.identity-verifications.show.notes')
                                             </p>
-                                            <p class="text-gray-600 dark:text-gray-300">
+                                            <p class="text-gray-600 dark:text-gray-300 break-all">
                                                 @{{ verification.notes }}
                                             </p>
                                         </div>
 
+                                        {!! view_render_event('bagisto.admin.citizens.identity-verifications.show.card.accordion.verification.notes.after') !!}
+
+                                        <!-- Reviewed By -->
                                         <div v-if="verification.reviewer">
-                                            <p class="text-sm font-semibold text-gray-800 dark:text-white">
+                                            <p class="text-sm font-semibold text-gray-800 dark:text-white mb-1">
                                                 @lang('Admin::app.citizens.identity-verifications.show.reviewed-by')
                                             </p>
                                             <p class="text-gray-600 dark:text-gray-300">
@@ -303,8 +322,11 @@
                                             </p>
                                         </div>
 
+                                        {!! view_render_event('bagisto.admin.citizens.identity-verifications.show.card.accordion.verification.reviewer.after') !!}
+
+                                        <!-- Reviewed At -->
                                         <div v-if="verification.reviewed_at">
-                                            <p class="text-sm font-semibold text-gray-800 dark:text-white">
+                                            <p class="text-sm font-semibold text-gray-800 dark:text-white mb-1">
                                                 @lang('Admin::app.citizens.identity-verifications.show.reviewed-at')
                                             </p>
                                             <p class="text-gray-600 dark:text-gray-300">
@@ -312,18 +334,27 @@
                                             </p>
                                         </div>
 
+                                        {!! view_render_event('bagisto.admin.citizens.identity-verifications.show.card.accordion.verification.reviewed_at.after') !!}
+
+                                        <!-- Created At -->
                                         <div>
-                                            <p class="text-sm font-semibold text-gray-800 dark:text-white">
+                                            <p class="text-sm font-semibold text-gray-800 dark:text-white mb-1">
                                                 @lang('Admin::app.citizens.identity-verifications.show.created-at')
                                             </p>
                                             <p class="text-gray-600 dark:text-gray-300">
                                                 @{{ verification.created_at }}
                                             </p>
                                         </div>
+
+                                        {!! view_render_event('bagisto.admin.citizens.identity-verifications.show.card.accordion.verification.created_at.after') !!}
+
+                                        {!! view_render_event('bagisto.admin.citizens.identity-verifications.show.card.accordion.verification.content.after') !!}
                                     </div>
-                                </template>
-                            </x-slot:content>
-                        </x-admin::accordion>
+                                </x-slot:content>
+                            </x-admin::accordion>
+                        </template>
+
+                        {!! view_render_event('bagisto.admin.citizens.identity-verifications.show.card.accordion.verification.after') !!}
 
                         <!-- Actions -->
                         @if (bouncer()->hasPermission('identity-verifications.update'))
@@ -376,6 +407,7 @@
                                     v-if="selectedVideo"
                                     :src="selectedVideo"
                                     controls
+                                    controlsList="nodownload"
                                     class="max-w-full max-h-[80vh] w-auto h-auto rounded-lg"
                             >
                                 @lang('Admin::app.citizens.identity-verifications.show.video-not-supported')
@@ -394,6 +426,11 @@
                         verification: @json($verification),
                         selectedImage: null,
                         selectedVideo: null,
+                        genderLabel: '@lang('Admin::app.citizens.citizens.view.gender')',
+                        genderTypes: {
+                            'Male': '@lang('Admin::app.citizens.citizens.index.datagrid.gender-types.Male')',
+                            'Female': '@lang('Admin::app.citizens.citizens.index.datagrid.gender-types.Female')',
+                        },
                     };
                 },
 
@@ -436,6 +473,16 @@
                             ...this.verification,
                             ...data,
                         };
+                    },
+
+                    getGenderLabel() {
+                        if (!this.verification || !this.verification.citizen || !this.verification.citizen.gender) {
+                            return this.genderLabel.replace(':gender', 'N/A');
+                        }
+
+                        const translatedGender = this.genderTypes[this.verification.citizen.gender] || this.verification.citizen.gender;
+
+                        return this.genderLabel.replace(':gender', translatedGender);
                     },
                 },
             });

@@ -142,7 +142,7 @@
                                             rules="required"
                                             :label="trans('Admin::app.citizens.types.index.create.code')"
                                             :placeholder="trans('Admin::app.citizens.types.index.create.code')"
-                                            ::readonly="selectedCitizenType"
+                                            ::disabled="selectedCitizenType"
 
                                         />
 

@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Webkul\Core\Eloquent\Repository;
 use Webkul\GraphQLAPI\Validators\CustomException;
 
@@ -77,6 +78,18 @@ class IdentityVerificationRepository extends Repository
                     $citizen->identity_verification_status = 0;
                     }
                     $citizen->save();
+                }
+
+                // If status is approved, delete face video and notes
+                if ($data['status'] == 'approved') {
+                    // Delete face video if exists
+                    if ($verification->face_video) {
+                        Storage::disk('public')->delete($verification->face_video);
+                        $data['face_video'] = null;
+                    }
+
+                    // Clear notes (rejection reason)
+                    $data['notes'] = null;
                 }
             }
 

@@ -127,3 +127,7 @@ extend type Citizen {
     services: [Service] @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\CitizenQuery@services")
 }
 
+enum Gender {
+    MALE @enum(value: "Male")
+    FEMALE @enum(value: "Female")
+}

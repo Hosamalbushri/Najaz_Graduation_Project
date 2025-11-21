@@ -9,7 +9,7 @@ input CitizenSignUpInput {
     firstName: String! @rename(attribute: "first_name")
     middleName: String! @rename(attribute: "middle_name")
     lastName: String! @rename(attribute: "last_name")
-    gender: String!
+    gender: Gender!
     email: String
     phone: String! @rules(apply: ["required"])
     nationalId: String! @rename(attribute: "national_id")

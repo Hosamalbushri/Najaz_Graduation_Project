@@ -118,6 +118,23 @@
 
             methods: {
                 updateStatus(params, {resetForm, setErrors}) {
+                    // Check if status is approved and face video exists
+                    const status = this.$refs.updateStatusForm.querySelector('[name="status"]').value;
+                    
+                    if (status === 'approved' && this.verification.face_video) {
+                        // Show confirmation dialog
+                        this.$emitter.emit('open-confirm-modal', {
+                            message: '@lang('Admin::app.citizens.identity-verifications.show.approve-face-video-warning')',
+                            agree: () => {
+                                this.submitUpdateStatus(resetForm, setErrors);
+                            }
+                        });
+                    } else {
+                        this.submitUpdateStatus(resetForm, setErrors);
+                    }
+                },
+
+                submitUpdateStatus(resetForm, setErrors) {
                     this.isLoading = true;
 
                     let formData = new FormData(this.$refs.updateStatusForm);
