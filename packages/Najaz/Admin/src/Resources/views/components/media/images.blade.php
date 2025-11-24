@@ -31,15 +31,15 @@
                 <template v-if="allowMultiple || images.length == 0">
                     <!-- AI Image Generation Button -->
                     <label
-                        class="grid h-[120px] max-h-[120px] min-h-[110px] w-full min-w-[110px] max-w-[120px] cursor-pointer items-center justify-items-center rounded border border-dashed border-blue-300 transition-all hover:border-blue-600 dark:mix-blend-exclusion dark:invert"
+                        class="grid h-[120px] max-h-[120px] min-h-[110px] w-full min-w-[110px] max-w-[120px] cursor-pointer items-center justify-items-center rounded border border-dashed border-brand-softStrong transition-all hover:border-brand dark:mix-blend-exclusion dark:invert"
                         :style="{'max-width': this.width, 'max-height': this.height}"
                         v-if="ai.enabled"
                         @click="resetAIModal(); $refs.magicAIImageModal.open()"
                     >
                         <div class="flex flex-col items-center">
-                            <span class="icon-magic text-2xl text-blue-600"></span>
+                            <span class="icon-magic text-2xl text-text-link"></span>
 
-                            <p class="grid text-center text-sm font-semibold text-blue-600">
+                            <p class="grid text-center text-sm font-semibold text-text-link">
                                 @lang('admin::app.components.media.images.ai-add-image-btn')
                                 
                                 <span class="text-xs">
@@ -51,15 +51,15 @@
 
                     <!-- Upload Image Button -->
                     <label
-                        class="grid h-[120px] max-h-[120px] min-h-[110px] w-full min-w-[110px] max-w-[120px] cursor-pointer items-center justify-items-center rounded border border-dashed border-gray-300 transition-all hover:border-gray-400 dark:border-gray-800 dark:mix-blend-exclusion dark:invert"
-                        :class="[(errors?.['images.files[0]'] ?? false) ? 'border border-red-500' : 'border-gray-300']"
+                        class="grid h-[120px] max-h-[120px] min-h-[110px] w-full min-w-[110px] max-w-[120px] cursor-pointer items-center justify-items-center rounded border border-dashed border-border-muted transition-all hover:border-border-hover dark:border-border-default dark:mix-blend-exclusion dark:invert"
+                        :class="[(errors?.['images.files[0]'] ?? false) ? 'border border-status-danger' : 'border-border-muted']"
                         :style="{'max-width': this.width, 'max-height': this.height}"
                         :for="$.uid + '_imageInput'"
                     >
                         <div class="flex flex-col items-center">
                             <span class="icon-image text-2xl"></span>
 
-                            <p class="grid text-center text-sm font-semibold text-gray-600 dark:text-gray-300">
+                            <p class="grid text-center text-sm font-semibold text-text-secondary dark:text-text-secondary">
                                 @lang('admin::app.components.media.images.add-image-btn')
                                 
                                 <span class="text-xs">
@@ -105,7 +105,7 @@
                 <template v-if="showPlaceholders && ! images.length">
                     <!-- Front Placeholder -->
                     <div
-                        class="relative h-[120px] max-h-[120px] w-full min-w-[120px] max-w-[120px] rounded border border-dashed border-gray-300 dark:border-gray-800 dark:mix-blend-exclusion dark:invert"
+                        class="relative h-[120px] max-h-[120px] w-full min-w-[120px] max-w-[120px] rounded border border-dashed border-border-muted dark:border-border-default dark:mix-blend-exclusion dark:invert"
                         v-for="placeholder in placeholders"
                     >
                         <img :src="placeholder.image">
@@ -299,7 +299,7 @@
                                                 </template>
 
                                                 <template v-else>
-                                                    <span class="icon-magic text-blue-600"></span>
+                                                    <span class="icon-magic text-text-link"></span>
                                                     
                                                     @lang('admin::app.components.media.images.ai-generation.generate')
                                                 </template>
@@ -319,7 +319,7 @@
                                                 </template>
 
                                                 <template v-else>
-                                                    <span class="icon-magic text-2xl text-blue-600"></span>
+                                                    <span class="icon-magic text-2xl text-text-link"></span>
                                                     
                                                     @lang('admin::app.components.media.images.ai-generation.regenerate')
                                                 </template>
@@ -344,7 +344,7 @@
     </script>
 
     <script type="text/x-template" id="v-media-image-item-template">
-        <div class="group relative grid max-h-[120px] min-w-[120px] justify-items-center overflow-hidden rounded transition-all hover:border-gray-400">
+        <div class="group relative grid max-h-[120px] min-w-[120px] justify-items-center overflow-hidden rounded transition-all hover:border-border-hover">
             <!-- Image Preview -->
             <img
                 :src="image.url"
@@ -353,7 +353,7 @@
 
             <div class="invisible absolute bottom-0 top-0 flex w-full flex-col justify-between bg-white p-3 opacity-80 transition-all group-hover:visible dark:bg-gray-900">
                 <!-- Image Name -->
-                <p class="break-all text-xs font-semibold text-gray-600 dark:text-gray-300"></p>
+                <p class="break-all text-xs font-semibold text-text-secondary dark:text-text-secondary"></p>
 
                 <!-- Actions -->
                 <div class="flex justify-between">

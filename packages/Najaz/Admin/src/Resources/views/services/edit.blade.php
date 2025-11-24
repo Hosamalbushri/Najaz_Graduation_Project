@@ -144,6 +144,12 @@
                                         </x-slot:content>
                                     </x-admin::accordion>
                                 </div>
+
+                                @include('admin::services.service-data-groups', [
+                                    'serviceId' => $service->id,
+                                    'allAttributeGroups' => $attributeGroupOptions,
+                                    'initialSelection' => $serviceGroupInitialSelection,
+                                ])
                             </div>
 
                             <div class="flex w-[360px] max-w-full flex-col gap-2 max-xl:flex-auto max-xl:w-full">
@@ -215,11 +221,6 @@
                                 </div>
                             </div>
                         </div>
-
-                        @include('admin::services.service-data-groups', [
-                            'allAttributeGroups' => $attributeGroupOptions,
-                            'initialSelection' => $serviceGroupInitialSelection,
-                        ])
 
                     </form>
                 </x-admin::form>

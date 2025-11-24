@@ -44,11 +44,30 @@ module.exports = {
                     inverse: "var(--surface-inverse)",
                 },
 
+                border: {
+                    default: "var(--border-default)",
+                    hover: "var(--border-hover)",
+                    focus: "var(--border-focus)",
+                    error: "var(--border-error)",
+                    muted: "var(--border-muted)",
+                    strong: "var(--border-strong)",
+                },
+
+                bg: {
+                    hover: "var(--bg-hover)",
+                    mutedLight: "var(--bg-muted-light)",
+                    badge: "var(--bg-badge)",
+                },
+
                 text: {
                     primary: "var(--text-primary)",
                     secondary: "var(--text-secondary)",
                     muted: "var(--text-muted)",
                     inverse: "var(--text-inverse)",
+                    light: "var(--text-light)",
+                    error: "var(--text-error)",
+                    success: "var(--text-success)",
+                    link: "var(--text-link)",
                 },
 
                 status: {

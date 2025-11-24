@@ -209,6 +209,7 @@
                         </div>
 
                         @include('admin::services.service-data-groups', [
+                            'serviceId' => null,
                             'allAttributeGroups' => $attributeGroupOptions,
                             'initialSelection' => $serviceGroupInitialSelection,
                         ])

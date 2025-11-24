@@ -2,6 +2,7 @@
 
 namespace Najaz\Service\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Najaz\Service\Contracts\ServiceAttributeGroup as ServiceAttributeGroupContract;
 use Webkul\Core\Eloquent\TranslatableModel;
@@ -51,6 +52,22 @@ class ServiceAttributeGroup extends TranslatableModel implements ServiceAttribut
     {
         return $this->hasMany(ServiceAttributeFieldProxy::modelClass())
             ->orderBy('sort_order');
+    }
+
+    /**
+     * Get the services that use this attribute group.
+     */
+    public function services(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            ServiceProxy::modelClass(),
+            'service_attribute_group_service',
+            'service_attribute_group_id',
+            'service_id'
+        )->using(ServiceAttributeGroupService::class)
+            ->withPivot('id', 'pivot_uid', 'sort_order', 'is_notifiable', 'custom_code', 'custom_name')
+            ->withTimestamps()
+            ->orderByPivot('sort_order');
     }
 }
 

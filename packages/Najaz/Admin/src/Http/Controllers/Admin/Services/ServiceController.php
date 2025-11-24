@@ -9,6 +9,7 @@ use Najaz\Admin\DataGrids\Services\ServiceDataGrid;
 use Najaz\Citizen\Models\CitizenTypeProxy;
 use Najaz\Service\Models\Service;
 use Najaz\Service\Models\ServiceAttributeGroupProxy;
+use Najaz\Service\Models\ServiceAttributeGroupService;
 use Najaz\Service\Models\ServiceDocumentTemplateProxy;
 use Najaz\Service\Repositories\ServiceRepository;
 use Najaz\Admin\Http\Controllers\Controller;
@@ -45,6 +46,7 @@ class ServiceController extends Controller
             'translations',
             'fields.translations',
             'fields.attributeType.translations',
+            'fields.attributeType.options.translations',
         ])->orderBy('sort_order')->get();
 
         return view('admin::services.create', [
@@ -81,10 +83,11 @@ class ServiceController extends Controller
 
         $service = $this->serviceRepository->create($data);
 
-        $this->serviceRepository->syncAttributeGroups(
-            request()->input('service_attribute_groups'),
-            $service
-        );
+        // Groups are now managed separately via ServiceGroupController
+        // $this->serviceRepository->syncAttributeGroups(
+        //     request()->input('service_attribute_groups'),
+        //     $service
+        // );
 
         $this->serviceRepository->syncCitizenTypes(request()->input('citizen_type_ids', []), $service);
 
@@ -106,16 +109,80 @@ class ServiceController extends Controller
             'attributeGroups.translations',
             'attributeGroups.fields.translations',
             'attributeGroups.fields.attributeType.translations',
+            'attributeGroups.fields.attributeType.options.translations',
             'citizenTypes',
         ])->findOrFail($id);
+
+        // Eager load saved fields for each pivot relation
+        $pivotIds = $service->attributeGroups->pluck('pivot.id')->filter();
+        if ($pivotIds->isNotEmpty()) {
+            \Najaz\Service\Models\ServiceAttributeGroupService::with([
+                'fields.translations',
+                'fields.attributeType.translations',
+                'fields.attributeType.options.translations'
+            ])->whereIn('id', $pivotIds)->get();
+        }
 
         $attributeGroups = ServiceAttributeGroupProxy::modelClass()::with([
             'translations',
             'fields.translations',
             'fields.attributeType.translations',
+            'fields.attributeType.options.translations',
         ])->orderBy('sort_order')->get();
 
         $documentTemplate = $service->documentTemplate;
+
+        // Get attribute types for field management
+        $attributeTypes = app(\Najaz\Service\Repositories\ServiceAttributeTypeRepository::class)
+            ->with(['translations', 'options.translations'])
+            ->orderBy('position')
+            ->get()
+            ->map(function ($type) use ($currentLocale) {
+                $translation = $type->translate($currentLocale);
+                
+                // Get options with translations
+                $options = [];
+                if ($type->options) {
+                    $allLocales = core()->getAllLocales();
+                    foreach ($type->options as $option) {
+                        $optionLabels = [];
+                        foreach ($allLocales as $loc) {
+                            $optionTranslation = $option->translate($loc->code);
+                            $optionLabels[$loc->code] = $optionTranslation?->label ?? $option->admin_name ?? $option->code ?? '';
+                        }
+                        $options[] = [
+                            'id' => $option->id,
+                            'code' => $option->code,
+                            'admin_name' => $option->admin_name,
+                            'labels' => $optionLabels,
+                            'sort_order' => $option->sort_order ?? 0,
+                        ];
+                    }
+                }
+                
+                return [
+                    'id'           => $type->id,
+                    'code'         => $type->code,
+                    'type'         => $type->type,
+                    'name'         => $translation?->name ?? $type->code,
+                    'validation'   => $type->validation,
+                    'regex'        => $type->regex,
+                    'default_value' => $type->default_value,
+                    'is_required'  => $type->is_required,
+                    'is_unique'    => $type->is_unique,
+                    'options'      => $options,
+                    'translations' => $type->translations->map(fn($t) => [
+                        'locale' => $t->locale,
+                        'name'   => $t->name,
+                    ])->toArray(),
+                ];
+            });
+
+        // Get validations enum values
+        $validations = \Webkul\Attribute\Enums\ValidationEnum::getValues();
+        $validationLabels = collect($validations)->mapWithKeys(fn ($value) => [
+            $value => trans("Admin::app.services.attribute-types.index.datagrid.validation-{$value}"),
+        ])->toArray();
 
         // Build available fields list from service attribute groups
         $availableFields = $this->buildAvailableFieldsForTemplate($service, $currentLocale);
@@ -129,6 +196,9 @@ class ServiceController extends Controller
                 $this->prepareServiceGroupsForFrontend($service, $currentLocale)
             ),
             'citizenTypeTree'  => $this->buildCitizenTypeTree(),
+            'attributeTypes'   => $attributeTypes,
+            'validations'      => $validations,
+            'validationLabels' => $validationLabels,
         ]);
     }
 
@@ -157,10 +227,11 @@ class ServiceController extends Controller
 
         $service = $this->serviceRepository->update($data, $id);
 
-        $this->serviceRepository->syncAttributeGroups(
-            request()->input('service_attribute_groups'),
-            $service
-        );
+        // Groups are now managed separately via ServiceGroupController
+        // $this->serviceRepository->syncAttributeGroups(
+        //     request()->input('service_attribute_groups'),
+        //     $service
+        // );
 
         $this->serviceRepository->syncCitizenTypes(request()->input('citizen_type_ids', []), $service);
 
@@ -261,6 +332,25 @@ class ServiceController extends Controller
                         $attributeType = $field->attributeType;
                         $attributeTypeTranslation = $attributeType?->translate($locale);
 
+                        // Get options for attribute type if available
+                        $options = [];
+                        if ($attributeType && $attributeType->options) {
+                            $allLocales = core()->getAllLocales();
+                            foreach ($attributeType->options as $option) {
+                                $optionLabels = [];
+                                foreach ($allLocales as $loc) {
+                                    $optionTranslation = $option->translate($loc->code);
+                                    $optionLabels[$loc->code] = $optionTranslation?->label ?? $option->admin_name ?? $option->code ?? '';
+                                }
+                                
+                                $options[] = [
+                                    'id' => $option->id,
+                                    'code' => $option->code,
+                                    'labels' => $optionLabels,
+                                ];
+                            }
+                        }
+
                         return [
                             'id'                  => $field->id,
                             'code'                => $field->code,
@@ -268,6 +358,7 @@ class ServiceController extends Controller
                             'type'                => $field->type,
                             'attribute_type_name' => $attributeTypeTranslation?->name ?? $attributeType?->code ?? '',
                             'sort_order'          => $field->sort_order ?? 0,
+                            'options'             => $options,
                         ];
                     })->values(),
                 ];
@@ -279,16 +370,50 @@ class ServiceController extends Controller
     protected function prepareServiceGroupsForFrontend(?Service $service, string $locale): Collection
     {
         $serviceGroups = ($service?->attributeGroups ?? collect())
-            ->filter(fn ($group) => ($group->fields ?? collect())->count())
+            ->filter(function ($group) {
+                // Check if group has saved fields or template fields
+                $pivotId = $group->pivot->id ?? null;
+                if ($pivotId) {
+                    $pivotRelation = \Najaz\Service\Models\ServiceAttributeGroupService::find($pivotId);
+                    if ($pivotRelation && $pivotRelation->fields()->count() > 0) {
+                        return true;
+                    }
+                }
+                // Fallback to template fields
+                return ($group->fields ?? collect())->count() > 0;
+            })
             ->map(function ($group) use ($locale) {
                 $translation = $group->translate($locale);
+                
+                // Get pivot relation
+                $pivotId = $group->pivot->id ?? null;
+                $pivotRelation = null;
+                $savedFields = collect();
+                
+                if ($pivotId) {
+                    $pivotRelation = \Najaz\Service\Models\ServiceAttributeGroupService::with([
+                        'fields.translations',
+                        'fields.attributeType.translations',
+                        'fields.attributeType.options.translations',
+                        'fields.options.translations',
+                        'fields.options.originalOption.translations'
+                    ])->find($pivotId);
+                    
+                    if ($pivotRelation) {
+                        $savedFields = $pivotRelation->fields;
+                    }
+                }
+                
+                // Use saved fields if available, otherwise use template fields
+                $fieldsToUse = $savedFields->count() > 0 ? $savedFields : ($group->fields ?? collect());
+                
                 $supportsNotification = $group->group_type === 'citizen'
-                    && ($group->fields ?? collect())->contains(
+                    && $fieldsToUse->contains(
                         fn ($field) => strtolower($field->code ?? '') === 'id_number'
                     );
 
                 return [
-                    'service_attribute_group_id' => $group->id,
+                    'service_attribute_group_id' => $pivotId, // Use pivot ID only (null if not exists)
                     'template_id'                => $group->id,
                     'code'                       => $group->pivot->custom_code ?? $group->code,
                     'group_type'                 => $group->group_type ?? 'general',
@@ -298,19 +423,64 @@ class ServiceController extends Controller
                     'is_notifiable'              => (bool) ($group->pivot->is_notifiable ?? false),
                     'supports_notification'      => $supportsNotification,
                     'pivot_uid'                  => $group->pivot->pivot_uid ?? '',
-                    'fields'                     => $group->fields->map(function ($field) use ($locale) {
+                    'pivot_id'                   => $pivotId,
+                    'fields'                     => $fieldsToUse->map(function ($field) use ($locale, $group) {
                         $fieldTranslation = $field->translate($locale);
                         $attributeType = $field->attributeType;
                         $attributeTypeTranslation = $attributeType?->translate($locale);
+                        
+                        // Determine template field ID (original field ID)
+                        $templateFieldId = $field->service_attribute_field_id ?? $field->id;
+                        
+                        // If this is a saved field, use its ID; otherwise use template field ID
+                        $fieldId = ($field instanceof \Najaz\Service\Models\ServiceAttributeGroupServiceField) 
+                            ? $field->id 
+                            : null;
+
+                        // Get labels for all locales
+                        $labels = [];
+                        if ($field instanceof \Najaz\Service\Models\ServiceAttributeGroupServiceField) {
+                            $allLocales = core()->getAllLocales();
+                            foreach ($allLocales as $locale) {
+                                $translation = $field->translate($locale->code);
+                                $labels[$locale->code] = $translation?->label ?? '';
+                            }
+                        }
+
+                        // Get options for attribute type if available
+                        $options = [];
+                        if ($attributeType && $attributeType->options) {
+                            $allLocales = core()->getAllLocales();
+                            foreach ($attributeType->options as $option) {
+                                $optionLabels = [];
+                                foreach ($allLocales as $loc) {
+                                    $optionTranslation = $option->translate($loc->code);
+                                    $optionLabels[$loc->code] = $optionTranslation?->label ?? $option->admin_name ?? $option->code ?? '';
+                                }
+                                
+                                $options[] = [
+                                    'id' => $option->id,
+                                    'code' => $option->code,
+                                    'labels' => $optionLabels,
+                                ];
+                            }
+                        }
 
                         return [
-                            'service_attribute_field_id' => $field->id,
-                            'template_field_id'          => $field->id,
-                            'code'                       => $field->code,
-                            'label'                      => $fieldTranslation?->label ?? $field->code,
-                            'type'                       => $field->type,
-                            'attribute_type_name'        => $attributeTypeTranslation?->name ?? $attributeType?->code ?? '',
-                            'sort_order'                 => $field->sort_order ?? 0,
+                            'id'                        => $fieldId,
+                            'service_attribute_field_id' => $fieldId ?? $field->id,
+                            'template_field_id'         => $templateFieldId,
+                            'code'                      => $field->code,
+                            'label'                     => $fieldTranslation?->label ?? $field->code,
+                            'type'                      => $field->type,
+                            'attribute_type_name'       => $attributeTypeTranslation?->name ?? $attributeType?->code ?? '',
+                            'sort_order'                => $field->sort_order ?? 0,
+                            'is_required'               => $field->is_required ?? false,
+                            'default_value'             => $field->default_value ?? null,
+                            'validation_rules'          => $field->validation_rules ?? null,
+                            'service_attribute_type_id' => $field->service_attribute_type_id ?? null,
+                            'labels'                    => $labels,
+                            'options'                   => $options,
                         ];
                     })->values()->toArray(),
                 ];
@@ -494,4 +664,5 @@ class ServiceController extends Controller
 
         return $fields;
     }
+
 }

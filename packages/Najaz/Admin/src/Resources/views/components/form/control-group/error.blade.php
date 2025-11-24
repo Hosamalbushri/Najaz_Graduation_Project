@@ -9,7 +9,7 @@
     v-slot="{ message }"
 >
     <p
-        {{ $attributes->merge(['class' => 'mt-1 text-xs italic text-red-600']) }}
+        {{ $attributes->merge(['class' => 'mt-1 text-xs italic text-status-danger']) }}
         v-text="message"
     >
     </p>

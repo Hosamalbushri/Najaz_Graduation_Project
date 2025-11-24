@@ -67,6 +67,14 @@ class ServiceAttributeType extends TranslatableModel implements ServiceAttribute
         return $this->hasMany(ServiceAttributeTypeOptionProxy::modelClass(), 'service_attribute_type_id')
             ->orderBy('sort_order');
     }
+
+    /**
+     * Get the fields that use this attribute type.
+     */
+    public function fields(): HasMany
+    {
+        return $this->hasMany(ServiceAttributeFieldProxy::modelClass(), 'service_attribute_type_id');
+    }
 }
 
 

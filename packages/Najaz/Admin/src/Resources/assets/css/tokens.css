@@ -1,135 +1,301 @@
 @layer base {
 :root {
-    /* ===== Base Palette (واضحة وبسيطة) ===== */
-    --color-white: #ffffff;
-    --color-black: #000000;
+    /* ============================================
+       🎨 لوحة الألوان الأساسية (Base Palette)
+       ============================================ */
+    
+    /* الألوان الأساسية - أبيض وأسود */
+    --color-white: #ffffff;  /* يستخدم للخلفيات البيضاء والنصوص على الخلفيات الداكنة */
+    --color-black: #000000;  /* يستخدم للنصوص السوداء */
 
-    --gray-25: #fcfcfd;
-    --gray-50: #f8fafc;
-    --gray-100: #f1f5f9;
-    --gray-200: #e2e8f0;
-    --gray-300: #d1d5db;
-    --gray-400: #9ca3af;
-    --gray-500: #6b7280;
-    --gray-600: #4b5563;
-    --gray-700: #374151;
-    --gray-800: #1f2937;
-    --gray-900: #0f172a;
+    /* درجات الرمادي - تستخدم للخلفيات والحدود والنصوص */
+    --gray-25: #fafbfc;   /* أخف درجة رمادي - خلفيات فاتحة جداً */
+    --gray-50: #f4f6f8;   /* خلفيات فاتحة - body background */
+    --gray-100: #e8ecf1;  /* خلفيات muted - خلفيات ثانوية */
+    --gray-200: #d1d8e0;  /* حدود فاتحة - borders muted */
+    --gray-300: #b8c2ce;  /* حدود متوسطة - borders strong */
+    --gray-400: #8b9aab;  /* نصوص فاتحة - text light, borders hover/focus */
+    --gray-500: #6b7a8c;  /* نصوص muted - text muted, icons */
+    --gray-600: #4a5568;  /* نصوص ثانوية - text secondary */
+    --gray-700: #374151;  /* نصوص قوية */
+    --gray-800: #1f2937;  /* نصوص أساسية - text primary */
+    --gray-900: #111827;  /* أغمق درجة - surface inverse */
 
-    --brand-50: #eff6ff;
-    --brand-100: #dbeafe;
-    --brand-200: #bfdbfe;
-    --brand-300: #93c5fd;
-    --brand-400: #4f46e5;
-    --brand-500: #3b82f6;
-    --brand-600: #4f46e5;
-    --brand-700: #1d4ed8;
-    --brand-800: #1e40af;
-    --brand-900: #1e3a8a;
+    /* ============================================
+       🎨 ألوان العلامة التجارية (Brand Colors)
+       ============================================ */
+    
+    /* درجات اللون الأساسي - Indigo/Violet جميل ومتناسق */
+    --brand-50: #f0f4ff;   /* خلفيات فاتحة جداً - soft backgrounds */
+    --brand-100: #e0e9ff;  /* خلفيات فاتحة - soft-strong backgrounds */
+    --brand-200: #c5d5ff;  /* خلفيات متوسطة */
+    --brand-300: #9fb5ff;  /* focus rings - حلقات التركيز */
+    --brand-400: #7c91ff;  /* medium - أزرار ثانوية */
+    --brand-500: #6366f1;  /* اللون الأساسي المتوسط */
+    --brand-600: #4f46e5;  /* اللون الأساسي - brand primary (Indigo) */
+    --brand-700: #4338ca;  /* strong - أزرار hover/active */
+    --brand-800: #3730a3;  /* أغمق */
+    --brand-900: #312e81;  /* أغمق درجة */
 
-    --success-100: #dcfce7;
-    --success-500: #22c55e;
-    --success-600: #16a34a;
+    /* ============================================
+       🎨 ألوان الحالات (Status Colors)
+       ============================================ */
+    
+    /* ✅ نجاح - أخضر جميل */
+    --success-100: #d1fae5;  /* خلفيات رسائل النجاح */
+    --success-500: #10b981;  /* لون النجاح الأساسي - text success */
+    --success-600: #059669;  /* لون النجاح القوي - status success */
 
-    --warning-100: #fef3c7;
-    --warning-500: #f59e0b;
-    --warning-600: #d97706;
+    /* ⚠️ تحذير - برتقالي/أصفر */
+    --warning-100: #fef3c7;  /* خلفيات رسائل التحذير */
+    --warning-500: #f59e0b;  /* لون التحذير الأساسي - status warning */
+    --warning-600: #d97706;  /* لون التحذير القوي */
 
-    --info-100: #cffafe;
-    --info-600: #0891b2;
+    /* ℹ️ معلومات - سماوي */
+    --info-100: #cffafe;     /* خلفيات رسائل المعلومات */
+    --info-600: #0891b2;     /* لون المعلومات - status info */
 
-    --danger-100: #ffe4e6;
-    --danger-600: #e11d48;
+    /* ❌ خطأ/خطر - وردي/أحمر */
+    --danger-100: #fee2e2;   /* خلفيات رسائل الخطأ */
+    --danger-600: #ef4444;   /* لون الخطأ - status danger, text error, border error */
 
-    --indigo-200: #c7d2fe;
-    --indigo-600: #4f46e5;
-    --slate-400: #94a3b8;
+    /* ألوان إضافية */
+    --indigo-200: #c7d2fe;   /* روابط muted */
+    --indigo-600: #4f46e5;   /* status closed */
+    --slate-400: #94a3b8;    /* نصوص muted في الوضع الداكن */
 
-    /* ===== Surfaces & Borders ===== */
-    --surface-body: var(--gray-50);
+    /* ============================================
+       🎨 الخلفيات والسطوح (Surfaces)
+       ============================================ */
+    
+    /* --surface-body: خلفية الصفحة الرئيسية - يظهر في body */
+    --surface-body: var(--color-white);
+    
+    /* --surface-card: خلفية البطاقات والصناديق - يظهر في cards, modals, dropdowns */
     --surface-card: var(--color-white);
+    
+    /* --surface-muted: خلفيات ثانوية - يظهر في sections muted, backgrounds */
     --surface-muted: var(--gray-100);
+    
+    /* --surface-inverse: خلفية معكوسة - يظهر في dark mode backgrounds */
     --surface-inverse: var(--gray-900);
 
+    /* ============================================
+       🎨 الحدود (Borders)
+       ============================================ */
+    
+    /* --border-muted: حدود فاتحة - يظهر في borders خفيفة، dividers */
     --border-muted: var(--gray-200);
+    
+    /* --border-strong: حدود قوية - يظهر في borders واضحة */
     --border-strong: var(--gray-300);
+    
+    /* --border-default: الحد الافتراضي - يظهر في input borders, card borders */
+    --border-default: var(--gray-200);
+    
+    /* --border-hover: لون الحد عند hover - يظهر عند تمرير الماوس على inputs, buttons */
+    --border-hover: var(--gray-400);
+    
+    /* --border-focus: لون الحد عند التركيز - يظهر عند focus على inputs */
+    --border-focus: var(--gray-400);
+    
+    /* --border-error: لون الحد عند الخطأ - يظهر في input errors, validation */
+    --border-error: var(--danger-600);
 
-    /* ===== نصوص وأيقونات ===== */
+    /* ============================================
+       🎨 النصوص والأيقونات (Text & Icons)
+       ============================================ */
+    
+    /* --text-primary: النص الأساسي - يظهر في العناوين، النصوص المهمة */
     --text-primary: var(--gray-800);
+    
+    /* --text-secondary: النص الثانوي - يظهر في النصوص العادية، labels */
     --text-secondary: var(--gray-600);
+    
+    /* --text-muted: نص خافت - يظهر في placeholders، نصوص مساعدة */
     --text-muted: var(--gray-500);
+    
+    /* --text-inverse: نص معكوس - يظهر على خلفيات داكنة */
     --text-inverse: var(--color-white);
+    
+    /* --text-light: نص فاتح - يظهر في نصوص ثانوية فاتحة */
+    --text-light: var(--gray-400);
+    
+    /* --text-error: نص الخطأ - يظهر في رسائل الخطأ، validation errors */
+    --text-error: var(--danger-600);
+    
+    /* --text-success: نص النجاح - يظهر في رسائل النجاح، indicators */
+    --text-success: var(--success-500);
+    
+    /* --text-link: نص الروابط - يظهر في الروابط القابلة للنقر */
+    --text-link: var(--brand-600);
+    
+    /* --icon-default: لون الأيقونات الافتراضي - يظهر في icons عادية */
     --icon-default: var(--gray-500);
 
-    /* ===== تفاعل و روابط ===== */
+    /* ============================================
+       🎨 العلامة التجارية والتفاعل (Brand & Interaction)
+       ============================================ */
+    
+    /* --brand-primary: اللون الأساسي للعلامة التجارية - يظهر في buttons primary, links */
     --brand-primary: var(--brand-600);
+    
+    /* --brand-primary-strong: لون قوي - يظهر في buttons hover, active states */
     --brand-primary-strong: var(--brand-700);
+    
+    /* --brand-primary-medium: لون متوسط - يظهر في elements متوسطة */
     --brand-primary-medium: var(--brand-400);
+    
+    /* --brand-primary-soft: لون ناعم - يظهر في خلفيات soft */
     --brand-primary-soft: var(--brand-50);
+    
+    /* --brand-primary-soft-strong: لون ناعم قوي - يظهر في hover states للعناصر الناعمة */
     --brand-primary-soft-strong: var(--brand-100);
-    --brand-primary-soft-alpha: rgba(37, 99, 235, 0.12);
+    
+    /* --brand-primary-soft-alpha: لون شفاف - يظهر في overlays، highlights */
+    --brand-primary-soft-alpha: rgba(99, 102, 241, 0.12);
 
+    /* --link-primary: لون الروابط الأساسي - يظهر في links */
     --link-primary: var(--brand-primary);
+    
+    /* --link-muted: لون الروابط الخافت - يظهر في links ثانوية */
     --link-muted: var(--indigo-200);
+    
+    /* --focus-ring: حلقة التركيز - يظهر عند focus على elements */
     --focus-ring: var(--brand-300);
-    --selection-bg: rgba(37, 99, 235, 0.2);
+    
+    /* --selection-bg: خلفية التحديد - يظهر عند تحديد النص */
+    --selection-bg: rgba(99, 102, 241, 0.2);
 
-    /* ===== حالات واستجابات ===== */
+    /* ============================================
+       🎨 حالات النظام (Status States)
+       ============================================ */
+    
+    /* ✅ حالة النجاح */
+    /* --status-success: لون النجاح - يظهر في success badges, indicators */
     --status-success: var(--success-600);
+    /* --status-success-bg: خلفية النجاح - يظهر في success backgrounds */
     --status-success-bg: var(--success-100);
 
+    /* ⚠️ حالة التحذير */
+    /* --status-warning: لون التحذير - يظهر في warning badges, alerts */
     --status-warning: var(--warning-500);
+    /* --status-warning-strong: لون تحذير قوي - يظهر في warning states قوية */
     --status-warning-strong: var(--warning-600);
+    /* --status-warning-bg: خلفية التحذير - يظهر في warning backgrounds */
     --status-warning-bg: var(--warning-100);
 
+    /* ℹ️ حالة المعلومات */
+    /* --status-info: لون المعلومات - يظهر في info badges, notifications */
     --status-info: var(--info-600);
+    /* --status-info-bg: خلفية المعلومات - يظهر في info backgrounds */
     --status-info-bg: var(--info-100);
 
+    /* ❌ حالة الخطأ */
+    /* --status-danger: لون الخطأ - يظهر في error badges, danger states */
     --status-danger: var(--danger-600);
+    /* --status-danger-bg: خلفية الخطأ - يظهر في error backgrounds */
     --status-danger-bg: var(--danger-100);
 
+    /* حالة إضافية */
+    /* --status-closed: لون الحالة المغلقة - يظهر في closed states */
     --status-closed: var(--indigo-600);
+    /* --status-closed-bg: خلفية الحالة المغلقة */
     --status-closed-bg: var(--indigo-200);
+    /* --status-disable: لون المعطل - يظهر في disabled states */
     --status-disable: #dc2626;
 
-    /* ===== مكونات محددة ===== */
+    /* ============================================
+       🎨 مكونات محددة (Component-Specific)
+       ============================================ */
+    
+    /* شريط التمرير (Scrollbar) */
+    /* --surface-scrollbar-track: خلفية شريط التمرير - يظهر في scrollbar track */
     --surface-scrollbar-track: var(--color-white);
+    /* --surface-scrollbar-thumb: زر شريط التمرير - يظهر في scrollbar thumb */
     --surface-scrollbar-thumb: var(--gray-200);
+    /* --surface-scrollbar-border: حدود شريط التمرير */
     --surface-scrollbar-border: var(--gray-200);
+
+    /* العناصر القابلة للسحب (Draggable) */
+    /* --surface-draggable: خلفية العناصر القابلة للسحب - يظهر عند drag elements */
     --surface-draggable: var(--brand-100);
+    /* --surface-selection: خلفية التحديد - يظهر عند تحديد elements */
     --surface-selection: var(--selection-bg);
+
+    /* الأزرار (Buttons) */
+    /* --surface-button-secondary: خلفية الأزرار الثانوية - يظهر في secondary buttons */
     --surface-button-secondary: var(--color-white);
-    --surface-button-secondary-hover: rgba(239, 246, 255, 0.38);
-    --surface-button-transparent-hover: #f3f4f6;
+    /* --surface-button-secondary-hover: خلفية hover للأزرار الثانوية */
+    --surface-button-secondary-hover: rgba(99, 102, 241, 0.08);
+    /* --surface-button-transparent-hover: خلفية hover للأزرار الشفافة */
+    --surface-button-transparent-hover: var(--gray-100);
 
-    --star-active: #ffb600;
-    --star-muted: #7d7d7d;
+    /* خلفيات تفاعلية (Interactive Backgrounds) */
+    /* --bg-hover: خلفية hover - يظهر عند hover على elements (مثل toggle switch) */
+    --bg-hover: var(--gray-200);
+    /* --bg-muted-light: خلفية muted فاتحة - يظهر في backgrounds ثانوية */
+    --bg-muted-light: var(--gray-100);
+    /* --bg-badge: خلفية الشارات - يظهر في badges, tags */
+    --bg-badge: var(--gray-600);
 
-    --shimmer-light-start: #f6f6f6;
-    --shimmer-light-mid: #f0f0f0;
+    /* النجوم (Stars) */
+    /* --star-active: لون النجم النشط - يظهر في star ratings نشطة */
+    --star-active: #fbbf24;
+    /* --star-muted: لون النجم الخافت - يظهر في star ratings غير نشطة */
+    --star-muted: #9ca3af;
+
+    /* تأثير Shimmer (Loading Animation) */
+    /* --shimmer-light-start: بداية shimmer في الوضع الفاتح */
+    --shimmer-light-start: #f0f0f0;
+    /* --shimmer-light-mid: منتصف shimmer في الوضع الفاتح */
+    --shimmer-light-mid: #e8e8e8;
+    /* --shimmer-dark-start: بداية shimmer في الوضع الداكن */
     --shimmer-dark-start: #1f2937;
+    /* --shimmer-dark-mid: منتصف shimmer في الوضع الداكن */
     --shimmer-dark-mid: #1a2232;
 
+    /* محرر النصوص (Text Editor) */
+    /* --editor-chip-bg: خلفية chips في المحرر - يظهر في editor chips */
     --editor-chip-bg: var(--brand-50);
+    /* --editor-chip-bg-hover: خلفية hover للchips */
     --editor-chip-bg-hover: var(--brand-100);
+    /* --editor-chip-text: نص chips في المحرر */
     --editor-chip-text: var(--brand-600);
 
+    /* رسائل Flash (Flash Messages) */
+    /* --flash-success: لون رسالة النجاح */
     --flash-success: var(--status-success);
+    /* --flash-error: لون رسالة الخطأ */
     --flash-error: var(--status-danger);
+    /* --flash-warning: لون رسالة التحذير */
     --flash-warning: var(--status-warning);
+    /* --flash-info: لون رسالة المعلومات */
     --flash-info: var(--status-info);
+    /* --flash-warning-text: نص رسالة التحذير */
     --flash-warning-text: var(--gray-800);
+    /* --flash-light-text: نص فاتح للرسائل */
     --flash-light-text: var(--color-white);
 
-    --seo-title: #161b9d;
-    --seo-url: #135f29;
+    /* SEO Preview */
+    /* --seo-title: لون عنوان SEO - يظهر في SEO preview titles */
+    --seo-title: #1e40af;
+    /* --seo-url: لون رابط SEO - يظهر في SEO preview URLs */
+    --seo-url: #059669;
+    /* --seo-description: لون وصف SEO - يظهر في SEO preview descriptions */
     --seo-description: var(--gray-600);
+    /* --seo-description-dark: لون وصف SEO في الوضع الداكن */
     --seo-description-dark: var(--slate-400);
 
+    /* الرسوم البيانية (Charts) */
+    /* --chart-total-visitors: لون زوار الموقع في الرسوم البيانية */
     --chart-total-visitors: #f87171;
-    --chart-total-sales: #598de6;
+    /* --chart-total-sales: لون المبيعات في الرسوم البيانية */
+    --chart-total-sales: #6366f1;
 
-    /* ===== واجهات قديمة (تسهيل الانتقال) ===== */
+    /* ============================================
+       🎨 واجهات قديمة (Legacy - للتوافق)
+       ============================================ */
     --color-primary: var(--brand-primary);
     --color-primary-border: var(--brand-primary-strong);
     --color-primary-medium: var(--brand-primary-medium);
@@ -194,25 +360,41 @@
     --color-chart-total-sales: var(--chart-total-sales);
 }
 
+/* ============================================
+   🌙 الوضع الداكن (Dark Mode)
+   ============================================ */
 html.dark,
 html[data-theme="dark"] {
-    --surface-body: #020617;
-    --surface-card: #0f172a;
-    --surface-muted: #1e293b;
-    --surface-scrollbar-track: #0f172a;
-    --surface-scrollbar-thumb: #1f2937;
-    --surface-scrollbar-border: #1f2937;
+    /* الخلفيات في الوضع الداكن */
+    --surface-body: #0a0e1a;        /* خلفية الصفحة - أغمق قليلاً */
+    --surface-card: #131827;        /* خلفية البطاقات - أغمق */
+    --surface-muted: #1e293b;       /* خلفيات ثانوية */
+    
+    /* شريط التمرير في الوضع الداكن */
+    --surface-scrollbar-track: #131827;
+    --surface-scrollbar-thumb: #2d3748;
+    --surface-scrollbar-border: #2d3748;
 
-    --text-primary: var(--gray-100);
-    --text-secondary: var(--gray-300);
-    --text-muted: var(--slate-400);
-    --icon-default: var(--gray-300);
+    /* النصوص في الوضع الداكن */
+    --text-primary: var(--gray-100);      /* نصوص أساسية فاتحة */
+    --text-secondary: var(--gray-300);    /* نصوص ثانوية */
+    --text-muted: var(--slate-400);       /* نصوص خافتة */
+    --text-light: var(--gray-400);        /* نصوص فاتحة */
+    --icon-default: var(--gray-300);      /* أيقونات */
 
-    --surface-button-secondary: #111827;
+    /* الخلفيات التفاعلية في الوضع الداكن */
+    --bg-hover: var(--gray-800);         /* hover backgrounds */
+    --bg-muted-light: var(--gray-800);   /* muted backgrounds */
+    --border-default: var(--gray-700);    /* حدود افتراضية */
+    --border-hover: var(--gray-400);      /* حدود hover */
+    --border-focus: var(--gray-400);      /* حدود focus */
+
+    /* الأزرار في الوضع الداكن */
+    --surface-button-secondary: #1a1f2e;
     --surface-button-secondary-hover: rgba(255, 255, 255, 0.05);
-    --surface-button-transparent-hover: #0f172a;
+    --surface-button-transparent-hover: #131827;
 
+    /* SEO في الوضع الداكن */
     --seo-description-dark: var(--gray-300);
 }
 }
-

@@ -28,15 +28,15 @@
                 <!-- Upload Video Button -->
 
                 <label
-                    class="grid h-[120px] max-h-[120px] w-full max-w-[210px] cursor-pointer items-center justify-items-center rounded border border-dashed transition-all hover:border-gray-400 dark:border-gray-800 dark:mix-blend-exclusion dark:invert"
-                    :class="[errors['videos.files[0]'] ? 'border border-red-500' : 'border-gray-300']"
+                    class="grid h-[120px] max-h-[120px] w-full max-w-[210px] cursor-pointer items-center justify-items-center rounded border border-dashed transition-all hover:border-border-hover dark:border-border-default dark:mix-blend-exclusion dark:invert"
+                    :class="[errors['videos.files[0]'] ? 'border border-status-danger' : 'border-border-muted']"
                     :for="$.uid + '_videoInput'"
                     v-if="allowMultiple || videos.length == 0"
                 >
                     <div class="flex flex-col items-center">
                         <span class="icon-image text-2xl"></span>
 
-                        <p class="grid text-center text-sm font-semibold text-gray-600 dark:text-gray-300">
+                        <p class="grid text-center text-sm font-semibold text-text-secondary dark:text-text-secondary">
                             @lang('admin::app.components.media.videos.add-video-btn')
                             
                             <span class="text-xs">
@@ -84,7 +84,7 @@
         type="text/x-template"
         id="v-media-video-item-template"
     >
-        <div class="group relative grid h-[120px] max-h-[120px] min-w-[210px] max-w-[210px] justify-items-center overflow-hidden rounded border border-dashed border-gray-300 transition-all hover:border-gray-400 dark:border-gray-800">
+        <div class="group relative grid h-[120px] max-h-[120px] min-w-[210px] max-w-[210px] justify-items-center overflow-hidden rounded border border-dashed border-border-muted transition-all hover:border-border-hover dark:border-border-default">
             <!-- Video Preview -->
             <video
                 class="h-[120px] w-[210px] object-cover"
@@ -94,28 +94,28 @@
                 <source :src="video.url" type="video/mp4">
             </video>
 
-            <div class="invisible absolute bottom-0 top-0 flex w-full flex-col justify-between bg-white p-3 opacity-80 transition-all group-hover:visible dark:bg-gray-900">
+            <div class="invisible absolute bottom-0 top-0 flex w-full flex-col justify-between bg-surface-card p-3 opacity-80 transition-all group-hover:visible dark:bg-surface-card">
                 <!-- Video Name -->
-                <p class="break-all text-xs font-semibold text-gray-600 dark:text-gray-300"></p>
+                <p class="break-all text-xs font-semibold text-text-secondary dark:text-text-secondary"></p>
 
                 <!-- Actions -->
                 <div class="flex justify-between">
                     <!-- Remove Button -->
                     <span
-                        class="icon-delete cursor-pointer rounded-md p-1.5 text-2xl hover:bg-gray-200 dark:hover:bg-gray-800"
+                        class="icon-delete cursor-pointer rounded-md p-1.5 text-2xl hover:bg-bg-hover dark:hover:bg-surface-muted"
                         @click="remove"
                     ></span>
 
                     <!-- Play Pause Button -->
                     <span
-                        class="cursor-pointer rounded-md p-1.5 text-2xl hover:bg-gray-200 dark:hover:bg-gray-800"
+                        class="cursor-pointer rounded-md p-1.5 text-2xl hover:bg-bg-hover dark:hover:bg-surface-muted"
                         :class="[isPlaying ? 'icon-pause': 'icon-play']"
                         @click="playPause"
                     ></span>
 
                     <!-- Edit Button -->
                     <label
-                        class="icon-edit cursor-pointer rounded-md p-1.5 text-2xl hover:bg-gray-200 dark:hover:bg-gray-800"
+                        class="icon-edit cursor-pointer rounded-md p-1.5 text-2xl hover:bg-bg-hover dark:hover:bg-surface-muted"
                         :for="$.uid + '_videoInput_' + index"
                     ></label>
 

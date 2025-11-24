@@ -16,7 +16,7 @@
 
         <!-- Total Sales Section -->
         <template v-else>
-            <div class="box-shadow rounded bg-white p-4 dark:bg-gray-900">
+            <div class="box-shadow rounded bg-surface-card p-4 dark:bg-surface-card">
                 <div class="flex flex-wrap gap-4">
                     <!-- Total Citizens -->
                     <div class="flex min-w-[200px] flex-1 gap-2.5">
@@ -29,24 +29,24 @@
 
                         <!-- Citizens Stats -->
                         <div class="grid place-content-start gap-1">
-                            <p class="text-base font-semibold leading-none text-gray-800 dark:text-white">
+                            <p class="text-base font-semibold leading-none text-text-primary dark:text-text-inverse">
                                 @{{ report.statistics.total_citizens.current }}
                             </p>
 
-                            <p class="text-xs font-semibold text-gray-600 dark:text-gray-300">
+                            <p class="text-xs font-semibold text-text-secondary dark:text-text-secondary">
                                 @lang('Admin::app.dashboard.index.total-citizens')
                             </p>
 
                             <!-- Citizens Percentage -->
                             <div class="flex items-center gap-0.5">
                                 <span
-                                    class="text-base text-emerald-500"
-                                    :class="[report.statistics.total_citizens.progress < 0 ? 'icon-down-stat text-red-500 dark:!text-red-500' : 'icon-up-stat text-emerald-500 dark:!text-emerald-500']"
+                                    class="text-base text-status-success"
+                                    :class="[report.statistics.total_citizens.progress < 0 ? 'icon-down-stat text-status-danger dark:!text-status-danger' : 'icon-up-stat text-status-success dark:!text-status-success']"
                                 ></span>
 
                                 <p
-                                    class="text-xs font-semibold text-emerald-500"
-                                    :class="[report.statistics.total_citizens.progress < 0 ?  'text-red-500' : 'text-emerald-500']"
+                                    class="text-xs font-semibold text-status-success"
+                                    :class="[report.statistics.total_citizens.progress < 0 ?  'text-status-danger' : 'text-status-success']"
                                 >
                                     @{{ Math.abs(report.statistics.total_citizens.progress.toFixed(2)) }}%
                                 </p>
@@ -65,24 +65,24 @@
 
                         <!-- Requests Stats -->
                         <div class="grid place-content-start gap-1">
-                            <p class="text-base font-semibold leading-none text-gray-800 dark:text-white">
+                            <p class="text-base font-semibold leading-none text-text-primary dark:text-text-inverse">
                                 @{{ report.statistics.total_requests.current }}
                             </p>
 
-                            <p class="text-xs font-semibold text-gray-600 dark:text-gray-300">
+                            <p class="text-xs font-semibold text-text-secondary dark:text-text-secondary">
                                 @lang('Admin::app.dashboard.index.total-requests')
                             </p>
 
                             <!-- Request Percentage -->
                             <div class="flex items-center gap-0.5">
                                 <span
-                                    class="text-base text-emerald-500"
-                                    :class="[report.statistics.total_requests.progress < 0 ? 'icon-down-stat text-red-500 dark:!text-red-500' : 'icon-up-stat text-emerald-500 dark:!text-emerald-500']"
+                                    class="text-base text-status-success"
+                                    :class="[report.statistics.total_requests.progress < 0 ? 'icon-down-stat text-status-danger dark:!text-status-danger' : 'icon-up-stat text-status-success dark:!text-status-success']"
                                 ></span>
 
                                 <p
-                                    class="text-xs font-semibold text-emerald-500"
-                                    :class="[report.statistics.total_requests.progress < 0 ?  'text-red-500' : 'text-emerald-500']"
+                                    class="text-xs font-semibold text-status-success"
+                                    :class="[report.statistics.total_requests.progress < 0 ?  'text-status-danger' : 'text-status-success']"
                                 >
                                     @{{ Math.abs(report.statistics.total_requests.progress.toFixed(2)) }}%
                                 </p>
@@ -101,24 +101,24 @@
 
                         <!-- Average Stats -->
                         <div class="grid place-content-start gap-1">
-                            <p class="text-base font-semibold leading-none text-gray-800 dark:text-white">
+                            <p class="text-base font-semibold leading-none text-text-primary dark:text-text-inverse">
                                 @{{ report.statistics.avg_requests.formatted_current }}
                             </p>
 
-                            <p class="text-xs font-semibold text-gray-600 dark:text-gray-300">
+                            <p class="text-xs font-semibold text-text-secondary dark:text-text-secondary">
                                 @lang('Admin::app.dashboard.index.average-requests')
                             </p>
 
                             <!-- Average Percentage -->
                             <div class="flex items-center gap-0.5">
                                 <span
-                                    class="text-base text-emerald-500"
-                                    :class="[report.statistics.avg_requests.progress < 0 ? 'icon-down-stat text-red-500 dark:!text-red-500' : 'icon-up-stat text-emerald-500 dark:!text-emerald-500']"
+                                    class="text-base text-status-success"
+                                    :class="[report.statistics.avg_requests.progress < 0 ? 'icon-down-stat text-status-danger dark:!text-status-danger' : 'icon-up-stat text-status-success dark:!text-status-success']"
                                 ></span>
 
                                 <p
                                     class="text-xs font-semibold"
-                                    :class="[report.statistics.avg_requests.progress < 0 ?  'text-red-500' : 'text-emerald-500']"
+                                    :class="[report.statistics.avg_requests.progress < 0 ?  'text-status-danger' : 'text-status-success']"
                                 >
                                     @{{ Math.abs(report.statistics.avg_requests.progress.toFixed(2)) }}%
                                 </p>
@@ -137,11 +137,11 @@
                         </div>
 
                         <div class="grid place-content-start gap-1">
-                            <p class="text-base font-semibold leading-none text-gray-800 dark:text-white">
+                            <p class="text-base font-semibold leading-none text-text-primary dark:text-text-inverse">
                                 @{{ report.statistics.pending_requests.formatted_current }}
                             </p>
 
-                            <p class="text-xs font-semibold text-gray-600 dark:text-gray-300">
+                            <p class="text-xs font-semibold text-text-secondary dark:text-text-secondary">
                                 @lang('Admin::app.dashboard.index.pending-requests')
                             </p>
                         </div>
@@ -158,24 +158,24 @@
 
                         <!-- Average Completion Time Stats -->
                         <div class="grid place-content-start gap-1">
-                            <p class="text-base font-semibold leading-none text-gray-800 dark:text-white">
+                            <p class="text-base font-semibold leading-none text-text-primary dark:text-text-inverse">
                                 @{{ report.statistics.avg_completion_time.formatted_current }}
                             </p>
 
-                            <p class="text-xs font-semibold text-gray-600 dark:text-gray-300">
+                            <p class="text-xs font-semibold text-text-secondary dark:text-text-secondary">
                                 @lang('Admin::app.dashboard.index.average-completion-time')
                             </p>
 
                             <!-- Average Completion Time Percentage -->
                             <div class="flex items-center gap-0.5">
                                 <span
-                                    class="text-base text-emerald-500"
-                                    :class="[report.statistics.avg_completion_time.progress < 0 ? 'icon-down-stat text-red-500 dark:!text-red-500' : 'icon-up-stat text-emerald-500 dark:!text-emerald-500']"
+                                    class="text-base text-status-success"
+                                    :class="[report.statistics.avg_completion_time.progress < 0 ? 'icon-down-stat text-status-danger dark:!text-status-danger' : 'icon-up-stat text-status-success dark:!text-status-success']"
                                 ></span>
 
                                 <p
                                     class="text-xs font-semibold"
-                                    :class="[report.statistics.avg_completion_time.progress < 0 ?  'text-red-500' : 'text-emerald-500']"
+                                    :class="[report.statistics.avg_completion_time.progress < 0 ?  'text-status-danger' : 'text-status-success']"
                                 >
                                     @{{ Math.abs(report.statistics.avg_completion_time.progress.toFixed(2)) }}%
                                 </p>
@@ -194,24 +194,24 @@
 
                         <!-- Identity Verifications Stats -->
                         <div class="grid place-content-start gap-1">
-                            <p class="text-base font-semibold leading-none text-gray-800 dark:text-white">
+                            <p class="text-base font-semibold leading-none text-text-primary dark:text-text-inverse">
                                 @{{ report.statistics.total_identity_verifications.current }}
                             </p>
 
-                            <p class="text-xs font-semibold text-gray-600 dark:text-gray-300">
+                            <p class="text-xs font-semibold text-text-secondary dark:text-text-secondary">
                                 @lang('Admin::app.dashboard.index.total-identity-verifications')
                             </p>
 
                             <!-- Identity Verifications Percentage -->
                             <div class="flex items-center gap-0.5">
                                 <span
-                                    class="text-base text-emerald-500"
-                                    :class="[report.statistics.total_identity_verifications.progress < 0 ? 'icon-down-stat text-red-500 dark:!text-red-500' : 'icon-up-stat text-emerald-500 dark:!text-emerald-500']"
+                                    class="text-base text-status-success"
+                                    :class="[report.statistics.total_identity_verifications.progress < 0 ? 'icon-down-stat text-status-danger dark:!text-status-danger' : 'icon-up-stat text-status-success dark:!text-status-success']"
                                 ></span>
 
                                 <p
-                                    class="text-xs font-semibold text-emerald-500"
-                                    :class="[report.statistics.total_identity_verifications.progress < 0 ?  'text-red-500' : 'text-emerald-500']"
+                                    class="text-xs font-semibold text-status-success"
+                                    :class="[report.statistics.total_identity_verifications.progress < 0 ?  'text-status-danger' : 'text-status-success']"
                                 >
                                     @{{ Math.abs(report.statistics.total_identity_verifications.progress.toFixed(2)) }}%
                                 </p>
@@ -229,11 +229,11 @@
                         </div>
 
                         <div class="grid place-content-start gap-1">
-                            <p class="text-base font-semibold leading-none text-gray-800 dark:text-white">
+                            <p class="text-base font-semibold leading-none text-text-primary dark:text-text-inverse">
                                 @{{ report.statistics.pending_identity_verifications.formatted_current }}
                             </p>
 
-                            <p class="text-xs font-semibold text-gray-600 dark:text-gray-300">
+                            <p class="text-xs font-semibold text-text-secondary dark:text-text-secondary">
                                 @lang('Admin::app.dashboard.index.pending-identity-verifications')
                             </p>
                         </div>
