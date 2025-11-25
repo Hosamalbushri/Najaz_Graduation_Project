@@ -48,6 +48,7 @@ Route::group(['middleware' => ['web', 'admin'], 'prefix' => 'admin/services'], f
         Route::post('{serviceId}/groups/{pivotId}/fields/{fieldId}/options', 'store')->name('admin.services.groups.fields.options.store');
         Route::put('{serviceId}/groups/{pivotId}/fields/{fieldId}/options/{optionId}', 'update')->name('admin.services.groups.fields.options.update');
         Route::delete('{serviceId}/groups/{pivotId}/fields/{fieldId}/options/{optionId}', 'destroy')->name('admin.services.groups.fields.options.delete');
+        Route::post('{serviceId}/groups/{pivotId}/fields/{fieldId}/options/reorder', 'reorder')->name('admin.services.groups.fields.options.reorder');
         Route::post('{serviceId}/groups/{pivotId}/fields/{fieldId}/options/sync-from-original', 'syncFromOriginal')->name('admin.services.groups.fields.options.sync-from-original');
     });
 

@@ -45,6 +45,7 @@ return [
             'cannot_update'          => 'يمكن تحديث طلب الخدمة فقط عندما تكون الحالة pending أو in_progress.',
             'cannot_cancel'          => 'يمكن إلغاء طلب الخدمة فقط عندما تكون الحالة pending أو in_progress.',
             'service_not_accessible' => 'هذه الخدمة غير متاحة لنوع المواطن الخاص بك.',
+            'identity_not_verified'  => 'يجب توثيق هويتك والحصول على الموافقة قبل إنشاء طلب خدمة.',
             'missing_required_fields' => 'الحقول المطلوبة التالية مفقودة: :fields',
             'invalid_fields'         => 'الحقول التالية تحتوي على قيم غير صحيحة: :fields',
             'unknown_fields'         => 'الحقول التالية غير مرتبطة بهذه الخدمة: :fields',

@@ -109,6 +109,7 @@ class ServiceGroupController extends Controller
             'attributeGroup.translations',
             'fields.translations',
             'fields.attributeType.translations',
+            'fields.options.translations',
         ])->where('pivot_uid', $pivotUid)
             ->where('service_id', $service->id)
             ->first();
@@ -183,6 +184,7 @@ class ServiceGroupController extends Controller
             'attributeGroup.translations',
             'fields.translations',
             'fields.attributeType.translations',
+            'fields.options.translations',
         ])->findOrFail($pivotId);
 
         return new JsonResponse([
@@ -285,15 +287,51 @@ class ServiceGroupController extends Controller
         }
 
         $fields = ($pivotRelation->fields ?? collect())->map(function ($field) use ($locale) {
+            // Get labels for all locales
+            $labels = [];
+            foreach (core()->getAllLocales() as $loc) {
+                $translation = $field->translate($loc->code);
+                $labels[$loc->code] = $translation?->label ?? '';
+            }
+            
+            // Get options with labels for all locales
+            $options = [];
+            if ($field->options) {
+                foreach ($field->options as $option) {
+                    $optionLabels = [];
+                    foreach (core()->getAllLocales() as $loc) {
+                        $optionTranslation = $option->translate($loc->code);
+                        $optionLabels[$loc->code] = $optionTranslation?->label ?? $option->admin_name ?? $option->code ?? '';
+                    }
+                    
+                    $options[] = [
+                        'id' => $option->id,
+                        'uid' => "option_{$option->id}",
+                        'service_attribute_type_option_id' => $option->service_attribute_type_option_id ?? null,
+                        'admin_name' => $option->admin_name ?? '',
+                        'code' => $option->code ?? $option->admin_name ?? '',
+                        'labels' => $optionLabels,
+                        'sort_order' => $option->sort_order ?? 0,
+                        'is_custom' => $option->is_custom ?? false,
+                    ];
+                }
+            }
+            
             return [
                 'id'                      => $field->id,
                 'service_attribute_field_id' => $field->service_attribute_field_id ?? null,
                 'template_field_id'       => $field->template_field_id ?? $field->id ?? null,
                 'code'                    => $field->code,
                 'label'                   => $field->translate($locale)?->label ?? $field->code,
+                'labels'                  => $labels,
                 'type'                    => $field->type,
                 'attribute_type_name'     => $field->attributeType?->translate($locale)?->name ?? $field->type,
+                'service_attribute_type_id' => $field->service_attribute_type_id ?? null,
+                'validation_rules'        => $field->validation_rules ?? null,
+                'default_value'           => $field->default_value ?? null,
+                'is_required'             => $field->is_required ?? false,
                 'sort_order'              => $field->sort_order ?? 0,
+                'options'                 => $options,
             ];
         })->sortBy('sort_order')->values()->toArray();
 

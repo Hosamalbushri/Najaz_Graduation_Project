@@ -107,19 +107,16 @@ class ServiceController extends Controller
 
         $service = $this->serviceRepository->with([
             'attributeGroups.translations',
-            'attributeGroups.fields.translations',
-            'attributeGroups.fields.attributeType.translations',
-            'attributeGroups.fields.attributeType.options.translations',
             'citizenTypes',
         ])->findOrFail($id);
 
-        // Eager load saved fields for each pivot relation
+        // Eager load custom service fields for each pivot relation (use service-specific tables only)
         $pivotIds = $service->attributeGroups->pluck('pivot.id')->filter();
         if ($pivotIds->isNotEmpty()) {
             \Najaz\Service\Models\ServiceAttributeGroupService::with([
                 'fields.translations',
                 'fields.attributeType.translations',
-                'fields.attributeType.options.translations'
+                'fields.options.translations', // Load custom field options only
             ])->whereIn('id', $pivotIds)->get();
         }
 
@@ -309,12 +306,35 @@ class ServiceController extends Controller
 
     protected function formatAttributeGroupsForFrontend(Collection $attributeGroups, string $locale): array
     {
+        // Load custom service fields from ServiceAttributeGroupService
+        $pivotIds = $attributeGroups->pluck('pivot.id')->filter();
+        $pivotRelations = collect();
+        if ($pivotIds->isNotEmpty()) {
+            $pivotRelations = \Najaz\Service\Models\ServiceAttributeGroupService::with([
+                'fields.translations',
+                'fields.attributeType.translations',
+                'fields.options.translations', // Load custom field options
+            ])->whereIn('id', $pivotIds)->get()->keyBy('id');
+        }
+
         return $attributeGroups
-            ->filter(fn ($group) => ($group->fields ?? collect())->count())
-            ->map(function ($group) use ($locale) {
+            ->map(function ($group) use ($locale, $pivotRelations) {
+                $pivotId = $group->pivot->id ?? null;
+                
+                // Get custom service fields from pivot relation if available, otherwise use template fields
+                $pivotRelation = $pivotId ? ($pivotRelations[$pivotId] ?? null) : null;
+                $fieldsToUse = $pivotRelation && $pivotRelation->fields->isNotEmpty() 
+                    ? $pivotRelation->fields 
+                    : ($group->fields ?? collect());
+
+                // Filter groups that have fields
+                if ($fieldsToUse->isEmpty()) {
+                    return null;
+                }
+
                 $translation = $group->translate($locale);
                 $supportsNotification = $group->group_type === 'citizen'
-                    && ($group->fields ?? collect())->contains(
+                    && $fieldsToUse->contains(
                         fn ($field) => strtolower($field->code ?? '') === 'id_number'
                     );
 
@@ -327,14 +347,32 @@ class ServiceController extends Controller
                     'sort_order'            => $group->sort_order ?? 0,
                     'is_notifiable'         => false,
                     'supports_notification' => $supportsNotification,
-                    'fields'                => $group->fields->map(function ($field) use ($locale) {
+                    'fields'                => $fieldsToUse->map(function ($field) use ($locale) {
                         $fieldTranslation = $field->translate($locale);
                         $attributeType = $field->attributeType;
                         $attributeTypeTranslation = $attributeType?->translate($locale);
 
-                        // Get options for attribute type if available
+                        // Get options from custom field options first, then fall back to attribute type options
                         $options = [];
-                        if ($attributeType && $attributeType->options) {
+                        
+                        // First, try custom field options (service_attribute_group_service_field_options)
+                        if ($field->options && $field->options->isNotEmpty()) {
+                            $allLocales = core()->getAllLocales();
+                            foreach ($field->options as $option) {
+                                $optionLabels = [];
+                                foreach ($allLocales as $loc) {
+                                    $optionTranslation = $option->translate($loc->code);
+                                    $optionLabels[$loc->code] = $optionTranslation?->label ?? $option->admin_name ?? $option->code ?? '';
+                                }
+                                
+                                $options[] = [
+                                    'id' => $option->id,
+                                    'code' => $option->code ?? $option->admin_name ?? '',
+                                    'labels' => $optionLabels,
+                                ];
+                            }
+                        } elseif ($attributeType && $attributeType->options && $attributeType->options->isNotEmpty()) {
+                            // Fall back to attribute type options if no custom options
                             $allLocales = core()->getAllLocales();
                             foreach ($attributeType->options as $option) {
                                 $optionLabels = [];
@@ -363,6 +401,7 @@ class ServiceController extends Controller
                     })->values(),
                 ];
             })
+            ->filter() // Remove null entries
             ->values()
             ->toArray();
     }
@@ -394,9 +433,7 @@ class ServiceController extends Controller
                     $pivotRelation = \Najaz\Service\Models\ServiceAttributeGroupService::with([
                         'fields.translations',
                         'fields.attributeType.translations',
-                        'fields.attributeType.options.translations',
-                        'fields.options.translations',
-                        'fields.options.originalOption.translations'
+                        'fields.options.translations', // Load custom field options only
                     ])->find($pivotId);
                     
                     if ($pivotRelation) {
@@ -447,21 +484,26 @@ class ServiceController extends Controller
                             }
                         }
 
-                        // Get options for attribute type if available
+                        // Get options from service field options (not from attribute type)
                         $options = [];
-                        if ($attributeType && $attributeType->options) {
+                        if ($field instanceof \Najaz\Service\Models\ServiceAttributeGroupServiceField && $field->options) {
                             $allLocales = core()->getAllLocales();
-                            foreach ($attributeType->options as $option) {
+                            foreach ($field->options as $option) {
                                 $optionLabels = [];
                                 foreach ($allLocales as $loc) {
                                     $optionTranslation = $option->translate($loc->code);
-                                    $optionLabels[$loc->code] = $optionTranslation?->label ?? $option->admin_name ?? $option->code ?? '';
+                                    $optionLabels[$loc->code] = $optionTranslation?->label ?? $option->admin_name ?? '';
                                 }
                                 
                                 $options[] = [
                                     'id' => $option->id,
-                                    'code' => $option->code,
+                                    'uid' => "option_{$option->id}",
+                                    'service_attribute_type_option_id' => $option->service_attribute_type_option_id ?? null,
+                                    'code' => $option->code ?? $option->admin_name ?? '',
+                                    'admin_name' => $option->admin_name ?? '',
                                     'labels' => $optionLabels,
+                                    'sort_order' => $option->sort_order ?? 0,
+                                    'is_custom' => $option->is_custom ?? true,
                                 ];
                             }
                         }
@@ -588,10 +630,11 @@ class ServiceController extends Controller
 
     /**
      * Build available fields list for document template.
+     * Uses custom service fields (service_attribute_group_service_fields) instead of template fields.
      */
     protected function buildAvailableFieldsForTemplate(Service $service, string $locale): array
     {
-        $service->load(['attributeGroups.fields.translations', 'attributeGroups.translations']);
+        $service->load(['attributeGroups.translations']);
 
         $fields = [];
 
@@ -637,13 +680,31 @@ class ServiceController extends Controller
             'group' => 'system',
         ];
 
-        // Add fields from service attribute groups
+        // Load custom service fields from ServiceAttributeGroupService
+        $pivotIds = $service->attributeGroups->pluck('pivot.id')->filter();
+        $pivotRelations = collect();
+        if ($pivotIds->isNotEmpty()) {
+            $pivotRelations = \Najaz\Service\Models\ServiceAttributeGroupService::with([
+                'attributeGroup.translations',
+                'fields.translations', // Load custom service fields with translations
+                'fields.attributeType.translations',
+            ])->whereIn('id', $pivotIds)->get()->keyBy('id');
+        }
+
+        // Add fields from service attribute groups - use custom service fields
         foreach ($service->attributeGroups as $group) {
+            $pivotId = $group->pivot->id ?? null;
             $groupCode = $group->pivot->custom_code ?? $group->code;
             $groupTranslation = $group->translate($locale);
             $groupName = $group->pivot->custom_name ?? ($groupTranslation?->name ?? $group->code);
 
-            foreach ($group->fields as $field) {
+            // Get custom service fields from pivot relation if available, otherwise use template fields
+            $pivotRelation = $pivotId ? ($pivotRelations[$pivotId] ?? null) : null;
+            $fieldsToUse = $pivotRelation && $pivotRelation->fields->isNotEmpty() 
+                ? $pivotRelation->fields 
+                : ($group->fields ?? collect());
+
+            foreach ($fieldsToUse as $field) {
                 $fieldTranslation = $field->translate($locale);
                 $fieldLabel = $fieldTranslation?->label ?? $field->code;
 

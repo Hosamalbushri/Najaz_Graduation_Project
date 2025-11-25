@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('identity_verifications', function (Blueprint $table) {
             $table->increments('id');
-            $table->integer('citizen_id')->unsigned();
+            $table->integer('citizen_id')->unsigned()->unique(); // Add unique constraint directly
             $table->enum('status', ['pending', 'approved', 'rejected', 'needs_more_info'])->default('pending');
             $table->json('documents')->nullable();
             $table->string('face_video')->nullable();

@@ -6,6 +6,8 @@ return [
         'no'  => 'No',
         'cancel' => 'Cancel',
         'select' => 'Select...',
+        'edit' => 'Edit',
+        'delete' => 'Delete',
     ],
 
     'citizens' => [
@@ -361,6 +363,7 @@ return [
             'notify-help' => 'Enable when contacts captured in this group should receive service status updates.',
             'duplicate-code' => 'The group code ":code" is already used for this service.',
             'delete-has-requests' => 'Cannot remove group ":group_code" because it is associated with service requests.',
+            'delete-field-has-requests' => 'Cannot delete field ":field_name" because it is associated with service requests.',
             'edit-group-btn' => 'Edit',
             'update-group-btn' => 'Update',
             'select-first-warning' => 'Select a template group before editing.',
@@ -412,6 +415,14 @@ return [
                         'sync-error' => 'Error syncing options.',
                         'no-original-options' => 'No original options available.',
                         'use-field-edit-modal' => 'Please use the field edit modal to manage options.',
+                        'invalid-option-index' => 'Invalid option index.',
+                        'option-id-required' => 'Option ID is required.',
+                        'reorder-success' => 'Options reordered successfully.',
+                        'reorder-error' => 'Error reordering options.',
+                        'invalid-option-ids' => 'Invalid option IDs.',
+                        'order-changed' => 'Option order has been changed.',
+                        'save-order' => 'Save Order',
+                        'cancel-order' => 'Cancel',
                     ],
                     'edit' => [
                         'title' => 'Manage Group Fields',

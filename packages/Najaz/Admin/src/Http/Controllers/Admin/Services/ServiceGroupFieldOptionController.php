@@ -140,22 +140,54 @@ class ServiceGroupFieldOptionController extends Controller
      */
     public function destroy(int $serviceId, int $pivotId, int $fieldId, int $optionId): JsonResponse
     {
-        $service = $this->serviceRepository->findOrFail($serviceId);
+        try {
+            $service = $this->serviceRepository->findOrFail($serviceId);
+        } catch (\Exception $e) {
+            return new JsonResponse([
+                'message' => trans('Admin::app.services.services.groups.fields.options.delete-error'),
+                'error' => 'Service not found',
+            ], 404);
+        }
         
-        $field = ServiceAttributeGroupServiceField::with('pivotRelation')->findOrFail($fieldId);
-        $option = $this->fieldOptionRepository->findOrFail($optionId);
+        try {
+            $field = ServiceAttributeGroupServiceField::with('pivotRelation')->findOrFail($fieldId);
+        } catch (\Exception $e) {
+            return new JsonResponse([
+                'message' => trans('Admin::app.services.services.groups.fields.options.delete-error'),
+                'error' => 'Field not found',
+            ], 404);
+        }
 
-        // Verify relationships
+        // Verify that this field belongs to the pivot and service
         if ($field->service_attribute_group_service_id != $pivotId) {
-            abort(404);
+            return new JsonResponse([
+                'message' => trans('Admin::app.services.services.groups.fields.options.delete-error'),
+                'error' => 'Field does not belong to this pivot',
+            ], 404);
         }
 
+        if (!$field->pivotRelation || $field->pivotRelation->service_id != $serviceId) {
+            return new JsonResponse([
+                'message' => trans('Admin::app.services.services.groups.fields.options.delete-error'),
+                'error' => 'Field does not belong to this service',
+            ], 404);
+        }
+
+        try {
+            $option = $this->fieldOptionRepository->findOrFail($optionId);
+        } catch (\Exception $e) {
+            return new JsonResponse([
+                'message' => trans('Admin::app.services.services.groups.fields.options.delete-error'),
+                'error' => 'Option not found',
+            ], 404);
+        }
+
+        // Verify that option belongs to this field
         if ($option->service_attribute_group_service_field_id != $fieldId) {
-            abort(404);
-        }
-
-        if ($field->pivotRelation->service_id != $serviceId) {
-            abort(404);
+            return new JsonResponse([
+                'message' => trans('Admin::app.services.services.groups.fields.options.delete-error'),
+                'error' => 'Option does not belong to this field',
+            ], 404);
         }
 
         try {
@@ -242,6 +274,56 @@ class ServiceGroupFieldOptionController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Reorder options for a field.
+     */
+    public function reorder(int $serviceId, int $pivotId, int $fieldId): JsonResponse
+    {
+        $service = $this->serviceRepository->findOrFail($serviceId);
+        
+        $field = ServiceAttributeGroupServiceField::with('pivotRelation')->findOrFail($fieldId);
+
+        // Verify that this field belongs to the pivot and service
+        if ($field->service_attribute_group_service_id != $pivotId) {
+            abort(404);
+        }
+
+        if ($field->pivotRelation->service_id != $serviceId) {
+            abort(404);
+        }
+
+        $this->validate(request(), [
+            'option_ids' => 'required|array',
+            'option_ids.*' => 'required|integer|exists:service_attribute_group_service_field_options,id',
+        ]);
+
+        $optionIds = request()->input('option_ids', []);
+
+        // Verify all options belong to this field
+        $optionCount = $this->fieldOptionRepository
+            ->where('service_attribute_group_service_field_id', $fieldId)
+            ->whereIn('id', $optionIds)
+            ->count();
+
+        if ($optionCount !== count($optionIds)) {
+            return new JsonResponse([
+                'message' => trans('Admin::app.services.services.groups.fields.options.invalid-option-ids'),
+            ], 422);
+        }
+
+        DB::transaction(function () use ($fieldId, $optionIds) {
+            foreach ($optionIds as $index => $optionId) {
+                $this->fieldOptionRepository->update([
+                    'sort_order' => $index,
+                ], $optionId);
+            }
+        });
+
+        return new JsonResponse([
+            'message' => trans('Admin::app.services.services.groups.fields.options.reorder-success'),
+        ]);
     }
 }
 

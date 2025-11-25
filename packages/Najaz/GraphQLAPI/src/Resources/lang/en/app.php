@@ -45,6 +45,7 @@ return [
             'cannot_update'          => 'Service request can only be updated when status is pending or in_progress.',
             'cannot_cancel'          => 'Service request can only be cancelled when status is pending or in_progress.',
             'service_not_accessible' => 'This service is not accessible for your citizen type.',
+            'identity_not_verified'  => 'Your identity must be verified and approved before you can create a service request.',
             'missing_required_fields' => 'The following required fields are missing: :fields',
             'invalid_fields'         => 'The following fields have invalid values: :fields',
             'unknown_fields'         => 'The following fields are not part of this service form: :fields',

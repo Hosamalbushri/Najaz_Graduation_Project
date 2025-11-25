@@ -163,23 +163,40 @@ class DocumentTemplateRepository extends Repository
             'label' => trans('Admin::app.services.document-templates.edit.fields.current_date'),
         ];
 
-        // Service attribute group fields
-        $service->load('attributeGroups.fields');
+        // Service attribute group fields - use custom service fields (service_attribute_group_service_fields)
+        $service->load('attributeGroups.translations');
+        
+        // Load custom service fields from ServiceAttributeGroupService
+        $pivotIds = $service->attributeGroups->pluck('pivot.id')->filter();
+        $pivotRelations = collect();
+        if ($pivotIds->isNotEmpty()) {
+            $pivotRelations = \Najaz\Service\Models\ServiceAttributeGroupService::with([
+                'attributeGroup.translations',
+                'fields.translations', // Load custom service fields with translations
+                'fields.attributeType.translations',
+            ])->whereIn('id', $pivotIds)->get()->keyBy('id');
+        }
+
         foreach ($service->attributeGroups as $group) {
+            $pivotId = $group->pivot->id ?? null;
             $groupCode = $group->pivot->custom_code ?? $group->code;
             $groupTranslation = $group->translate($locale);
             $groupName = $group->pivot->custom_name ?? ($groupTranslation?->name ?? $group->code ?? $groupCode);
 
-            foreach ($group->fields as $field) {
+            // Get custom service fields from pivot relation if available, otherwise use template fields
+            $pivotRelation = $pivotId ? ($pivotRelations[$pivotId] ?? null) : null;
+            $fieldsToUse = $pivotRelation && $pivotRelation->fields->isNotEmpty() 
+                ? $pivotRelation->fields 
+                : ($group->fields ?? collect());
+
+            foreach ($fieldsToUse as $field) {
                 $fieldCode = $field->code;
                 $fieldTranslation = $field->translate($locale);
                 $fieldLabel = $fieldTranslation?->label ?? $fieldCode;
-
-                // Add nested field (group.field)
                 $fields[] = [
                     'group' => $groupName,
-                    'code'  => $groupCode.'.'.$fieldCode,
-                    'label' => $groupName.' - '.$fieldLabel,
+                    'code'  => $fieldCode,
+                    'label' => $fieldLabel,
                 ];
             }
         }

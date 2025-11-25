@@ -67,15 +67,33 @@ class ServiceRequestController extends Controller
             }
         }
 
-        // Build field labels map for translations
+        // Build field labels map for translations - use custom service fields
         $fieldLabelsMap = [];
         $locale = app()->getLocale();
 
         if ($request->service && $request->service->attributeGroups) {
+            // Load custom service fields from ServiceAttributeGroupService
+            $pivotIds = $request->service->attributeGroups->pluck('pivot.id')->filter();
+            $pivotRelations = collect();
+            
+            if ($pivotIds->isNotEmpty()) {
+                $pivotRelations = \Najaz\Service\Models\ServiceAttributeGroupService::with([
+                    'fields.translations',
+                    'attributeGroup.translations',
+                ])->whereIn('id', $pivotIds)->get()->keyBy('id');
+            }
+
             foreach ($request->service->attributeGroups as $group) {
+                $pivotId = $group->pivot->id ?? null;
+                $pivotRelation = $pivotId ? $pivotRelations->get($pivotId) : null;
                 $groupCode = $group->pivot->custom_code ?? $group->code;
 
-                foreach ($group->fields as $field) {
+                // Use custom service fields if available, otherwise fall back to template fields
+                $fieldsToUse = $pivotRelation && $pivotRelation->fields && $pivotRelation->fields->isNotEmpty()
+                    ? $pivotRelation->fields
+                    : ($group->fields ?? collect());
+
+                foreach ($fieldsToUse as $field) {
                     $fieldTranslation = $field->translate($locale);
                     $fieldLabel = $fieldTranslation?->label ?? $field->code;
 

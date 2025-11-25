@@ -18,16 +18,17 @@ class ServiceFormQuery
             return ['groups' => []];
         }
 
-        // Eager-load nested relations if not already loaded.
+        // Eager-load nested relations if not already loaded (only translations, not template fields)
         $rootValue->loadMissing([
-            'attributeGroups.fields.attributeType.options',
+            'attributeGroups.translations',
         ]);
 
-        // Load pivot relations with saved fields
+        // Load pivot relations with custom service fields (use service-specific tables only)
         $pivotRelations = \Najaz\Service\Models\ServiceAttributeGroupService::with([
-            'fields.attributeType.options',
             'fields.translations',
-            'attributeGroup'
+            'fields.attributeType.translations',
+            'fields.options.translations', // Load custom field options only
+            'attributeGroup.translations',
         ])->where('service_id', $rootValue->id)->get()->keyBy('pivot_uid');
 
         $groups = $rootValue->attributeGroups->map(function ($group) use ($pivotRelations) {
@@ -50,19 +51,36 @@ class ServiceFormQuery
                 'customName'  => $group->pivot?->custom_name,
                 'fields'      => $fieldsToUse->map(function ($field) {
                     $attributeType = $field->attributeType;
+                    $locale = app()->getLocale();
 
-                    $options = $attributeType
-                        ? $attributeType->options->map(function ($option) {
+                    // Get options from custom field options first, then fall back to attribute type options
+                    $options = [];
+                    
+                    // First, try custom field options (service_attribute_group_service_field_options)
+                    if ($field instanceof \Najaz\Service\Models\ServiceAttributeGroupServiceField && $field->options && $field->options->isNotEmpty()) {
+                        $options = $field->options->map(function ($option) use ($locale) {
+                            $optionTranslation = $option->translate($locale);
                             return [
                                 'value' => (string) $option->id,
-                                'label' => (string) ($option->label ?? $option->admin_name),
+                                'label' => (string) ($optionTranslation?->label ?? $option->admin_name ?? $option->code ?? ''),
                             ];
-                        })->values()->all()
-                        : [];
+                        })->values()->all();
+                    } elseif ($attributeType && $attributeType->options && $attributeType->options->isNotEmpty()) {
+                        // Fall back to attribute type options if no custom options
+                        $options = $attributeType->options->map(function ($option) use ($locale) {
+                            $optionTranslation = $option->translate($locale);
+                            return [
+                                'value' => (string) $option->id,
+                                'label' => (string) ($optionTranslation?->label ?? $option->admin_name ?? ''),
+                            ];
+                        })->values()->all();
+                    }
+
+                    $fieldTranslation = $field->translate($locale);
 
                     return [
                         'code'           => $field->code,
-                        'label'          => (string) ($field->label ?? $field->code),
+                        'label'          => (string) ($fieldTranslation?->label ?? $field->code),
                         'type'           => $field->type,
                         'isRequired'     => (bool) $field->is_required,
                         'defaultValue'   => $field->default_value,

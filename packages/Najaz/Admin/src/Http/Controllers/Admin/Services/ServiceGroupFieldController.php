@@ -167,7 +167,7 @@ class ServiceGroupFieldController extends Controller
                 ])->toArray(),
             ],
             'fields' => $pivotRelation->fields->map(function ($field) {
-                // Get custom options for this field
+                // Get custom options for this field (only from service field options)
                 $customOptions = [];
                 if ($field->options) {
                     $allLocales = core()->getAllLocales();
@@ -175,15 +175,17 @@ class ServiceGroupFieldController extends Controller
                         $optionLabels = [];
                         foreach ($allLocales as $loc) {
                             $optionTranslation = $option->translate($loc->code);
-                            $optionLabels[$loc->code] = $optionTranslation?->label ?? $option->admin_name ?? $option->code ?? '';
+                            $optionLabels[$loc->code] = $optionTranslation?->label ?? $option->admin_name ?? '';
                         }
                         $customOptions[] = [
                             'id' => $option->id,
-                            'code' => $option->code ?? null,
-                            'admin_name' => $option->admin_name,
+                            'uid' => "option_{$option->id}",
+                            'service_attribute_type_option_id' => $option->service_attribute_type_option_id ?? null,
+                            'code' => $option->code ?? $option->admin_name ?? '',
+                            'admin_name' => $option->admin_name ?? '',
                             'labels' => $optionLabels,
                             'sort_order' => $option->sort_order ?? 0,
-                            'is_custom' => true,
+                            'is_custom' => $option->is_custom ?? true,
                         ];
                     }
                 }
@@ -256,18 +258,22 @@ class ServiceGroupFieldController extends Controller
 
         $attributeType = $this->attributeTypeRepository->findOrFail(request()->input('service_attribute_type_id'));
 
-        // Get code from attribute type
-        $fieldCode = $attributeType->code;
-        $existingField = $this->groupServiceFieldRepository->findWhere([
-            'service_attribute_group_service_id' => $pivotId,
-            'code'                               => $fieldCode,
-        ])->first();
-
-        if ($existingField) {
-            return new JsonResponse([
-                'message' => trans('Admin::app.services.attribute-groups.attribute-group-fields.code-exists'),
-            ], 422);
+        // Get the group code (custom_code or fallback to attribute group code)
+        // Load attributeGroup if not already loaded
+        if (! $pivotRelation->relationLoaded('attributeGroup')) {
+            $pivotRelation->load('attributeGroup');
         }
+        
+        $groupCode = $pivotRelation->custom_code ?? ($pivotRelation->attributeGroup ? $pivotRelation->attributeGroup->code : null) ?? '';
+        
+        // Get original field code from attribute type
+        $originalFieldCode = $attributeType->code;
+        
+        // Merge group code with field code using underscore
+        $baseFieldCode = $groupCode ? $groupCode . '_' . $originalFieldCode : $originalFieldCode;
+        
+        // Generate unique field code by checking for duplicates and adding sequential number if needed
+        $fieldCode = $this->generateUniqueFieldCode($pivotRelation, $baseFieldCode, $attributeType->id);
 
         $fieldData = [
             'service_attribute_group_service_id' => $pivotId,
@@ -465,6 +471,36 @@ class ServiceGroupFieldController extends Controller
             abort(404);
         }
 
+        // Check if this field is used in any requests
+        $groupCode = $pivotRelation->custom_code ?? $pivotRelation->attributeGroup->code;
+        $fieldCode = $field->code;
+        
+        // Get field label for error message
+        $fieldLabel = $field->translate(app()->getLocale())->label ?? $field->code;
+        
+        // Check if there are any requests with this group code
+        $hasRequests = DB::table('service_request_form_data')
+            ->join('service_requests', 'service_request_form_data.service_request_id', '=', 'service_requests.id')
+            ->where('service_requests.service_id', $serviceId)
+            ->where('service_request_form_data.group_code', $groupCode)
+            ->whereNotNull('service_request_form_data.fields_data')
+            ->get()
+            ->filter(function ($record) use ($fieldCode) {
+                // Check if fields_data JSON contains the field code as a key
+                $fieldsData = json_decode($record->fields_data, true);
+                return is_array($fieldsData) && array_key_exists($fieldCode, $fieldsData);
+            })
+            ->isNotEmpty();
+        
+        if ($hasRequests) {
+            return new JsonResponse([
+                'message' => trans(
+                    'Admin::app.services.services.attribute-groups.delete-field-has-requests',
+                    ['field_name' => $fieldLabel]
+                ),
+            ], 422);
+        }
+
         $this->groupServiceFieldRepository->delete($fieldId);
 
         return new JsonResponse([
@@ -498,6 +534,43 @@ class ServiceGroupFieldController extends Controller
         }
 
         return ['validation' => $formatted];
+    }
+
+    /**
+     * Generate a unique field code by checking for duplicates and adding sequential number if needed.
+     *
+     * @param  \Najaz\Service\Models\ServiceAttributeGroupService  $pivotRelation
+     * @param  string  $baseCode
+     * @param  int|null  $attributeTypeId
+     * @return string
+     */
+    protected function generateUniqueFieldCode(ServiceAttributeGroupService $pivotRelation, string $baseCode, ?int $attributeTypeId = null): string
+    {
+        // Check if base code already exists
+        $existingField = $this->groupServiceFieldRepository->findWhere([
+            'service_attribute_group_service_id' => $pivotRelation->id,
+            'code'                               => $baseCode,
+        ])->first();
+
+        // If base code doesn't exist, return it
+        if (! $existingField) {
+            return $baseCode;
+        }
+
+        // Add sequential number if code exists
+        $counter = 2;
+        $uniqueCode = $baseCode . '_' . $counter;
+
+        // Keep incrementing until we find a unique code
+        while ($this->groupServiceFieldRepository->findWhere([
+            'service_attribute_group_service_id' => $pivotRelation->id,
+            'code'                               => $uniqueCode,
+        ])->first()) {
+            $counter++;
+            $uniqueCode = $baseCode . '_' . $counter;
+        }
+
+        return $uniqueCode;
     }
 
     /**

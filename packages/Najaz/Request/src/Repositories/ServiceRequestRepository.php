@@ -45,17 +45,34 @@ class ServiceRequestRepository extends Repository
         try {
             Event::dispatch('service.request.save.before', [$data, $citizenId]);
 
-            // Load service with relationships
-            $service = ServiceProxy::modelClass()::with(['citizenTypes', 'attributeGroups.fields'])
+            // Load service with relationships - use custom service fields instead of template fields
+            $service = ServiceProxy::modelClass()::with(['citizenTypes', 'attributeGroups.translations'])
                 ->findOrFail($data['service_id']);
+            
+            // Load custom service fields from ServiceAttributeGroupService
+            $pivotIds = $service->attributeGroups->pluck('pivot.id')->filter();
+            if ($pivotIds->isNotEmpty()) {
+                \Najaz\Service\Models\ServiceAttributeGroupService::with([
+                    'fields.translations',
+                    'fields.attributeType.translations',
+                    'fields.options.translations',
+                ])->whereIn('id', $pivotIds)->get();
+            }
 
             // Verify service is accessible to citizen type
-            $citizen = CitizenProxy::modelClass()::findOrFail($citizenId);
+            $citizen = CitizenProxy::modelClass()::with('identityVerification')->findOrFail($citizenId);
             $citizenTypeIds = $service->citizenTypes->pluck('id')->toArray();
 
             if (! in_array($citizen->citizen_type_id, $citizenTypeIds)) {
                 throw new CustomException(
                     trans('najaz_graphql::app.citizens.service_request.service_not_accessible')
+                );
+            }
+
+            // Verify citizen has approved identity verification via relationship
+            if (! $citizen->identityVerification || $citizen->identityVerification->status !== 'approved') {
+                throw new CustomException(
+                    trans('najaz_graphql::app.citizens.service_request.identity_not_verified')
                 );
             }
 
@@ -282,14 +299,31 @@ class ServiceRequestRepository extends Repository
      */
     protected function saveFormData($request, $service, array $formData): void
     {
-        // Load attribute groups with pivot data and options
+        // Load attribute groups with pivot data, fields, and their custom options (new structure)
         $service->load('attributeGroups.fields.attributeType.options');
+        
+        // Load custom service fields with their options from service_attribute_group_service_field_options
+        $pivotIds = $service->attributeGroups->pluck('pivot.id')->filter();
+        $pivotRelations = collect();
+        if ($pivotIds->isNotEmpty()) {
+            $pivotRelations = \Najaz\Service\Models\ServiceAttributeGroupService::with([
+                'fields.options.translations', // Load custom field options
+                'fields.attributeType.translations',
+            ])->whereIn('id', $pivotIds)->get()->keyBy('id');
+        }
 
         $sortOrder = 0;
 
         foreach ($service->attributeGroups as $group) {
             $groupCode = $group->pivot->custom_code ?? $group->code;
             $groupName = $group->pivot->custom_name ?? $group->name ?? $groupCode;
+            $pivotId = $group->pivot->id ?? null;
+            
+            // Get custom fields from pivot relation if available, otherwise use template fields
+            $pivotRelation = $pivotId ? ($pivotRelations[$pivotId] ?? null) : null;
+            $fieldsToUse = $pivotRelation && $pivotRelation->fields->isNotEmpty() 
+                ? $pivotRelation->fields 
+                : ($group->fields ?? collect());
 
             // Check if there's data for this group in formData
             $hasData = false;
@@ -299,7 +333,7 @@ class ServiceRequestRepository extends Repository
                 $hasData = true;
             } else {
                 // Flat structure - check if any field from this group exists in formData
-                foreach ($group->fields as $field) {
+                foreach ($fieldsToUse as $field) {
                     $fieldCode = $field->code;
                     if (isset($formData[$fieldCode])) {
                         $hasData = true;
@@ -314,11 +348,11 @@ class ServiceRequestRepository extends Repository
                 $groupFieldsData = [];
                 
                 if (isset($formData[$groupCode]) && is_array($formData[$groupCode]) && !empty($formData[$groupCode])) {
-                    // Nested structure - convert option IDs to labels
-                    $groupFieldsData = $this->convertOptionIdsToLabels($formData[$groupCode], $group->fields);
+                    // Nested structure - convert option IDs to labels using custom fields
+                    $groupFieldsData = $this->convertOptionIdsToLabels($formData[$groupCode], $fieldsToUse);
                 } else {
                     // Flat structure - extract fields that belong to this group and convert option IDs to labels
-                    foreach ($group->fields as $field) {
+                    foreach ($fieldsToUse as $field) {
                         $fieldCode = $field->code;
                         if (isset($formData[$fieldCode])) {
                             $value = $formData[$fieldCode];
@@ -376,8 +410,19 @@ class ServiceRequestRepository extends Repository
             return;
         }
 
-        // Load attribute groups with pivot data
-        $service->load('attributeGroups.fields');
+        // Load attribute groups with translations
+        $service->load('attributeGroups.translations');
+
+        // Load custom service fields from ServiceAttributeGroupService
+        $pivotIds = $service->attributeGroups->pluck('pivot.id')->filter();
+        $pivotRelations = collect();
+        if ($pivotIds->isNotEmpty()) {
+            $pivotRelations = \Najaz\Service\Models\ServiceAttributeGroupService::with([
+                'fields.translations',
+                'fields.attributeType.translations',
+                'fields.options.translations',
+            ])->whereIn('id', $pivotIds)->get()->keyBy('id');
+        }
 
         // Filter groups that are notifiable
         $notifiableGroups = $service->attributeGroups->filter(function ($group) {
@@ -395,7 +440,13 @@ class ServiceRequestRepository extends Repository
             // Use customCode if available, otherwise fall back to code
             $groupCode = $group->pivot->custom_code ?? $group->code;
             $originalGroupCode = $group->code;
-            $groupFields = $group->fields;
+            $pivotId = $group->pivot->id ?? null;
+            
+            // Get custom service fields from pivot relation if available, otherwise use template fields
+            $pivotRelation = $pivotId ? ($pivotRelations[$pivotId] ?? null) : null;
+            $groupFields = $pivotRelation && $pivotRelation->fields->isNotEmpty() 
+                ? $pivotRelation->fields 
+                : ($group->fields ?? collect());
 
             if (! $groupFields || $groupFields->isEmpty()) {
                 continue;
@@ -477,8 +528,19 @@ class ServiceRequestRepository extends Repository
      */
     protected function validateFormData($service, array $formData): void
     {
-        // Load all fields from all attribute groups with attribute types and options
-        $service->load('attributeGroups.fields.attributeType.options');
+        // Load attribute groups with translations
+        $service->load('attributeGroups.translations');
+
+        // Load custom service fields from ServiceAttributeGroupService with options
+        $pivotIds = $service->attributeGroups->pluck('pivot.id')->filter();
+        $pivotRelations = collect();
+        if ($pivotIds->isNotEmpty()) {
+            $pivotRelations = \Najaz\Service\Models\ServiceAttributeGroupService::with([
+                'fields.translations',
+                'fields.attributeType.translations',
+                'fields.options.translations', // Load custom field options
+            ])->whereIn('id', $pivotIds)->get()->keyBy('id');
+        }
 
         $missingFields = [];
         $invalidFields = [];
@@ -487,8 +549,15 @@ class ServiceRequestRepository extends Repository
             $groupCode = $group->pivot->custom_code ?? $group->code;
             $groupName = $group->pivot->custom_name ?? $group->name ?? $groupCode;
             $originalGroupCode = $group->code;
+            $pivotId = $group->pivot->id ?? null;
 
-            foreach ($group->fields as $field) {
+            // Get custom service fields from pivot relation if available, otherwise use template fields
+            $pivotRelation = $pivotId ? ($pivotRelations[$pivotId] ?? null) : null;
+            $fieldsToUse = $pivotRelation && $pivotRelation->fields->isNotEmpty() 
+                ? $pivotRelation->fields 
+                : ($group->fields ?? collect());
+
+            foreach ($fieldsToUse as $field) {
                 $fieldCode = $field->code;
                 $fieldLabel = $field->label ?? $fieldCode;
                 $isRequired = (bool) $field->is_required;
@@ -515,6 +584,7 @@ class ServiceRequestRepository extends Repository
                         $validationResult = $this->validateSelectOptionIds(
                             $value,
                             $attributeType,
+                            $field, // Pass the field to use custom field options
                             $fieldCode,
                             $fieldLabel
                         );
@@ -592,17 +662,37 @@ class ServiceRequestRepository extends Repository
      * @param  string  $fieldLabel
      * @return bool|string
      */
-    protected function validateSelectOptionIds($value, $attributeType, string $fieldCode, string $fieldLabel)
+    protected function validateSelectOptionIds($value, $attributeType, $field = null, string $fieldCode, string $fieldLabel)
     {
-        // Load options if not loaded
-        if (! $attributeType->relationLoaded('options')) {
-            $attributeType->load('options');
+        $validOptionIds = [];
+
+        // First, try to use custom field options (service_attribute_group_service_field_options)
+        if ($field && method_exists($field, 'options')) {
+            // Load field options if not loaded
+            if (! $field->relationLoaded('options')) {
+                $field->load('options');
+            }
+
+            if ($field->options && $field->options->isNotEmpty()) {
+                $validOptionIds = $field->options->pluck('id')->map(function ($id) {
+                    return (string) $id;
+                })->toArray();
+            }
         }
 
-        // Get valid option IDs
-        $validOptionIds = $attributeType->options->pluck('id')->map(function ($id) {
-            return (string) $id;
-        })->toArray();
+        // If no custom field options found, fall back to attribute type options
+        if (empty($validOptionIds)) {
+            // Load options if not loaded
+            if (! $attributeType->relationLoaded('options')) {
+                $attributeType->load('options');
+            }
+
+            if ($attributeType->options && $attributeType->options->isNotEmpty()) {
+                $validOptionIds = $attributeType->options->pluck('id')->map(function ($id) {
+                    return (string) $id;
+                })->toArray();
+            }
+        }
 
         if (empty($validOptionIds)) {
             // If no options exist, skip validation
@@ -656,6 +746,18 @@ class ServiceRequestRepository extends Repository
             return [];
         }
 
+        // Load attribute groups with translations
+        $service->load('attributeGroups.translations');
+
+        // Load custom service fields from ServiceAttributeGroupService
+        $pivotIds = $service->attributeGroups->pluck('pivot.id')->filter();
+        $pivotRelations = collect();
+        if ($pivotIds->isNotEmpty()) {
+            $pivotRelations = \Najaz\Service\Models\ServiceAttributeGroupService::with([
+                'fields.translations',
+            ])->whereIn('id', $pivotIds)->get()->keyBy('id');
+        }
+
         // Build map of allowed fields per group
         $allowedFieldsByGroup = [];
         $allowedFlatFields = [];
@@ -663,9 +765,16 @@ class ServiceRequestRepository extends Repository
         foreach ($service->attributeGroups as $group) {
             $groupCode = $group->pivot->custom_code ?? $group->code;
             $originalGroupCode = $group->code;
+            $pivotId = $group->pivot->id ?? null;
+
+            // Get custom service fields from pivot relation if available, otherwise use template fields
+            $pivotRelation = $pivotId ? ($pivotRelations[$pivotId] ?? null) : null;
+            $fieldsToUse = $pivotRelation && $pivotRelation->fields->isNotEmpty() 
+                ? $pivotRelation->fields 
+                : ($group->fields ?? collect());
 
             $groupFields = [];
-            foreach ($group->fields as $field) {
+            foreach ($fieldsToUse as $field) {
                 $fieldCode = $field->code;
                 $groupFields[] = $fieldCode;
                 $allowedFlatFields[] = $fieldCode;
@@ -843,6 +952,8 @@ class ServiceRequestRepository extends Repository
 
     /**
      * Convert option ID to label for a specific field.
+     * Uses new field options (service_attribute_group_service_field_options) first,
+     * then falls back to original attribute type options if not found.
      *
      * @param  mixed  $field
      * @param  mixed  $value
@@ -856,23 +967,47 @@ class ServiceRequestRepository extends Repository
         }
 
         $attributeType = $field->attributeType;
-
-        // Load options if not loaded
-        if (! $attributeType->relationLoaded('options')) {
-            $attributeType->load('options');
-        }
-
-        if ($attributeType->options->isEmpty()) {
-            return $value;
-        }
-
         $locale = app()->getLocale();
 
         // Create map of option ID to label
         $optionMap = [];
-        foreach ($attributeType->options as $option) {
-            $optionTranslation = $option->translate($locale);
-            $optionMap[(string) $option->id] = $optionTranslation?->label ?? $option->admin_name ?? '';
+
+        // First, try to use field's custom options (service_attribute_group_service_field_options)
+        if ($field->relationLoaded('options') || method_exists($field, 'options')) {
+            // Load field options if not loaded
+            if (! $field->relationLoaded('options')) {
+                $field->load('options.translations');
+            }
+
+            if ($field->options && $field->options->isNotEmpty()) {
+                foreach ($field->options as $option) {
+                    $optionTranslation = $option->translate($locale);
+                    $optionId = (string) ($option->id ?? $option->service_attribute_type_option_id ?? '');
+                    if ($optionId) {
+                        $optionMap[$optionId] = $optionTranslation?->label ?? $option->admin_name ?? $option->code ?? '';
+                    }
+                }
+            }
+        }
+
+        // If no custom field options found, fall back to attribute type options
+        if (empty($optionMap)) {
+            // Load options if not loaded
+            if (! $attributeType->relationLoaded('options')) {
+                $attributeType->load('options.translations');
+            }
+
+            if ($attributeType->options && $attributeType->options->isNotEmpty()) {
+                foreach ($attributeType->options as $option) {
+                    $optionTranslation = $option->translate($locale);
+                    $optionMap[(string) $option->id] = $optionTranslation?->label ?? $option->admin_name ?? '';
+                }
+            }
+        }
+
+        // If still no options found, return original value
+        if (empty($optionMap)) {
+            return $value;
         }
 
         // Convert based on field type

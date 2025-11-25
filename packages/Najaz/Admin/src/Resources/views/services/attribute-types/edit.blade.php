@@ -57,15 +57,15 @@
             </div>
         </div>
 
-        <v-field-type-edit>
+        <v-edit-attribute-types>
             <x-admin::shimmer.catalog.attributes />
-        </v-field-type-edit>
+        </v-edit-attribute-types>
     </x-admin::form>
 
     @pushOnce('scripts')
         <script
             type="text/x-template"
-            id="v-field-type-edit-template">
+            id="v-edit-attribute-types-template">
             <!-- Body Content -->
             <div class="mt-3.5 flex gap-2.5 max-xl:flex-wrap">
                 <!-- Left Sub Component -->
@@ -124,7 +124,7 @@
 
                             <div
                                 class="secondary-button text-sm"
-                                @click="openCreateModal"
+                                @click="$refs.addOptionsRow.toggle()"
                             >
                                 @lang('Admin::app.services.attribute-types.edit.add-option-btn')
                             </div>
@@ -155,72 +155,67 @@
                                         tag="tbody"
                                         ghost-class="draggable-ghost"
                                         handle=".icon-drag"
-                                        v-bind="{ animation: 200 }"
+                                        v-bind="{animation: 200}"
                                         :list="options"
-                                        item-key="uid"
-                                        @end="refreshSortOrders"
+                                        item-key="id"
                                     >
                                         <template #item="{ element, index }">
-                                            <x-admin::table.thead.tr class="hover:bg-gray-50 dark:hover:bg-gray-950">
-                                                <x-admin::table.td class="!px-0 text-center">
+                                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-950 border-b border-gray-200 dark:border-gray-800">
+                                                <td class="!px-0 text-center">
                                                     <i class="icon-drag cursor-grab text-xl transition-all group-hover:text-gray-700"></i>
 
                                                     <input
                                                         type="hidden"
-                                                        :name="getOptionFieldName(element.uid, 'sort_order')"
+                                                        :name="'options[' + element.id + '][sort_order]'"
                                                         :value="index"
                                                     />
 
                                                     <input
-                                                        v-if="element.id"
+                                                        v-if="element.params.id"
                                                         type="hidden"
-                                                        :name="getOptionFieldName(element.uid, 'id')"
-                                                        :value="element.id"
+                                                        :name="'options[' + element.id + '][id]'"
+                                                        :value="element.params.id"
                                                     />
-                                                </x-admin::table.td>
+                                                </td>
 
-                                                <x-admin::table.td>
+                                                <td class="px-6 py-4">
                                                     <p class="dark:text-white">
-                                                        @{{ element.admin_name || '—' }}
+                                                        @{{ element.params.admin_name }}
                                                     </p>
 
                                                     <input
                                                         type="hidden"
-                                                        :name="getOptionFieldName(element.uid, 'admin_name')"
-                                                        :value="element.admin_name"
+                                                        :name="'options[' + element.id + '][admin_name]'"
+                                                        v-model="element.params.admin_name"
                                                     />
-                                                </x-admin::table.td>
+                                                </td>
 
-                                                <template v-for="locale in locales" :key="getLocaleCellKey(element.uid, locale.code)">
-                                                    <x-admin::table.td>
-                                                        <p class="dark:text-white">
-                                                            @{{ element.labels[locale.code] || '—' }}
-                                                        </p>
+                                                <td v-for="locale in locales" class="px-6 py-4">
+                                                    <p class="dark:text-white">
+                                                        @{{ element.params[locale.code] }}
+                                                    </p>
 
-                                                        <input
-                                                            type="hidden"
-                                                            :name="getOptionFieldName(element.uid, 'label', locale.code)"
-                                                            :value="element.labels[locale.code] || ''"
-                                                        />
-                                                    </x-admin::table.td>
-                                                </template>
+                                                    <input
+                                                        type="hidden"
+                                                        :name="'options[' + element.id + '][label][' + locale.code + ']'"
+                                                        v-model="element.params[locale.code]"
+                                                    />
+                                                </td>
 
-                                                <x-admin::table.td class="!px-0">
+                                                <td class="!px-0">
                                                     <span
-                                                        class="icon-edit cursor-pointer rounded-md p-1.5 text-2xl transition-all hover:bg-gray-200 dark:hover:bg-gray-800"
-                                                        :title="translations.editButton"
-                                                        @click="openEditModal(index)"
+                                                        class="icon-edit cursor-pointer rounded-md p-1.5 text-2xl transition-all hover:bg-gray-200 dark:hover:bg-gray-800 max-sm:place-self-center"
+                                                        @click="editModal(element)"
                                                     >
                                                     </span>
 
                                                     <span
-                                                        class="icon-delete cursor-pointer rounded-md p-1.5 text-2xl transition-all hover:bg-gray-200 dark:hover:bg-gray-800"
-                                                        :title="translations.removeButton"
-                                                        @click="removeOption(index)"
+                                                        class="icon-delete cursor-pointer rounded-md p-1.5 text-2xl transition-all hover:bg-gray-200 dark:hover:bg-gray-800 max-sm:place-self-center"
+                                                        @click="removeOption(element.id)"
                                                     >
                                                     </span>
-                                                </x-admin::table.td>
-                                            </x-admin::table.thead.tr>
+                                                </td>
+                                            </tr>
                                         </template>
                                     </draggable>
                                 </x-admin::table>
@@ -455,115 +450,114 @@
                 </div>
             </div>
 
-            <x-admin::modal
-                ref="optionModal"
-                @toggle="handleModalToggle"
+            <x-admin::form
+                v-slot="{ meta, errors, handleSubmit }"
+                as="div"
+                ref="modelForm"
             >
-                <x-slot:header>
-                    <p class="text-lg font-bold text-gray-800 dark:text-white">
-                        @{{ modalTitle }}
-                    </p>
-                </x-slot:header>
+                <form
+                    @submit.prevent="handleSubmit($event, storeOptions)"
+                    enctype="multipart/form-data"
+                    ref="createOptionsForm"
+                >
+                    <x-admin::modal
+                        @toggle="listenModal"
+                        ref="addOptionsRow"
+                    >
+                        <x-slot:header>
+                            <p class="text-lg font-bold text-gray-800 dark:text-white">
+                                @lang('Admin::app.services.attribute-types.edit.add-option-title')
+                            </p>
+                        </x-slot>
 
-                <x-slot:content>
-                    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        <x-admin::form.control-group class="!mb-2.5">
-                            <x-admin::form.control-group.label ::class="{ 'required' : ! isNullOptionChecked }">
-                                @lang('Admin::app.services.attribute-types.edit.option-admin-name')
-                            </x-admin::form.control-group.label>
-
-                            <x-admin::form.control-group.control
-                                type="text"
-                                name="admin_name"
-                                v-model="modalData.admin_name"
-                                ::rules="{ 'required' : ! isNullOptionChecked }"
-                                :label="trans('Admin::app.services.attribute-types.edit.option-admin-name')"
-                                :placeholder="trans('Admin::app.services.attribute-types.edit.option-admin-name')"
-                            />
-
-                            <x-admin::form.control-group.error control-name="admin_name" />
-                        </x-admin::form.control-group>
-
-                        @foreach ($locales as $locale)
-                            <x-admin::form.control-group class="!mb-2.5">
-                                <x-admin::form.control-group.label
-                                    ::class="{ 'required' : isRequiredLocale('{{ $locale->code }}') && ! isNullOptionChecked }"
-                                >
-                                    {{ $locale->name }} ({{ strtoupper($locale->code) }})
-                                </x-admin::form.control-group.label>
-
+                        <x-slot:content>
+                            <div class="grid grid-cols-3 gap-4">
                                 <x-admin::form.control-group.control
-                                    type="text"
-                                    :name="'{{ $locale->code }}'"
-                                    v-model="modalData.labels['{{ $locale->code }}']"
-                                    ::rules="{ 'required' : isRequiredLocale('{{ $locale->code }}') && ! isNullOptionChecked }"
-                                    :label="'{{ $locale->name }}'"
-                                    :placeholder="'{{ $locale->name }}'"
+                                    type="hidden"
+                                    name="id"
                                 />
 
-                                <x-admin::form.control-group.error :control-name="'{{ $locale->code }}'" />
-                            </x-admin::form.control-group>
-                        @endforeach
-                    </div>
-                </x-slot:content>
+                                <x-admin::form.control-group class="!mb-2.5 w-full">
+                                    <x-admin::form.control-group.label ::class="{ 'required' : ! isNullOptionChecked }">
+                                        @lang('Admin::app.services.attribute-types.edit.option-admin-name')
+                                    </x-admin::form.control-group.label>
 
-                <x-slot:footer>
-                    <div class="flex items-center justify-end gap-2">
-                        <button
-                            type="button"
-                            class="secondary-button"
-                            @click="closeModal"
-                        >
-                            @{{ translations.cancel }}
-                        </button>
+                                    <x-admin::form.control-group.control
+                                        type="text"
+                                        name="admin_name"
+                                        ::rules="{ 'required' : ! isNullOptionChecked }"
+                                        :label="trans('Admin::app.services.attribute-types.edit.option-admin-name')"
+                                        :placeholder="trans('Admin::app.services.attribute-types.edit.option-admin-name')"
+                                    />
 
-                        <button
-                            type="button"
-                            class="primary-button"
-                            @click="saveOption"
-                        >
-                            @{{ modalPrimaryLabel }}
-                        </button>
-                    </div>
-                </x-slot:footer>
-            </x-admin::modal>
+                                    <x-admin::form.control-group.error control-name="admin_name" />
+                                </x-admin::form.control-group>
+
+                                @foreach ($locales as $locale)
+                                    <x-admin::form.control-group class="!mb-2.5 w-full">
+                                        <x-admin::form.control-group.label ::class="{ '{{core()->getDefaultLocaleCodeFromDefaultChannel() == $locale->code ? 'required' : ''}}' : ! isNullOptionChecked }">
+                                            {{ $locale->name }} ({{ strtoupper($locale->code) }})
+                                        </x-admin::form.control-group.label>
+
+                                        <x-admin::form.control-group.control
+                                            type="text"
+                                            :name="$locale->code"
+                                            ::rules="{ '{{core()->getDefaultLocaleCodeFromDefaultChannel() == $locale->code ? 'required' : ''}}' : ! isNullOptionChecked }"
+                                            :label="$locale->name"
+                                            :placeholder="$locale->name"
+                                        />
+
+                                        <x-admin::form.control-group.error :control-name="$locale->code" />
+                                    </x-admin::form.control-group>
+                                @endforeach
+                            </div>
+                        </x-slot>
+
+                        <x-slot:footer>
+                            <button
+                                type="submit"
+                                class="primary-button"
+                            >
+                                {{ trans('Admin::app.services.attribute-types.edit.save-option-btn') }}
+                            </button>
+                        </x-slot>
+                    </x-admin::modal>
+                </form>
+            </x-admin::form>
         </script>
 
         <script type="module">
-            app.component('v-field-type-edit', {
-                template: '#v-field-type-edit-template',
+            app.component('v-edit-attribute-types', {
+                template: '#v-edit-attribute-types-template',
                 data() {
                     return {
+                        optionRowCount: 1,
+
                         validationType: @json(old('validation', $attributeType->validation)),
+
+                        inputValidation: false,
+
                         regex: @json(old('regex', $attributeType->regex)),
+
                         position: @json(old('position', $attributeType->position)),
+
                         defaultValue: @json(old('default_value', $attributeType->default_value)),
+
                         isRequired: @json((bool) old('is_required', $attributeType->is_required)),
                         isUnique: @json((bool) old('is_unique', $attributeType->is_unique)),
+
+                        requiresOptionsAttribute: false,
+
                         attributeType: '{{ $attributeType->type }}',
-                        locales: @json($localesPayload),
-                        options: [],
-                        optionsRaw: @json(old('options', $optionsPayload)),
-                        modalMode: 'create',
-                        modalIndex: null,
-                        modalData: {
-                            admin_name: '',
-                            labels: {},
-                            id: null,
-                        },
+
                         isNullOptionChecked: false,
-                        defaultLocaleCode: '{{ core()->getDefaultLocaleCodeFromDefaultChannel() }}',
-                        translations: {
-                            addTitle: "{{ trans('Admin::app.services.attribute-types.edit.add-option-title') }}",
-                            editTitle: "{{ trans('Admin::app.services.attribute-types.edit.edit-option-title') }}",
-                            save: "{{ trans('Admin::app.services.attribute-types.edit.save-option-btn') }}",
-                            update: "{{ trans('Admin::app.services.attribute-types.edit.update-option-btn') }}",
-                            cancel: "{{ trans('Admin::app.services.attribute-types.edit.cancel-option-btn') }}",
-                            validationAdmin: "{{ trans('Admin::app.services.attribute-types.edit.validation-option-admin') }}",
-                            validationLabel: "{{ trans('Admin::app.services.attribute-types.edit.validation-option-label') }}",
-                            editButton: "{{ trans('Admin::app.services.attribute-types.edit.edit-option-btn') }}",
-                            removeButton: "{{ trans('Admin::app.services.attribute-types.edit.remove-option-btn') }}",
-                        },
+
+                        options: [],
+
+                        locales: @json($locales->map(fn ($locale) => [
+                            'code' => $locale->code,
+                            'name' => $locale->name,
+                        ])->values()),
                     }
                 },
                 computed: {
@@ -578,224 +572,119 @@
                     canHaveDefaultValue() {
                         return this.attributeType === 'boolean';
                     },
-
-                    isEditMode() {
-                        return this.modalMode === 'edit';
-                    },
-
-                    modalTitle() {
-                        return this.isEditMode ? this.translations.editTitle : this.translations.addTitle;
-                    },
-
-                    modalPrimaryLabel() {
-                        return this.isEditMode ? this.translations.update : this.translations.save;
-                    },
-                },
-                created() {
-                    this.options = this.normalizeOptions(this.optionsRaw);
-                    this.refreshSortOrders();
-                    this.resetModal();
                 },
                 watch: {
-                    validationType(value) {
-                        if (value !== 'regex') {
-                            this.regex = '';
-                        }
-                    },
                     attributeType() {
                         if (! this.requiresOptions) {
                             this.options = [];
-                            this.refreshSortOrders();
                         }
 
                         if (! this.canShowValidation) {
                             this.validationType = '';
                             this.regex = '';
+                            this.inputValidation = false;
                         }
 
                         if (! this.canHaveDefaultValue) {
                             this.defaultValue = '';
                         }
                     },
+
+                    validationType(value) {
+                        if (value !== 'regex') {
+                            this.regex = '';
+                        }
+                    },
                 },
+
+                created() {
+                    this.normalizeOptionsFromRaw();
+                },
+
                 methods: {
-                    generateUid() {
-                        return `option_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-                    },
-
-                    ensureLabels(labels = {}) {
-                        const normalized = {};
-
-                        this.locales.forEach(({ code }) => {
-                            normalized[code] = labels[code] ?? '';
-                        });
-
-                        return normalized;
-                    },
-
-                    normalizeOptions(value) {
-                        if (! value) {
-                            return [];
-                        }
-
-                        const entries = Array.isArray(value)
-                            ? value.map((item, index) => [index, item])
-                            : Object.entries(value);
-
-                        return entries.map(([key, option], index) => this.normalizeOption(option, key, index));
-                    },
-
-                    normalizeOption(option = {}, key, index) {
-                        const uid = (option.uid ?? option.id ?? key ?? this.generateUid()).toString();
-
-                        return {
-                            uid,
-                            id: option.id ?? null,
-                            admin_name: option.admin_name ?? '',
-                            labels: this.ensureLabels(option.label ?? option.labels ?? {}),
-                            sort_order: option.sort_order ?? index,
-                        };
-                    },
-
-                    refreshSortOrders() {
-                        this.options.forEach((option, index) => {
-                            option.sort_order = index;
-                        });
-                    },
-
-                    isRequiredLocale(code) {
-                        const requiredLocale = this.defaultLocaleCode || this.locales[0]?.code || null;
-
-                        return requiredLocale === code;
-                    },
-
-                    getOptionFieldName(uid, field, localeCode = null) {
-                        if (! uid || ! field) {
-                            return '';
-                        }
-
-                        if (localeCode) {
-                            return `options[${uid}][${field}][${localeCode}]`;
-                        }
-
-                        return `options[${uid}][${field}]`;
-                    },
-
-                    getLocaleCellKey(uid, localeCode) {
-                        return `cell-${uid}-${localeCode}`;
-                    },
-
-                    openCreateModal() {
-                        this.modalMode = 'create';
-                        this.modalIndex = null;
-                        this.modalData = {
-                            admin_name: '',
-                            labels: this.ensureLabels(),
-                            id: null,
-                        };
-                        this.isNullOptionChecked = false;
-
-                        this.$nextTick(() => {
-                            this.$refs.optionModal?.toggle();
-                        });
-                    },
-
-                    openEditModal(index) {
-                        const option = this.options[index];
-
-                        this.modalMode = 'edit';
-                        this.modalIndex = index;
-                        this.modalData = {
-                            admin_name: option.admin_name,
-                            labels: this.ensureLabels(option.labels),
-                            id: option.id ?? null,
-                        };
-                        this.isNullOptionChecked = false;
-
-                        this.$nextTick(() => {
-                            this.$refs.optionModal?.toggle();
-                        });
-                    },
-
-                    saveOption() {
-                        const adminName = (this.modalData.admin_name || '').trim();
-                        const labels = this.ensureLabels(this.modalData.labels);
-                        const normalizedLabels = {};
-
-                        Object.entries(labels).forEach(([code, value]) => {
-                            normalizedLabels[code] = (value || '').trim();
-                        });
-
-                        if (! adminName) {
-                            this.$emitter.emit('add-flash', {
-                                type: 'warning',
-                                message: this.translations.validationAdmin,
-                            });
-
+                    normalizeOptionsFromRaw() {
+                        const rawOptions = @json(old('options', $optionsPayload));
+                        
+                        if (! rawOptions || ! Array.isArray(rawOptions)) {
+                            this.options = [];
                             return;
                         }
 
-                        const requiredLocale = this.defaultLocaleCode || this.locales[0]?.code || null;
+                        rawOptions.forEach((option, index) => {
+                            const sortedLocales = Object.values(this.locales).sort((a, b) => a.name.localeCompare(b.name));
+                            const params = {};
 
-                        if (requiredLocale && ! (normalizedLabels[requiredLocale] || '')) {
-                            this.$emitter.emit('add-flash', {
-                                type: 'warning',
-                                message: this.translations.validationLabel,
+                            sortedLocales.forEach((locale) => {
+                                params[locale.code] = option.labels?.[locale.code] ?? '';
                             });
 
-                            return;
-                        }
+                            params.admin_name = option.admin_name ?? '';
+                            params.id = option.id ?? null;
 
-                        if (this.isEditMode && this.modalIndex !== null) {
-                            const option = this.options[this.modalIndex];
+                            const optionId = option.id ? option.id.toString() : `option_${this.optionRowCount++}`;
 
-                            option.admin_name = adminName;
-                            option.labels = normalizedLabels;
-                            if (this.modalData.id) {
-                                option.id = this.modalData.id;
+                            this.options.push({
+                                id: optionId,
+                                params: params,
+                            });
+                        });
+                    },
+
+                    storeOptions(params, { resetForm }) {
+                        const sortedLocales = Object.values(this.locales).sort((a, b) => a.name.localeCompare(b.name));
+
+                        this.locales = sortedLocales.map(({ code, name }) => ({ code, name }));
+
+                        const sortedParams = sortedLocales.reduce((acc, locale) => {
+                            acc[locale.code] = params[locale.code] || null;
+                            return acc;
+                        }, {});
+
+                        if (params.id) {
+                            let foundIndex = this.options.findIndex(item => item.id === params.id.toString());
+
+                            if (foundIndex !== -1) {
+                                Object.assign(this.options[foundIndex].params, sortedParams);
+                                this.options[foundIndex].params.admin_name = params.admin_name;
                             }
                         } else {
+                            const optionId = `option_${this.optionRowCount}`;
                             this.options.push({
-                                uid: this.generateUid(),
-                                id: null,
-                                admin_name: adminName,
-                                labels: normalizedLabels,
-                                sort_order: this.options.length,
+                                id: optionId,
+                                params: { admin_name: params.admin_name, ...sortedParams }
                             });
+
+                            params.id = optionId;
+                            this.optionRowCount++;
                         }
 
-                        this.refreshSortOrders();
-                        this.closeModal();
+                        this.$refs.addOptionsRow.toggle();
+
+                        resetForm();
                     },
 
-                    closeModal() {
-                        this.$refs.optionModal?.toggle();
+                    editModal(values) {
+                        values.params.id = values.id;
+
+                        this.$refs.modelForm.setValues(values.params);
+
+                        this.$refs.addOptionsRow.toggle();
                     },
 
-                    handleModalToggle(event) {
-                        if (! event.isActive) {
-                            this.resetModal();
-                            this.isNullOptionChecked = false;
-                        }
-                    },
-
-                    resetModal() {
-                        this.modalMode = 'create';
-                        this.modalIndex = null;
-                        this.modalData = {
-                            admin_name: '',
-                            labels: this.ensureLabels(),
-                            id: null,
-                        };
-                    },
-
-                    removeOption(index) {
+                    removeOption(id) {
                         this.$emitter.emit('open-confirm-modal', {
                             agree: () => {
-                                this.options.splice(index, 1);
-                                this.refreshSortOrders();
-                            },
+                                this.options = this.options.filter(option => option.id !== id);
+
+                                this.$emitter.emit('add-flash', { type: 'success', message: "@lang('Admin::app.services.attribute-types.edit.option-deleted')" });
+                            }
                         });
+                    },
+
+                    listenModal(event) {
+                        if (! event.isActive) {
+                            this.isNullOptionChecked = false;
+                        }
                     },
                 },
             });

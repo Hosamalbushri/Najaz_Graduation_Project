@@ -218,7 +218,23 @@ class ServiceAttributeGroupServiceFieldRepository extends Repository
     public function copyFieldFromTemplate($templateField, ServiceAttributeGroupService $pivotRelation, array $overrides = [])
     {
         $attributeType = $templateField->attributeType;
-        $fieldCode = $overrides['code'] ?? $templateField->code;
+        
+        // Get the original field code from template or overrides
+        $originalFieldCode = $overrides['code'] ?? $templateField->code;
+        
+        // Get the group code (custom_code or fallback to attribute group code)
+        // Load attributeGroup if not already loaded
+        if (! $pivotRelation->relationLoaded('attributeGroup')) {
+            $pivotRelation->load('attributeGroup');
+        }
+        
+        $groupCode = $pivotRelation->custom_code ?? ($pivotRelation->attributeGroup ? $pivotRelation->attributeGroup->code : null) ?? '';
+        
+        // Merge group code with field code using underscore
+        $baseFieldCode = $groupCode ? $groupCode . '_' . $originalFieldCode : $originalFieldCode;
+        
+        // Generate unique field code by checking for duplicates and adding sequential number if needed
+        $fieldCode = $this->generateUniqueFieldCode($pivotRelation, $baseFieldCode, $templateField->service_attribute_type_id);
 
         // Check if field with same code already exists in this pivot relation
         $existingField = $this->findWhere([
@@ -244,8 +260,23 @@ class ServiceAttributeGroupServiceFieldRepository extends Repository
             if (isset($overrides['label']) && is_array($overrides['label'])) {
                 $translationData = $overrides['label'];
             } else {
+                // Load translations if not already loaded
+                if (! $templateField->relationLoaded('translations')) {
+                    $templateField->load('translations');
+                }
+                
                 foreach (core()->getAllLocales() as $locale) {
-                    $translation = $templateField->translate($locale);
+                    // Try to get translation from loaded translations first
+                    $translation = null;
+                    if ($templateField->relationLoaded('translations')) {
+                        $translation = $templateField->translations->firstWhere('locale', $locale->code);
+                    }
+                    
+                    // Fallback to translate method if translations not loaded
+                    if (! $translation) {
+                        $translation = $templateField->translate($locale->code);
+                    }
+                    
                     $translationData[$locale->code] = $translation?->label ?? '';
                 }
             }
@@ -279,8 +310,23 @@ class ServiceAttributeGroupServiceFieldRepository extends Repository
         if (isset($overrides['label']) && is_array($overrides['label'])) {
             $translationData = $overrides['label'];
         } else {
+            // Load translations if not already loaded
+            if (! $templateField->relationLoaded('translations')) {
+                $templateField->load('translations');
+            }
+            
             foreach (core()->getAllLocales() as $locale) {
-                $translation = $templateField->translate($locale);
+                // Try to get translation from loaded translations first
+                $translation = null;
+                if ($templateField->relationLoaded('translations')) {
+                    $translation = $templateField->translations->firstWhere('locale', $locale->code);
+                }
+                
+                // Fallback to translate method if translations not loaded
+                if (! $translation) {
+                    $translation = $templateField->translate($locale->code);
+                }
+                
                 $translationData[$locale->code] = $translation?->label ?? '';
             }
         }
@@ -291,6 +337,44 @@ class ServiceAttributeGroupServiceFieldRepository extends Repository
         $this->copyFieldOptionsFromTemplate($templateField, $field);
 
         return $field;
+    }
+
+    /**
+     * Generate a unique field code by checking for duplicates and adding sequential number if needed.
+     *
+     * @param  \Najaz\Service\Models\ServiceAttributeGroupService  $pivotRelation
+     * @param  string  $baseCode
+     * @param  int|null  $attributeTypeId
+     * @return string
+     */
+    protected function generateUniqueFieldCode(ServiceAttributeGroupService $pivotRelation, string $baseCode, ?int $attributeTypeId = null): string
+    {
+        // Check if base code already exists
+        $existingField = $this->findWhere([
+            'service_attribute_group_service_id' => $pivotRelation->id,
+            'code'                               => $baseCode,
+        ])->first();
+
+        // If base code doesn't exist, return it
+        if (! $existingField) {
+            return $baseCode;
+        }
+
+        // If attribute type is provided, check if we should allow duplicates of the same type
+        // Otherwise, add sequential number
+        $counter = 2;
+        $uniqueCode = $baseCode . '_' . $counter;
+
+        // Keep incrementing until we find a unique code
+        while ($this->findWhere([
+            'service_attribute_group_service_id' => $pivotRelation->id,
+            'code'                               => $uniqueCode,
+        ])->first()) {
+            $counter++;
+            $uniqueCode = $baseCode . '_' . $counter;
+        }
+
+        return $uniqueCode;
     }
 
     /**

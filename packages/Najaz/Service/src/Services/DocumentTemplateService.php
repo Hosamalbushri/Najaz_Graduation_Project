@@ -5,6 +5,7 @@ namespace Najaz\Service\Services;
 use Carbon\Carbon;
 use Najaz\Request\Models\ServiceRequest;
 use Najaz\Request\Models\ServiceRequestFormData;
+use Najaz\Service\Models\ServiceAttributeGroupService;
 use Najaz\Service\Models\ServiceDocumentTemplate;
 use Webkul\Core\Traits\PDFHandler;
 
@@ -63,6 +64,7 @@ class DocumentTemplateService
 
     /**
      * Get all field values from service request.
+     * Uses new field structure from service_attribute_group_service_fields.
      *
      * @param  ServiceRequest  $serviceRequest
      * @return array
@@ -84,6 +86,24 @@ class DocumentTemplateService
             ? Carbon::parse($serviceRequest->submitted_at)->format('Y-m-d')
             : '';
         $values['current_date'] = Carbon::now()->format('Y-m-d');
+
+        // Load service attribute groups with fields and options (new structure)
+        $service = $serviceRequest->service;
+        $pivotRelations = ServiceAttributeGroupService::with([
+            'attributeGroup.translations',
+            'fields.translations',
+            'fields.attributeType.translations',
+            'fields.options.translations', // Load custom field options
+        ])
+        ->where('service_id', $service->id)
+        ->get();
+
+        // Create a map of group codes to pivot relations for quick lookup
+        $groupCodeMap = [];
+        foreach ($pivotRelations as $pivot) {
+            $groupCode = $pivot->custom_code ?? $pivot->attributeGroup->code;
+            $groupCodeMap[$groupCode] = $pivot;
+        }
 
         // Get form data from service_request_form_data table
         $formDataRecords = ServiceRequestFormData::where('service_request_id', $serviceRequest->id)
@@ -123,11 +143,24 @@ class DocumentTemplateService
         ]);
 
         // Extract field values from form data
+        // Field codes in fields_data already match the new field structure (field->code)
         foreach ($formData as $groupCode => $groupFields) {
             if (is_array($groupFields)) {
+                // Get the pivot relation for this group to access field information
+                $pivotRelation = $groupCodeMap[$groupCode] ?? null;
+                
                 foreach ($groupFields as $fieldCode => $fieldValue) {
                     // Convert value to string if needed
                     $stringValue = is_null($fieldValue) ? '' : (string) $fieldValue;
+                    
+                    // Verify field code exists in new structure (optional validation)
+                    if ($pivotRelation) {
+                        $field = $pivotRelation->fields->firstWhere('code', $fieldCode);
+                        if ($field) {
+                            // Field exists in new structure, use it
+                            // The value is already converted to label in saveFormData
+                        }
+                    }
                     
                     // Add nested fields (group.field) - this is important for {{group.field}} placeholders
                     $nestedKey = $groupCode . '.' . $fieldCode;
