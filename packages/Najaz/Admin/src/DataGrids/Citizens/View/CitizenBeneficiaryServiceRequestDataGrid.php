@@ -19,6 +19,10 @@ class CitizenBeneficiaryServiceRequestDataGrid extends DataGrid
         $queryBuilder = DB::table('service_requests')
             ->join('service_request_beneficiaries', 'service_requests.id', '=', 'service_request_beneficiaries.service_request_id')
             ->leftJoin('services', 'service_requests.service_id', '=', 'services.id')
+            ->leftJoin('service_translations', function ($join) {
+                $join->on('services.id', '=', 'service_translations.service_id')
+                    ->where('service_translations.locale', '=', app()->getLocale());
+            })
             ->leftJoin('citizens as request_citizen', 'service_requests.citizen_id', '=', 'request_citizen.id')
             ->select(
                 'service_requests.id',
@@ -26,7 +30,7 @@ class CitizenBeneficiaryServiceRequestDataGrid extends DataGrid
                 'service_requests.status',
                 'service_requests.created_at',
                 'service_requests.completed_at',
-                'services.name as service_name',
+                'service_translations.name as service_name',
                 'service_request_beneficiaries.group_code',
                 DB::raw('CONCAT('.$tablePrefix.'request_citizen.first_name, " ", '.$tablePrefix.'request_citizen.middle_name, " ", '.$tablePrefix.'request_citizen.last_name) as request_citizen_full_name'),
                 'request_citizen.national_id as request_citizen_national_id'

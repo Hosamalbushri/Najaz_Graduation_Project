@@ -49,7 +49,6 @@ class ServiceAttributeGroupService extends Pivot implements ServiceAttributeGrou
         'sort_order',
         'is_notifiable',
         'custom_code',
-        'custom_name',
     ];
 
     /**
@@ -85,6 +84,43 @@ class ServiceAttributeGroupService extends Pivot implements ServiceAttributeGrou
     {
         return $this->hasMany(ServiceAttributeGroupServiceFieldProxy::modelClass(), 'service_attribute_group_service_id')
             ->orderBy('sort_order');
+    }
+
+    /**
+     * Get the translations for this pivot.
+     */
+    public function translations(): HasMany
+    {
+        return $this->hasMany(
+            ServiceAttributeGroupServiceTranslationProxy::modelClass(),
+            'service_attribute_group_service_id'
+        );
+    }
+
+    /**
+     * Get custom_name attribute with translation fallback.
+     *
+     * @return string|null
+     */
+    public function getCustomNameAttribute(): ?string
+    {
+        // Check if translations are loaded
+        if (! $this->relationLoaded('translations')) {
+            $this->load('translations');
+        }
+
+        $locale = app()->getLocale();
+        $translation = $this->translations->where('locale', $locale)->first();
+
+        if ($translation && $translation->custom_name) {
+            return $translation->custom_name;
+        }
+
+        // Fallback to default locale
+        $fallbackLocale = config('app.fallback_locale', 'ar');
+        $fallbackTranslation = $this->translations->where('locale', $fallbackLocale)->first();
+
+        return $fallbackTranslation?->custom_name ?? null;
     }
 }
 

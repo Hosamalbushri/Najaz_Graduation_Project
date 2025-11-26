@@ -32,6 +32,7 @@ class ServiceQuery
         return $citizenType->services()
             ->where('services.id', $args['id'])
             ->where('services.status', 1)
+            ->with('translations')
             ->first();
     }
 
@@ -46,6 +47,7 @@ class ServiceQuery
         return $citizenType->services()
             ->where('status', 1)
             ->orderBy('sort_order')
+            ->with('translations')
             ->get();
     }
 }

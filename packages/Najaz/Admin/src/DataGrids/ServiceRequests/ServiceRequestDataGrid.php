@@ -17,6 +17,10 @@ class ServiceRequestDataGrid extends DataGrid
     {
         $queryBuilder = DB::table('service_requests')
             ->leftJoin('services', 'service_requests.service_id', '=', 'services.id')
+            ->leftJoin('service_translations', function ($join) {
+                $join->on('services.id', '=', 'service_translations.service_id')
+                    ->where('service_translations.locale', '=', app()->getLocale());
+            })
             ->select(
                 'service_requests.id',
                 'service_requests.increment_id',
@@ -29,7 +33,7 @@ class ServiceRequestDataGrid extends DataGrid
                 'service_requests.locale',
                 'service_requests.created_at',
                 'service_requests.completed_at',
-                'services.name as service_name'
+                'service_translations.name as service_name'
             );
 
         $this->addFilter('status', 'service_requests.status');

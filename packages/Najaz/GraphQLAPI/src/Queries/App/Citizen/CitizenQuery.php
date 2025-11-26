@@ -24,6 +24,7 @@ class CitizenQuery
         return $citizenType->services()
             ->where('status', 1)
             ->orderBy('sort_order')
+            ->with('translations')
             ->get();
     }
 }

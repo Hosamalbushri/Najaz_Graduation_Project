@@ -85,7 +85,7 @@ class RegistrationMutation extends Controller
             'access_token' => $jwtToken,
             'token_type'   => 'Bearer',
             'expires_in'   => auth('citizen-api')->factory()->getTTL() * 60,
-            'citizen'      => $authorizedCitizen->fresh(['citizenType.services']),
+            'citizen'      => $authorizedCitizen->fresh(['citizenType.services.translations']),
             'services'     => $this->getCitizenServices($authorizedCitizen),
         ];
     }
@@ -124,6 +124,7 @@ class RegistrationMutation extends Controller
         return $citizenType->services()
             ->where('status', 1)
             ->orderBy('sort_order')
+            ->with('translations')
             ->get();
     }
 }

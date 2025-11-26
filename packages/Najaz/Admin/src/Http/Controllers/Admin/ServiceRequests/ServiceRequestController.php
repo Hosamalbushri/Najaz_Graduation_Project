@@ -175,11 +175,26 @@ class ServiceRequestController extends Controller
 
             $request = $this->serviceRequestRepository->update($updateData, $id);
 
+            // Return JSON response for AJAX requests
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json([
+                    'message' => trans('Admin::app.service-requests.view.status-update-success'),
+                    'data'    => $request,
+                ]);
+            }
+
             session()->flash('success', trans('Admin::app.service-requests.view.status-update-success'));
 
             return redirect()->route('admin.service-requests.view', $request->id);
 
         } catch (\Exception $e) {
+            // Return JSON response for AJAX requests
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json([
+                    'message' => $e->getMessage(),
+                ], 422);
+            }
+
             session()->flash('error', $e->getMessage());
 
             return redirect()->back();

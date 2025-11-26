@@ -23,17 +23,21 @@ class DocumentTemplateDataGrid extends DataGrid
     {
         $queryBuilder = DB::table('service_document_templates')
             ->leftJoin('services', 'service_document_templates.service_id', '=', 'services.id')
+            ->leftJoin('service_translations', function ($join) {
+                $join->on('services.id', '=', 'service_translations.service_id')
+                    ->where('service_translations.locale', '=', app()->getLocale());
+            })
             ->addSelect(
                 'service_document_templates.id as template_id',
                 'service_document_templates.service_id',
                 'service_document_templates.is_active',
                 'service_document_templates.created_at',
                 'service_document_templates.updated_at',
-                'services.name as service_name'
+                'service_translations.name as service_name'
             );
 
         $this->addFilter('template_id', 'service_document_templates.id');
-        $this->addFilter('service_name', 'services.name');
+        $this->addFilter('service_name', 'service_translations.name');
         $this->addFilter('is_active', 'service_document_templates.is_active');
 
         return $queryBuilder;

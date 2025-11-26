@@ -41,6 +41,10 @@
                         <div class="flex gap-2.5 max-xl:flex-wrap">
                             <div class="flex flex-1 flex-col gap-2 overflow-auto max-xl:flex-auto">
                                 <div class="box-shadow rounded bg-white p-4 dark:bg-gray-900">
+                                    @php
+                                        $currentLocale = core()->getRequestedLocale();
+                                    @endphp
+
                                     <x-admin::form.control-group>
                                         <x-admin::form.control-group.label class="required">
                                             @lang('Admin::app.services.attribute-groups.edit.default-name')
@@ -56,36 +60,42 @@
                                         <x-admin::form.control-group.error control-name="default_name" />
                                     </x-admin::form.control-group>
 
-                                    @foreach (core()->getAllLocales() as $locale)
+                                    <!-- Name -->
                                         <x-admin::form.control-group>
                                             <x-admin::form.control-group.label class="required">
-                                                {{ __('Admin::app.services.attribute-groups.edit.name'). ' (' . strtoupper($locale->code) . ')' }}
+                                            @lang('Admin::app.services.attribute-groups.edit.name')
+                                            <span class="rounded border border-gray-200 bg-gray-100 px-1 py-0.5 text-[10px] font-semibold leading-normal text-gray-600">
+                                                {{ $currentLocale->name }}
+                                            </span>
                                             </x-admin::form.control-group.label>
 
                                             <x-admin::form.control-group.control
                                                     type="text"
-                                                    :name="'name[' . $locale->code . ']'"
-                                                    :value="old('name.' . $locale->code, $attributeGroup->translate($locale->code)?->name ?? '')"
-                                                    :placeholder="$locale->name"
+                                                name="{{ $currentLocale->code }}[name]"
+                                                :value="old($currentLocale->code)['name'] ?? ($attributeGroup->translate($currentLocale->code)?->name ?? '')"
+                                                :placeholder="$currentLocale->name"
                                             />
 
-                                            <x-admin::form.control-group.error :control-name="'name[' . $locale->code . ']'" />
+                                        <x-admin::form.control-group.error :control-name="$currentLocale->code . '[name]'" />
                                         </x-admin::form.control-group>
 
+                                    <!-- Description -->
                                         <x-admin::form.control-group>
                                             <x-admin::form.control-group.label>
-                                                {{ __('Admin::app.services.attribute-groups.edit.description') .' (' . strtoupper($locale->code) . ')' }}
+                                            @lang('Admin::app.services.attribute-groups.edit.description')
+                                            <span class="rounded border border-gray-200 bg-gray-100 px-1 py-0.5 text-[10px] font-semibold leading-normal text-gray-600">
+                                                {{ $currentLocale->name }}
+                                            </span>
                                             </x-admin::form.control-group.label>
 
                                             <x-admin::form.control-group.control
                                                     type="textarea"
-                                                    :name="'description[' . $locale->code . ']'"
-                                                    :value="old('description.' . $locale->code, $attributeGroup->translate($locale->code)?->description ?? '')"
+                                                name="{{ $currentLocale->code }}[description]"
+                                                :value="old($currentLocale->code)['description'] ?? ($attributeGroup->translate($currentLocale->code)?->description ?? '')"
                                             />
 
-                                            <x-admin::form.control-group.error :control-name="'description[' . $locale->code . ']'" />
+                                        <x-admin::form.control-group.error :control-name="$currentLocale->code . '[description]'" />
                                         </x-admin::form.control-group>
-                                    @endforeach
                                 </div>
                             </div>
 
@@ -704,11 +714,12 @@
 
             data() {
                 const validationOptions = Array.isArray(this.validations) ? this.validations : [];
+                const locales = Array.isArray(this.locales) ? this.locales : [];
 
                 const normalizeField = (field) => {
                     const labels = {};
 
-                    this.locales.forEach(locale => {
+                    locales.forEach(locale => {
                         let value = '';
 
                         if (field.labels && field.labels[locale.code] !== undefined) {
@@ -758,7 +769,7 @@
                 return {
                     isSaving: false,
                     fields: initialFields,
-                    locales: this.locales,
+                    locales: locales,
                     attributeTypesList: this.attributeTypes || [],
                     selectedFieldIndex: null,
                     selectedField: emptyField,

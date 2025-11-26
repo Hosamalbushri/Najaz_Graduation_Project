@@ -29,14 +29,20 @@ class ServiceGroupController extends Controller
     {
         $service = $this->serviceRepository->findOrFail($serviceId);
 
-        $this->validate(request(), [
+        $rules = [
             'template_id'     => 'required|exists:service_attribute_groups,id',
             'code'            => 'required|string|max:255',
-            'name'            => 'required|string|max:255',
             'description'     => 'nullable|string',
             'is_notifiable'   => 'nullable|boolean',
             'sort_order'      => 'nullable|integer',
-        ]);
+        ];
+
+        // Add validation rules for translations
+        foreach (core()->getAllLocales() as $locale) {
+            $rules['custom_name.'.$locale->code] = 'required|string|max:255';
+        }
+
+        $this->validate(request(), $rules);
 
         $templateGroupId = (int) request()->input('template_id');
         $templateGroup = ServiceAttributeGroupProxy::modelClass()::with([
@@ -88,8 +94,15 @@ class ServiceGroupController extends Controller
                 'sort_order'                 => $sortOrder,
                 'is_notifiable'              => $isNotifiable,
                 'custom_code'                => $customCode,
-                'custom_name'                => request()->input('name'),
             ]);
+
+            // Save translations
+            foreach (core()->getAllLocales() as $locale) {
+                $pivotRelation->translations()->updateOrCreate(
+                    ['locale' => $locale->code],
+                    ['custom_name' => request()->input('custom_name.'.$locale->code)]
+                );
+            }
 
             // Copy fields from template when creating a new pivot relation
             if ($templateGroup->fields) {
@@ -106,6 +119,7 @@ class ServiceGroupController extends Controller
         $service = $service->fresh(['attributeGroups.translations', 'attributeGroups.fields.translations']);
 
         $pivotRelation = ServiceAttributeGroupService::with([
+            'translations',
             'attributeGroup.translations',
             'fields.translations',
             'fields.attributeType.translations',
@@ -140,12 +154,18 @@ class ServiceGroupController extends Controller
             abort(404);
         }
 
-        $this->validate(request(), [
+        $rules = [
             'code'          => 'required|string|max:255',
-            'name'          => 'required|string|max:255',
             'description'   => 'nullable|string',
             'is_notifiable' => 'nullable|boolean',
-        ]);
+        ];
+
+        // Add validation rules for translations
+        foreach (core()->getAllLocales() as $locale) {
+            $rules['custom_name.'.$locale->code] = 'required|string|max:255';
+        }
+
+        $this->validate(request(), $rules);
 
         $customCode = request()->input('code');
         $normalizedCode = mb_strtolower(trim($customCode));
@@ -175,12 +195,20 @@ class ServiceGroupController extends Controller
 
         $pivotRelation->update([
             'custom_code'   => $customCode,
-            'custom_name'   => request()->input('name'),
             'is_notifiable' => $isNotifiable,
         ]);
 
+        // Update translations
+        foreach (core()->getAllLocales() as $locale) {
+            $pivotRelation->translations()->updateOrCreate(
+                ['locale' => $locale->code],
+                ['custom_name' => request()->input('custom_name.'.$locale->code)]
+            );
+        }
+
         // Reload the pivot relation with updated data
         $pivotRelation = ServiceAttributeGroupService::with([
+            'translations',
             'attributeGroup.translations',
             'fields.translations',
             'fields.attributeType.translations',
@@ -335,13 +363,37 @@ class ServiceGroupController extends Controller
             ];
         })->sortBy('sort_order')->values()->toArray();
 
+        // Get translations for custom_name
+        $customNameTranslations = [];
+        $displayName = '';
+        
+        // Load translations if not loaded
+        if (! $pivotRelation->relationLoaded('translations')) {
+            $pivotRelation->load('translations');
+        }
+        
+        foreach (core()->getAllLocales() as $loc) {
+            $translation = $pivotRelation->translations->where('locale', $loc->code)->first();
+            $customNameTranslations[$loc->code] = $translation?->custom_name ?? '';
+            
+            if ($loc->code === $locale && !empty($customNameTranslations[$loc->code])) {
+                $displayName = $customNameTranslations[$loc->code];
+            }
+        }
+
+        // Fallback to group name if no custom name
+        if (empty($displayName)) {
+            $displayName = $group->translate($locale)?->name ?? $group->code;
+        }
+
         return [
             'service_attribute_group_id' => $pivotRelation->id,
             'template_id'                => $group->id,
             'pivot_uid'                  => $pivotRelation->pivot_uid,
             'code'                       => $pivotRelation->custom_code ?? $group->code,
-            'name'                       => $pivotRelation->custom_name ?? $group->translate($locale)?->name ?? $group->code,
-            'display_name'               => $pivotRelation->custom_name ?? $group->translate($locale)?->name ?? $group->code,
+            'name'                       => $displayName,
+            'display_name'               => $displayName,
+            'custom_name'                => $customNameTranslations,
             'description'                => $group->translate($locale)?->description ?? '',
             'group_type'                 => $group->group_type ?? 'general',
             'sort_order'                 => $pivotRelation->sort_order ?? 0,

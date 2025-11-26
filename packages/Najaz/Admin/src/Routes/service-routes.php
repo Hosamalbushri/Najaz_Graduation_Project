@@ -76,9 +76,11 @@ Route::group(['middleware' => ['web', 'admin'], 'prefix' => 'admin/attribute-gro
     });
 
     Route::controller(AttributeGroupFieldController::class)->group(function () {
+        Route::get('{groupId}/fields/data', 'getData')->name('admin.attribute-groups.fields.data');
         Route::post('{groupId}/fields', 'store')->name('admin.attribute-groups.fields.store');
         Route::put('{groupId}/fields/{fieldId}', 'update')->name('admin.attribute-groups.fields.update');
         Route::delete('{groupId}/fields/{fieldId}', 'destroy')->name('admin.attribute-groups.fields.delete');
+        Route::post('{groupId}/fields/reorder', 'reorder')->name('admin.attribute-groups.fields.reorder');
     });
 });
 

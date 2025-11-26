@@ -3,13 +3,13 @@
 namespace Najaz\Service\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Najaz\Citizen\Models\CitizenTypeProxy;
 use Najaz\Service\Contracts\Service as ServiceContract;
+use Webkul\Core\Eloquent\TranslatableModel;
 
-class Service extends Model implements ServiceContract
+class Service extends TranslatableModel implements ServiceContract
 {
     use HasFactory;
 
@@ -21,13 +21,28 @@ class Service extends Model implements ServiceContract
     protected $table = 'services';
 
     /**
+     * Translation model foreign key column.
+     *
+     * @var string
+     */
+    protected $translationForeignKey = 'service_id';
+
+    /**
+     * Translated attributes.
+     *
+     * @var array
+     */
+    public $translatedAttributes = [
+        'name',
+        'description',
+    ];
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array
      */
     protected $fillable = [
-        'name',
-        'description',
         'status',
         'image',
         'sort_order',
@@ -44,6 +59,13 @@ class Service extends Model implements ServiceContract
     ];
 
     /**
+     * Eager loading.
+     *
+     * @var array
+     */
+    protected $with = ['translations'];
+
+    /**
      * Get the attribute groups assigned to the service.
      */
     public function attributeGroups(): BelongsToMany
@@ -54,7 +76,7 @@ class Service extends Model implements ServiceContract
             'service_id',
             'service_attribute_group_id'
         )->using(ServiceAttributeGroupService::class)
-            ->withPivot('id', 'pivot_uid', 'sort_order', 'is_notifiable', 'custom_code', 'custom_name')
+            ->withPivot('id', 'pivot_uid', 'sort_order', 'is_notifiable', 'custom_code')
             ->withTimestamps()
             ->orderByPivot('sort_order');
     }
@@ -78,5 +100,38 @@ class Service extends Model implements ServiceContract
     public function documentTemplate(): HasOne
     {
         return $this->hasOne(ServiceDocumentTemplateProxy::modelClass(), 'service_id');
+    }
+
+    /**
+     * Scope to load translations.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeWithTranslations($query)
+    {
+        return $query->with('translations');
+    }
+
+    /**
+     * Use fallback for service.
+     */
+    protected function useFallback(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Get fallback locale for service.
+     */
+    protected function getFallbackLocale(?string $locale = null): ?string
+    {
+        $fallbackLocale = config('app.fallback_locale', 'ar');
+        
+        if ($fallbackLocale) {
+            return $fallbackLocale;
+        }
+
+        return parent::getFallbackLocale();
     }
 }

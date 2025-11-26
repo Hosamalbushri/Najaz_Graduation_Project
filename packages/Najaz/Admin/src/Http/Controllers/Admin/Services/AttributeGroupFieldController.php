@@ -143,6 +143,132 @@ class AttributeGroupFieldController extends Controller
     }
 
     /**
+     * Get fields data for the attribute group.
+     */
+    public function getData(int $groupId): JsonResponse
+    {
+        $attributeGroup = $this->dataGroupRepository->with([
+            'fields.translations',
+            'fields.attributeType.translations',
+        ])->findOrFail($groupId);
+
+        $attributeTypes = $this->fieldTypeRepository
+            ->with(['translations', 'options.translations'])
+            ->orderBy('position')
+            ->get()
+            ->map(function ($type) {
+                $translation = $type->translate(app()->getLocale());
+                
+                // Get options with translations
+                $options = [];
+                if ($type->options) {
+                    $allLocales = core()->getAllLocales();
+                    foreach ($type->options as $option) {
+                        $optionLabels = [];
+                        foreach ($allLocales as $loc) {
+                            $optionTranslation = $option->translate($loc->code);
+                            $optionLabels[$loc->code] = $optionTranslation?->label ?? $option->admin_name ?? $option->code ?? '';
+                        }
+                        $options[] = [
+                            'id' => $option->id,
+                            'code' => $option->code,
+                            'admin_name' => $option->admin_name,
+                            'labels' => $optionLabels,
+                            'sort_order' => $option->sort_order ?? 0,
+                        ];
+                    }
+                }
+                
+                return [
+                    'id'           => $type->id,
+                    'code'         => $type->code,
+                    'type'         => $type->type,
+                    'name'         => $translation?->name ?? $type->code,
+                    'translations' => $type->translations->map(fn($t) => [
+                        'locale' => $t->locale,
+                        'name'   => $t->name,
+                    ])->toArray(),
+                    'validation'   => $type->validation,
+                    'regex'        => $type->regex,
+                    'default_value' => $type->default_value,
+                    'is_required'  => $type->is_required,
+                    'is_unique'    => $type->is_unique,
+                    'options'      => $options,
+                ];
+            });
+
+        $fields = $attributeGroup->fields->map(function ($field) {
+            // Get labels for all locales
+            $labels = [];
+            foreach (core()->getAllLocales() as $locale) {
+                $translation = $field->translate($locale->code);
+                $labels[$locale->code] = $translation?->label ?? '';
+            }
+
+            return [
+                'id' => $field->id,
+                'service_attribute_type_id' => $field->service_attribute_type_id,
+                'code' => $field->code,
+                'type' => $field->type,
+                'validation_rules' => $field->validation_rules,
+                'default_value' => $field->default_value,
+                'is_required' => $field->is_required,
+                'sort_order' => $field->sort_order,
+                'labels' => $labels,
+                'translations' => $field->translations->map(fn($t) => [
+                    'locale' => $t->locale,
+                    'label' => $t->label,
+                ])->toArray(),
+                'attributeType' => $field->attributeType ? [
+                    'id' => $field->attributeType->id,
+                    'code' => $field->attributeType->code,
+                    'type' => $field->attributeType->type,
+                    'validation' => $field->attributeType->validation,
+                    'regex' => $field->attributeType->regex,
+                    'default_value' => $field->attributeType->default_value,
+                    'is_required' => $field->attributeType->is_required,
+                    'is_unique' => $field->attributeType->is_unique,
+                    'translations' => $field->attributeType->translations->map(fn($t) => [
+                        'locale' => $t->locale,
+                        'name' => $t->name,
+                    ])->toArray(),
+                ] : null,
+            ];
+        })->toArray();
+
+        return new JsonResponse([
+            'fields' => $fields,
+            'attributeTypes' => $attributeTypes,
+        ]);
+    }
+
+    /**
+     * Reorder fields.
+     */
+    public function reorder(int $groupId): JsonResponse
+    {
+        $this->dataGroupRepository->findOrFail($groupId);
+
+        $this->validate(request(), [
+            'fields' => 'required|array',
+            'fields.*.id' => 'required|integer|exists:service_attribute_fields,id',
+            'fields.*.sort_order' => 'required|integer',
+        ]);
+
+        $fields = request()->input('fields', []);
+
+        foreach ($fields as $fieldData) {
+            $this->fieldRepository->update([
+                'sort_order' => $fieldData['sort_order'],
+            ], $fieldData['id']);
+        }
+
+        return new JsonResponse([
+            'message' => trans('Admin::app.services.attribute-groups.attribute-group-fields.reorder-success'),
+        ]);
+    }
+
+    /**
      * Normalize validation rules input into stored JSON structure.
      */
     protected function prepareValidationRules($rules, $regex = null): ?array

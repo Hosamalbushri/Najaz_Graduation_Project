@@ -13,6 +13,7 @@ class ModuleServiceProvider extends BaseModuleServiceProvider
      */
     protected $models = [
         \Najaz\Service\Models\Service::class,
+        \Najaz\Service\Models\ServiceTranslation::class,
         \Najaz\Service\Models\ServiceAttributeGroup::class,
         \Najaz\Service\Models\ServiceAttributeGroupTranslation::class,
         \Najaz\Service\Models\ServiceAttributeField::class,
@@ -22,6 +23,7 @@ class ModuleServiceProvider extends BaseModuleServiceProvider
         \Najaz\Service\Models\ServiceAttributeTypeOptionTranslation::class,
         \Najaz\Service\Models\ServiceDocumentTemplate::class,
         \Najaz\Service\Models\ServiceAttributeGroupService::class,
+        \Najaz\Service\Models\ServiceAttributeGroupServiceTranslation::class,
         \Najaz\Service\Models\ServiceAttributeGroupServiceField::class,
         \Najaz\Service\Models\ServiceAttributeGroupServiceFieldTranslation::class,
         \Najaz\Service\Models\ServiceAttributeGroupServiceFieldOption::class,

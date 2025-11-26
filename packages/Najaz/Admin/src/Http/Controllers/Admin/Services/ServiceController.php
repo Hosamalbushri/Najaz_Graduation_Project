@@ -3,16 +3,18 @@
 namespace Najaz\Admin\Http\Controllers\Admin\Services;
 
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 use Najaz\Admin\DataGrids\Services\ServiceDataGrid;
+use Najaz\Admin\Http\Controllers\Controller;
+use Najaz\Admin\Http\Requests\ServiceForm;
 use Najaz\Citizen\Models\CitizenTypeProxy;
 use Najaz\Service\Models\Service;
 use Najaz\Service\Models\ServiceAttributeGroupProxy;
 use Najaz\Service\Models\ServiceAttributeGroupService;
 use Najaz\Service\Models\ServiceDocumentTemplateProxy;
 use Najaz\Service\Repositories\ServiceRepository;
-use Najaz\Admin\Http\Controllers\Controller;
 
 class ServiceController extends Controller
 {
@@ -61,41 +63,35 @@ class ServiceController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(): JsonResponse
+    public function store(ServiceForm $serviceForm): RedirectResponse
     {
-        $this->validate(request(), [
-            'name'        => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'status'      => 'nullable|boolean',
-            'image'       => 'nullable|string|max:2048',
-            'sort_order'  => 'nullable|integer|min:0',
-            'citizen_type_ids'   => 'nullable|array',
-            'citizen_type_ids.*' => 'integer|exists:citizen_types,id',
-        ]);
+        $locale = core()->getRequestedLocaleCode();
 
-        $data = request()->only([
-            'name',
-            'description',
+        $data = $serviceForm->only([
             'status',
             'image',
             'sort_order',
+            'citizen_type_ids',
         ]);
+
+        $data['locale'] = $locale;
+        $data[$locale] = $serviceForm->input($locale, []);
+
+        // If no locale-specific data, use direct input
+        if (empty($data[$locale])) {
+            $data[$locale] = [
+                'name'        => $serviceForm->input('name'),
+                'description' => $serviceForm->input('description'),
+            ];
+        }
 
         $service = $this->serviceRepository->create($data);
 
-        // Groups are now managed separately via ServiceGroupController
-        // $this->serviceRepository->syncAttributeGroups(
-        //     request()->input('service_attribute_groups'),
-        //     $service
-        // );
+        $this->serviceRepository->syncCitizenTypes($serviceForm->input('citizen_type_ids', []), $service);
 
-        $this->serviceRepository->syncCitizenTypes(request()->input('citizen_type_ids', []), $service);
+        session()->flash('success', trans('Admin::app.services.services.create-success'));
 
-
-        return new JsonResponse([
-            'message' => trans('Admin::app.services.services.create-success'),
-            'redirect_to' => route('admin.services.edit', $service->id),
-        ]);
+        return redirect()->route('admin.services.edit', $service->id);
     }
 
     /**
@@ -106,6 +102,7 @@ class ServiceController extends Controller
         $currentLocale = app()->getLocale();
 
         $service = $this->serviceRepository->with([
+            'translations',
             'attributeGroups.translations',
             'citizenTypes',
         ])->findOrFail($id);
@@ -114,6 +111,7 @@ class ServiceController extends Controller
         $pivotIds = $service->attributeGroups->pluck('pivot.id')->filter();
         if ($pivotIds->isNotEmpty()) {
             \Najaz\Service\Models\ServiceAttributeGroupService::with([
+                'translations',
                 'fields.translations',
                 'fields.attributeType.translations',
                 'fields.options.translations', // Load custom field options only
@@ -202,41 +200,27 @@ class ServiceController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(int $id): JsonResponse
+    public function update(ServiceForm $serviceForm, int $id): RedirectResponse
     {
-        $this->validate(request(), [
-            'name'        => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'status'      => 'nullable|boolean',
-            'image'       => 'nullable|string|max:2048',
-            'sort_order'  => 'nullable|integer|min:0',
-            'citizen_type_ids'   => 'nullable|array',
-            'citizen_type_ids.*' => 'integer|exists:citizen_types,id',
-        ]);
+        $locale = core()->getRequestedLocaleCode();
 
-        $data = request()->only([
-            'name',
-            'description',
+        $data = $serviceForm->only([
             'status',
             'image',
             'sort_order',
+            'citizen_type_ids',
         ]);
+
+        $data['locale'] = $locale;
+        $data[$locale] = $serviceForm->input($locale, []);
 
         $service = $this->serviceRepository->update($data, $id);
 
-        // Groups are now managed separately via ServiceGroupController
-        // $this->serviceRepository->syncAttributeGroups(
-        //     request()->input('service_attribute_groups'),
-        //     $service
-        // );
+        $this->serviceRepository->syncCitizenTypes($serviceForm->input('citizen_type_ids', []), $service);
 
-        $this->serviceRepository->syncCitizenTypes(request()->input('citizen_type_ids', []), $service);
+        session()->flash('success', trans('Admin::app.services.services.update-success'));
 
-
-        return new JsonResponse([
-            'message' => trans('Admin::app.services.services.update-success'),
-            'data'    => $service->fresh(['attributeGroups', 'citizenTypes']),
-        ]);
+        return redirect()->route('admin.services.edit', $service->id);
     }
 
     /**
@@ -311,6 +295,7 @@ class ServiceController extends Controller
         $pivotRelations = collect();
         if ($pivotIds->isNotEmpty()) {
             $pivotRelations = \Najaz\Service\Models\ServiceAttributeGroupService::with([
+                'translations',
                 'fields.translations',
                 'fields.attributeType.translations',
                 'fields.options.translations', // Load custom field options

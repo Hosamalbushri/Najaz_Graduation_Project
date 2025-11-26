@@ -1,0 +1,29 @@
+{
+    "name": "najaz/installer",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Najaz",
+            "email": "support@webkul.com"
+        }
+    ],
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "Najaz\\Installer\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Najaz\\Installer\\Providers\\InstallerServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev"
+}
+

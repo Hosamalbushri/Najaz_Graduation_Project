@@ -1,12 +1,18 @@
 # Admin\Service related queries for Service model
 extend type Query @guard(with: ["admin-api"]) {
-    services: [Service!] @paginate(
-        type: "PAGINATOR"
-        defaultCount: 10
-        model: "Najaz\\Service\\Models\\Service"
-    )
+    services: [Service!] 
+        @paginate(
+            type: "PAGINATOR"
+            defaultCount: 10
+            model: "Najaz\\Service\\Models\\Service"
+            scopes: ["withTranslations"]
+        )
 
-    service(id: ID @eq): Service @find(model: "Najaz\\Service\\Models\\Service")
+    service(id: ID @eq): Service 
+        @find(
+            model: "Najaz\\Service\\Models\\Service"
+            scopes: ["withTranslations"]
+        )
 }
 
 extend type Service {

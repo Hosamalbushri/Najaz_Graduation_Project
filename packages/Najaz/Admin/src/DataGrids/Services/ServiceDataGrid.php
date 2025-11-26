@@ -22,19 +22,24 @@ class ServiceDataGrid extends DataGrid
     public function prepareQueryBuilder()
     {
         $queryBuilder = DB::table('services')
-            ->addSelect(
+            ->leftJoin('service_translations', function ($join) {
+                $join->on('services.id', '=', 'service_translations.service_id')
+                    ->where('service_translations.locale', '=', app()->getLocale());
+            })
+            ->select(
                 'services.id as service_id',
-                'services.name',
-                'services.description',
+                'service_translations.name',
+                'service_translations.description',
                 'services.status',
                 'services.image',
                 'services.sort_order',
                 'services.created_at',
                 'services.updated_at'
-            );
+            )
+            ->groupBy('services.id');
 
         $this->addFilter('service_id', 'services.id');
-        $this->addFilter('name', 'services.name');
+        $this->addFilter('name', 'service_translations.name');
         $this->addFilter('price', 'services.price');
         $this->addFilter('status', 'services.status');
 

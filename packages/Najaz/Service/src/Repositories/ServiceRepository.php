@@ -252,6 +252,30 @@ class ServiceRepository extends Repository
         $service->citizenTypes()->sync($ids);
     }
 
+    /**
+     * Create service with translations.
+     *
+     * @return \Najaz\Service\Contracts\Service
+     */
+    public function create(array $data)
+    {
+        // TranslatableModel will handle translations automatically
+        // The data should come with locale structure like: ['ar' => ['name' => '...'], 'en' => ['name' => '...']]
+        return parent::create($data);
+    }
+
+    /**
+     * Update service with translations.
+     *
+     * @param  int  $id
+     * @return \Najaz\Service\Contracts\Service
+     */
+    public function update(array $data, $id)
+    {
+        // TranslatableModel will handle translations automatically
+        return parent::update($data, $id);
+    }
+
     protected function toBoolean($value): bool
     {
         if (is_bool($value)) {

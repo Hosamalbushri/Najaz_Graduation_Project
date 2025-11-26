@@ -40,6 +40,8 @@ class ServiceAttributeTypeController extends Controller
 
     public function store(): RedirectResponse
     {
+        $locale = core()->getRequestedLocaleCode();
+
         if (request()->input('position') === '') {
             request()->merge(['position' => null]);
         }
@@ -48,19 +50,20 @@ class ServiceAttributeTypeController extends Controller
             request()->merge(['validation' => null]);
         }
 
-        $this->validate(request(), [
+        $rules = [
             'code'   => ['required', 'unique:service_attribute_types,code', new Code],
             'type'   => 'required|in:' . implode(',', ServiceAttributeTypeEnum::getValues()),
             'default_name' => 'required|string|max:255',
-            'name'   => 'required|array',
-            'name.*' => 'required|string|max:255',
             'position' => 'nullable|integer|min:0',
             'default_value' => 'nullable|string',
             'validation' => 'nullable|in:' . implode(',', ValidationEnum::getValues()),
             'regex' => 'nullable|required_if:validation,regex|string',
             'is_required' => 'nullable|boolean',
             'is_unique' => 'nullable|boolean',
-        ]);
+            "{$locale}.name" => 'required|string|max:255',
+        ];
+
+        $this->validate(request(), $rules);
 
         $type = request()->input('type');
 
@@ -84,13 +87,10 @@ class ServiceAttributeTypeController extends Controller
             'is_unique'       => request()->boolean('is_unique'),
         ];
 
-        $attributeType = $this->serviceAttributeTypeRepository->create($data);
+        $data['locale'] = $locale;
+        $data[$locale] = request()->input($locale, []);
 
-        foreach (core()->getAllLocales() as $locale) {
-            $attributeType->translateOrNew($locale->code)->fill([
-                'name' => request()->input("name.{$locale->code}"),
-            ])->save();
-        }
+        $attributeType = $this->serviceAttributeTypeRepository->create($data);
 
         if ($this->requiresOptions($type)) {
             $this->serviceAttributeTypeOptionRepository->syncOptions(
@@ -118,6 +118,8 @@ class ServiceAttributeTypeController extends Controller
 
     public function update(int $id): RedirectResponse
     {
+        $locale = core()->getRequestedLocaleCode();
+
         if (request()->input('position') === '') {
             request()->merge(['position' => null]);
         }
@@ -126,17 +128,18 @@ class ServiceAttributeTypeController extends Controller
             request()->merge(['validation' => null]);
         }
 
-        $this->validate(request(), [
+        $rules = [
             'default_name' => 'required|string|max:255',
-            'name'   => 'required|array',
-            'name.*' => 'required|string|max:255',
             'position' => 'nullable|integer|min:0',
             'default_value' => 'nullable|string',
             'validation' => 'nullable|in:' . implode(',', ValidationEnum::getValues()),
             'regex' => 'nullable|required_if:validation,regex|string',
             'is_required' => 'nullable|boolean',
             'is_unique' => 'nullable|boolean',
-        ]);
+            "{$locale}.name" => 'required|string|max:255',
+        ];
+
+        $this->validate(request(), $rules);
 
         $attributeType = $this->serviceAttributeTypeRepository->findOrFail($id);
 
@@ -147,7 +150,7 @@ class ServiceAttributeTypeController extends Controller
         $validation = request()->input('validation');
         $regex = $validation === 'regex' ? request()->input('regex') : null;
 
-        $this->serviceAttributeTypeRepository->update([
+        $data = [
             'position'      => request()->input('position'),
             'default_value' => request()->input('default_value'),
             'default_name'  => request()->input('default_name'),
@@ -155,13 +158,12 @@ class ServiceAttributeTypeController extends Controller
             'regex'         => $regex,
             'is_required'   => request()->boolean('is_required'),
             'is_unique'     => request()->boolean('is_unique'),
-        ], $attributeType->id);
+        ];
 
-        foreach (core()->getAllLocales() as $locale) {
-            $attributeType->translateOrNew($locale->code)->fill([
-                'name' => request()->input("name.{$locale->code}"),
-            ])->save();
-        }
+        $data['locale'] = $locale;
+        $data[$locale] = request()->input($locale, []);
+
+        $this->serviceAttributeTypeRepository->update($data, $attributeType->id);
 
         if ($this->requiresOptions($attributeType->type)) {
             $this->serviceAttributeTypeOptionRepository->syncOptions(

@@ -438,20 +438,29 @@
                             />
                         </x-admin::form.control-group>
 
+                        <div class="grid gap-4 md:grid-cols-2">
+                            <div
+                                v-for="locale in locales"
+                                :key="`group-name-${locale.code}`"
+                            >
                         <x-admin::form.control-group>
                             <x-admin::form.control-group.label class="required">
-                                @lang('Admin::app.services.services.attribute-groups.name-label')
+                                        @lang('Admin::app.services.services.attribute-groups.name-label') (@{{ locale.name }})
                             </x-admin::form.control-group.label>
 
                             <x-admin::form.control-group.control
                                 type="text"
-                                name="group_name"
-                                ::value="groupToAdd.name"
-                                ::placeholder="selectedTemplate ? selectedTemplate.name : ''"
+                                        ::name="`custom_name[${locale.code}]`"
+                                        ::value="groupToAdd.custom_name && groupToAdd.custom_name[locale.code] ? groupToAdd.custom_name[locale.code] : ''"
+                                        ::placeholder="selectedTemplate ? (selectedTemplate.translations && selectedTemplate.translations[locale.code] ? selectedTemplate.translations[locale.code].name : selectedTemplate.name) : ''"
                                 :label="trans('Admin::app.services.services.attribute-groups.name-label')"
-                                @input="groupToAdd.name = $event.target.value"
+                                        @input="if (!groupToAdd.custom_name) groupToAdd.custom_name = {}; groupToAdd.custom_name[locale.code] = $event.target.value"
                             />
+
+                                    <x-admin::form.control-group.error ::control-name="`custom_name.${locale.code}`" />
                         </x-admin::form.control-group>
+                            </div>
+                        </div>
 
                         <x-admin::form.control-group v-if="selectedTemplate && groupSupportsNotification(selectedTemplate)">
                             <x-admin::form.control-group.label>
@@ -1279,6 +1288,7 @@
                         group_type: base.group_type || 'general',
                         name: base.name,
                         display_name: base.name,
+                        custom_name: base.custom_name || {},
                         description: base.description,
                         sort_order: base.sort_order ?? 0,
                         is_notifiable: !!base.is_notifiable,
@@ -1346,12 +1356,21 @@
                             template_id: group.template_id ?? group.id ?? '',
                             code: group.code ?? '',
                             name: group.display_name ?? group.name ?? '',
+                            custom_name: group.custom_name || {},
                             description: group.description ?? '',
                             group_type: group.group_type ?? 'general',
                             is_notifiable: this.normalizeBoolean(group.is_notifiable ?? false),
                             supports_notification: this.groupSupportsNotification(group),
                             pivot_uid: group.pivot_uid ?? '',
                         };
+
+                        // Initialize custom_name for all locales if not present
+                        if (!this.groupToAdd.custom_name || Object.keys(this.groupToAdd.custom_name).length === 0) {
+                            this.groupToAdd.custom_name = {};
+                            this.locales.forEach(locale => {
+                                this.groupToAdd.custom_name[locale.code] = this.groupToAdd.name || '';
+                            });
+                        }
 
                         if (! this.groupToAdd.supports_notification) {
                             this.groupToAdd.is_notifiable = false;
@@ -1362,7 +1381,15 @@
                 },
 
                 async confirmAddGroup() {
-                    if (! this.groupToAdd.template_id || ! this.groupToAdd.code || ! this.groupToAdd.name) {
+                    // Validate custom_name for all locales
+                    let hasValidNames = true;
+                    this.locales.forEach(locale => {
+                        if (!this.groupToAdd.custom_name || !this.groupToAdd.custom_name[locale.code] || !this.groupToAdd.custom_name[locale.code].trim()) {
+                            hasValidNames = false;
+                        }
+                    });
+
+                    if (! this.groupToAdd.template_id || ! this.groupToAdd.code || !hasValidNames) {
                         this.$emitter.emit('add-flash', {
                             type: 'warning',
                             message: "@lang('Admin::app.services.services.attribute-groups.missing-required-fields')",
@@ -1406,14 +1433,13 @@
                         }
 
                         const updateUrl = `{{ url('admin/services') }}/${this.serviceId}/groups/${pivotId}`;
-                        const response = await this.$axios.put(updateUrl,
-                                {
+                        const updateData = {
                                     code: this.groupToAdd.code,
-                                    name: this.groupToAdd.name,
                                     description: this.groupToAdd.description || '',
                                     is_notifiable: this.groupToAdd.is_notifiable,
-                                }
-                            );
+                            custom_name: this.groupToAdd.custom_name || {},
+                        };
+                        const response = await this.$axios.put(updateUrl, updateData);
 
                             if (response.data && response.data.data) {
                                 const updatedGroup = this.formatGroupFromResponse(response.data.data, existing);
@@ -1427,16 +1453,15 @@
                         } else {
                             // Create new group
                             const storeUrl = `{{ url('admin/services') }}/${this.serviceId}/groups`;
-                            const response = await this.$axios.post(storeUrl,
-                                {
+                            const storeData = {
                                     template_id: this.groupToAdd.template_id,
                                     code: this.groupToAdd.code,
-                                    name: this.groupToAdd.name,
                                     description: this.groupToAdd.description || '',
                                     is_notifiable: this.groupToAdd.is_notifiable,
                                     sort_order: this.selectedGroups.length,
-                                }
-                            );
+                                custom_name: this.groupToAdd.custom_name || {},
+                            };
+                            const response = await this.$axios.post(storeUrl, storeData);
 
                             if (response.data && response.data.data) {
                                 const newGroup = this.formatGroupFromResponse(response.data.data);
@@ -1453,6 +1478,7 @@
                             template_id: '',
                             code: '',
                             name: '',
+                            custom_name: {},
                             description: '',
                             group_type: 'general',
                             is_notifiable: false,
@@ -1514,6 +1540,18 @@
 
                     if (! this.groupToAdd.name) {
                         this.groupToAdd.name = template.name;
+                    }
+
+                    // Initialize custom_name from template translations
+                    if (!this.groupToAdd.custom_name || Object.keys(this.groupToAdd.custom_name).length === 0) {
+                        this.groupToAdd.custom_name = {};
+                        this.locales.forEach(locale => {
+                            if (template.translations && template.translations[locale.code]) {
+                                this.groupToAdd.custom_name[locale.code] = template.translations[locale.code].name || template.name || '';
+                            } else {
+                                this.groupToAdd.custom_name[locale.code] = template.name || '';
+                            }
+                        });
                     }
 
                     if (! this.groupToAdd.description) {
@@ -1823,6 +1861,7 @@
                         code: data.code,
                         name: data.name,
                         display_name: data.display_name || data.name,
+                        custom_name: data.custom_name || {},
                         description: data.description || '',
                         group_type: data.group_type || 'general',
                         sort_order: data.sort_order ?? 0,

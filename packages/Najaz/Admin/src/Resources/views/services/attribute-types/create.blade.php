@@ -3,6 +3,10 @@
         @lang('Admin::app.services.attribute-types.create.title')
     </x-slot>
 
+    @php
+        $currentLocale = core()->getRequestedLocale();
+    @endphp
+
     <x-admin::form
         :action="route('admin.attribute-types.store')"
         enctype="multipart/form-data"
@@ -26,6 +30,48 @@
                 >
                     @lang('Admin::app.services.attribute-types.create.save-btn')
                 </button>
+            </div>
+        </div>
+
+        <!-- Locale Switcher -->
+        <div class="mt-7 flex items-center justify-between gap-4 max-md:flex-wrap">
+            <div class="flex items-center gap-x-1">
+                <x-admin::dropdown 
+                    position="bottom-{{ core()->getCurrentLocale()->direction === 'ltr' ? 'left' : 'right' }}" 
+                    :class="core()->getAllLocales()->count() <= 1 ? 'hidden' : ''"
+                >
+                    <!-- Dropdown Toggler -->
+                    <x-slot:toggle>
+                        <button
+                            type="button"
+                            class="transparent-button px-1 py-1.5 hover:bg-gray-200 focus:bg-gray-200 dark:text-white dark:hover:bg-gray-800 dark:focus:bg-gray-800"
+                        >
+                            <span class="icon-language text-2xl"></span>
+
+                            {{ $currentLocale->name }}
+                            
+                            <input
+                                type="hidden"
+                                name="locale"
+                                value="{{ $currentLocale->code }}"
+                            />
+
+                            <span class="icon-sort-down text-2xl"></span>
+                        </button>
+                    </x-slot>
+
+                    <!-- Dropdown Content -->
+                    <x-slot:content class="!p-0">
+                        @foreach (core()->getAllLocales() as $locale)
+                            <a
+                                href="?{{ Arr::query(['locale' => $locale->code]) }}"
+                                class="flex gap-2.5 px-5 py-2 text-base cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-950 dark:text-white {{ $locale->code == $currentLocale->code ? 'bg-gray-100 dark:bg-gray-950' : ''}}"
+                            >
+                                {{ $locale->name }}
+                            </a>
+                        @endforeach
+                    </x-slot>
+                </x-admin::dropdown>
             </div>
         </div>
 
@@ -63,20 +109,25 @@
                             <x-admin::form.control-group.error control-name="default_name" />
                         </x-admin::form.control-group>
 
-                        @foreach ($locales as $locale)
+                        <!-- Name for current locale -->
                             <x-admin::form.control-group class="last:!mb-0">
-                                <x-admin::form.control-group.label>
-                                    {{ $locale->name . ' (' . strtoupper($locale->code) . ')' }}
+                            <x-admin::form.control-group.label class="required">
+                                @lang('Admin::app.services.attribute-types.create.name')
+                                <span class="rounded border border-gray-200 bg-gray-100 px-1 py-0.5 text-[10px] font-semibold leading-normal text-gray-600">
+                                    {{ $currentLocale->name }}
+                                </span>
                                 </x-admin::form.control-group.label>
 
                                 <x-admin::form.control-group.control
                                     type="text"
-                                    :name="'name[' . $locale->code . ']'"
-                                    :value="old('name.' . $locale->code)"
-                                    :placeholder="$locale->name"
+                                name="{{ $currentLocale->code }}[name]"
+                                :value="old($currentLocale->code)['name'] ?? old('name.' . $currentLocale->code)"
+                                rules="required"
+                                :placeholder="$currentLocale->name"
                                 />
+
+                            <x-admin::form.control-group.error :control-name="$currentLocale->code . '[name]'" />
                             </x-admin::form.control-group>
-                        @endforeach
                     </div>
 
                     <div

@@ -3,11 +3,12 @@
 namespace Najaz\Admin\Http\Controllers\Admin\Services;
 
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use Najaz\Admin\DataGrids\Services\AttributeGroupDataGrid;
+use Najaz\Admin\Http\Controllers\Controller;
 use Najaz\Service\Repositories\ServiceAttributeFieldRepository;
 use Najaz\Service\Repositories\ServiceAttributeGroupRepository;
-use Najaz\Admin\Http\Controllers\Controller;
 use Webkul\Attribute\Enums\ValidationEnum;
 
 class AttributeGroupController extends Controller
@@ -72,45 +73,119 @@ class AttributeGroupController extends Controller
     {
         $attributeGroup = $this->dataGroupRepository->with(['fields.translations', 'fields.attributeType.translations'])->findOrFail($id);
         $attributeTypes = app(\Najaz\Service\Repositories\ServiceAttributeTypeRepository::class)
-            ->with('translations')
-            ->all();
+            ->with(['translations', 'options.translations'])
+            ->orderBy('position')
+            ->get()
+            ->map(function ($type) {
+                $translation = $type->translate(app()->getLocale());
+                
+                // Get options with translations
+                $options = [];
+                if ($type->options) {
+                    $allLocales = core()->getAllLocales();
+                    foreach ($type->options as $option) {
+                        $optionLabels = [];
+                        foreach ($allLocales as $loc) {
+                            $optionTranslation = $option->translate($loc->code);
+                            $optionLabels[$loc->code] = $optionTranslation?->label ?? $option->admin_name ?? $option->code ?? '';
+                        }
+                        $options[] = [
+                            'id' => $option->id,
+                            'code' => $option->code,
+                            'admin_name' => $option->admin_name,
+                            'labels' => $optionLabels,
+                            'sort_order' => $option->sort_order ?? 0,
+                        ];
+                    }
+                }
+                
+                return [
+                    'id'           => $type->id,
+                    'code'         => $type->code,
+                    'type'         => $type->type,
+                    'name'         => $translation?->name ?? $type->code,
+                    'translations' => $type->translations->map(fn($t) => [
+                        'locale' => $t->locale,
+                        'name'   => $t->name,
+                    ])->toArray(),
+                    'validation'   => $type->validation,
+                    'regex'        => $type->regex,
+                    'default_value' => $type->default_value,
+                    'is_required'  => $type->is_required,
+                    'is_unique'    => $type->is_unique,
+                    'options'      => $options,
+                ];
+            });
+
         $validations = ValidationEnum::getValues();
         $validationLabels = collect($validations)->mapWithKeys(fn ($value) => [
             $value => trans('Admin::app.services.attribute-types.validation-options.'.$value),
         ]);
+
+        // Prepare fields data
+        $fields = $attributeGroup->fields->map(function ($field) {
+            // Get labels for all locales
+            $labels = [];
+            foreach (core()->getAllLocales() as $locale) {
+                $translation = $field->translate($locale->code);
+                $labels[$locale->code] = $translation?->label ?? '';
+            }
+
+            return [
+                'id' => $field->id,
+                'service_attribute_type_id' => $field->service_attribute_type_id,
+                'code' => $field->code,
+                'type' => $field->type,
+                'validation_rules' => $field->validation_rules,
+                'default_value' => $field->default_value,
+                'is_required' => $field->is_required,
+                'sort_order' => $field->sort_order,
+                'labels' => $labels,
+                'translations' => $field->translations->map(fn($t) => [
+                    'locale' => $t->locale,
+                    'label' => $t->label,
+                ])->toArray(),
+                'attributeType' => $field->attributeType ? [
+                    'id' => $field->attributeType->id,
+                    'code' => $field->attributeType->code,
+                    'type' => $field->attributeType->type,
+                    'validation' => $field->attributeType->validation,
+                    'regex' => $field->attributeType->regex,
+                    'default_value' => $field->attributeType->default_value,
+                    'is_required' => $field->attributeType->is_required,
+                    'is_unique' => $field->attributeType->is_unique,
+                    'translations' => $field->attributeType->translations->map(fn($t) => [
+                        'locale' => $t->locale,
+                        'name' => $t->name,
+                    ])->toArray(),
+                ] : null,
+            ];
+        })->toArray();
 
         return view('admin::services.attribute-groups.edit', [
             'attributeGroup'   => $attributeGroup,
             'attributeTypes'   => $attributeTypes,
             'validations'      => $validations,
             'validationLabels' => $validationLabels,
+            'initialFields'    => $fields,
         ]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(int $id): JsonResponse
+    public function update(int $id): RedirectResponse
     {
+        $locale = core()->getRequestedLocaleCode();
+
         $rules = [
             'default_name'                       => 'required|string|max:255',
             'code'                               => 'required|string|max:255|unique:service_attribute_groups,code,'.$id,
             'group_type'                         => 'required|in:general,citizen',
             'sort_order'                         => 'nullable|integer',
-            'attribute_type_ids'                 => 'nullable|array',
-            'attribute_type_ids.*'               => 'integer|exists:service_attribute_types,id',
-            'fields'                             => 'nullable|array',
-            'fields.*.service_attribute_type_id' => 'nullable|integer|exists:service_attribute_types,id',
-            'fields.*.is_required'               => 'nullable|boolean',
-            'fields.*.sort_order'                => 'nullable|integer',
-            'fields.*.validation_rules'          => 'nullable|string',
-            'fields.*.default_value'             => 'nullable|string',
+            "{$locale}.name"                     => 'required|string|max:255',
+            "{$locale}.description"              => 'nullable|string',
         ];
-
-        foreach (core()->getAllLocales() as $locale) {
-            $rules['name.'.$locale->code] = 'required|string|max:255';
-            $rules['description.'.$locale->code] = 'nullable|string';
-        }
 
         $this->validate(request(), $rules);
 
@@ -121,34 +196,14 @@ class AttributeGroupController extends Controller
             'sort_order'   => request()->input('sort_order', 0),
         ];
 
+        $data['locale'] = $locale;
+        $data[$locale] = request()->input($locale, []);
+
         $attributeGroup = $this->dataGroupRepository->update($data, $id);
 
-        // Update translations
-        foreach (core()->getAllLocales() as $locale) {
-            $translationData = [
-                'name'        => request()->input("name.{$locale->code}"),
-                'description' => request()->input("description.{$locale->code}"),
-            ];
+        session()->flash('success', trans('Admin::app.services.attribute-groups.update-success'));
 
-            $attributeGroup->translateOrNew($locale->code)->fill($translationData)->save();
-        }
-
-        // Handle fields payload (drag/drop modal)
-        if (request()->has('fields')) {
-            $fields = request()->input('fields', []);
-
-            if (! $this->fieldRepository->validateGroupTypeFields($data['group_type'], $fields)) {
-                return new JsonResponse([
-                    'message'     => trans('Admin::app.services.attribute-groups.validation.citizen-id-number-required'),
-                ]);
-            }
-
-            $this->fieldRepository->syncGroupFields($attributeGroup, $fields);
-        }
-
-        return new JsonResponse([
-            'message'     => trans('Admin::app.services.attribute-groups.update-success'),
-        ]);
+        return redirect()->route('admin.attribute-groups.edit', $attributeGroup->id);
 
     }
 

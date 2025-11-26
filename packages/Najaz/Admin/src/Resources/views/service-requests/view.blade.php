@@ -32,14 +32,13 @@
             <div class="flex gap-1.5">
                 @if ($request->status === 'pending')
                     <!-- Pending: Show "In Progress" and "Reject" buttons -->
-                    <button
-                        type="button"
-                        class="inline-flex w-full max-w-max cursor-pointer items-center justify-between gap-x-2 px-1 py-1.5 text-center font-semibold text-gray-600 transition-all hover:rounded-md hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-800"
-                        x-on:click="openStatusUpdateModal('in_progress', '@lang('Admin::app.service-requests.view.in-progress')')"
-                    >
-                        <span class="icon-checkmark text-2xl"></span>
-                        @lang('Admin::app.service-requests.view.in-progress')
-                    </button>
+                    @include('admin::service-requests.update-status', [
+                        'serviceRequest' => $request,
+                        'buttonIcon' => 'icon-checkmark',
+                        'buttonLabel' => trans('Admin::app.service-requests.view.in-progress'),
+                        'confirmMessage' => trans('Admin::app.service-requests.view.confirm-status-update', ['status' => trans('Admin::app.service-requests.view.in-progress')]),
+                        'status' => 'in_progress'
+                    ])
 
                     <button
                         type="button"
@@ -51,14 +50,22 @@
                     </button>
 
                 @elseif ($request->status === 'in_progress')
-                    <!-- In Progress: Show "Complete" button -->
+                    <!-- In Progress: Show "Complete" and "Reject" buttons -->
+                    @include('admin::service-requests.update-status', [
+                        'serviceRequest' => $request,
+                        'buttonIcon' => 'icon-checkmark',
+                        'buttonLabel' => trans('Admin::app.service-requests.view.complete'),
+                        'confirmMessage' => trans('Admin::app.service-requests.view.confirm-status-update', ['status' => trans('Admin::app.service-requests.view.completed')]),
+                        'status' => 'completed'
+                    ])
+
                     <button
                         type="button"
                         class="inline-flex w-full max-w-max cursor-pointer items-center justify-between gap-x-2 px-1 py-1.5 text-center font-semibold text-gray-600 transition-all hover:rounded-md hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-800"
-                        @click="openStatusUpdateModal('completed', '@lang('Admin::app.service-requests.view.completed')')"
+                        @click="$refs.rejectModal.toggle()"
                     >
-                        <span class="icon-checkmark text-2xl"></span>
-                        @lang('Admin::app.service-requests.view.complete')
+                        <span class="icon-cancel-1 text-2xl"></span>
+                        @lang('Admin::app.service-requests.view.reject')
                     </button>
 
                 @elseif ($request->status === 'completed')

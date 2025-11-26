@@ -18,8 +18,8 @@ type CitizenLoginResponse {
 
 type Service {
     id: ID!
-    name: String!
-    description: String
+    name: String! @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ServiceResolver@name")
+    description: String @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ServiceResolver@description")
     status: Boolean
     image: String
     sortOrder: Int @rename(attribute: "sort_order")

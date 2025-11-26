@@ -1,0 +1,6 @@
+<?php
+
+namespace Najaz\Service\Contracts;
+
+interface ServiceTranslation {}
+

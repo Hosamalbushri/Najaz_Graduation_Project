@@ -65,7 +65,7 @@ class ServiceAttributeGroup extends TranslatableModel implements ServiceAttribut
             'service_attribute_group_id',
             'service_id'
         )->using(ServiceAttributeGroupService::class)
-            ->withPivot('id', 'pivot_uid', 'sort_order', 'is_notifiable', 'custom_code', 'custom_name')
+            ->withPivot('id', 'pivot_uid', 'sort_order', 'is_notifiable', 'custom_code')
             ->withTimestamps()
             ->orderByPivot('sort_order');
     }
