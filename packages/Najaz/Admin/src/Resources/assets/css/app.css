@@ -727,3 +727,328 @@
 .login-buttons-colors {
     @apply bg-violet-600 border border-violet-700 text-white font-semibold transition-all cursor-pointer hover:bg-violet-700 focus:bg-violet-700;
 }
+
+/* ============================================
+   🎨 Professional Login Page Styles
+   ============================================ */
+.login-page-container {
+    max-width: 1200px;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+@media (max-width: 768px) {
+    .login-page-container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}
+
+/* Background gradient effect */
+.login-page-container::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg,
+        var(--brand-primary-soft) 0%,
+        var(--surface-body) 50%,
+        var(--brand-primary-soft-strong) 100%);
+    opacity: 0.4;
+    z-index: -1;
+    pointer-events: none;
+}
+
+.dark .login-page-container::before {
+    background: linear-gradient(135deg,
+        rgba(99, 102, 241, 0.1) 0%,
+        var(--surface-body) 50%,
+        rgba(99, 102, 241, 0.05) 100%);
+}
+
+.login-page-body {
+    background-color: var(--surface-body) !important;
+}
+
+/* Logo container */
+.login-logo-container {
+    @apply flex justify-center items-center;
+    width: 100%;
+    margin: 0 auto 2.5rem auto;
+    text-align: center;
+}
+
+.login-logo-container img {
+    width: 220px;
+    height: auto;
+    max-width: 100%;
+    display: block;
+    margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+    .login-logo-container img {
+        width: 180px;
+    }
+}
+
+@media (max-width: 525px) {
+    .login-logo-container img {
+        width: 150px;
+    }
+}
+
+.login-form-container {
+    @apply m-auto w-full max-w-[480px] rounded-xl border p-8 px-6 max-md:px-6 max-md:py-6 max-sm:border-none max-sm:p-0;
+    border-color: var(--border-muted);
+    background-color: var(--surface-card);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08),
+                0 2px 8px rgba(0, 0, 0, 0.04);
+    position: relative;
+    overflow: hidden;
+}
+
+.login-form-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg,
+        var(--brand-primary) 0%,
+        var(--brand-primary-medium) 50%,
+        var(--brand-primary) 100%);
+}
+
+.login-title {
+    @apply font-dmserif text-3xl max-md:text-2xl max-sm:text-xl;
+    color: var(--text-primary);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin: 0 auto 1.5rem auto;
+    text-align: center;
+    background: linear-gradient(135deg,
+        var(--text-primary) 0%,
+        var(--brand-primary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    display: block;
+    width: 100%;
+}
+
+.login-subtitle {
+    @apply mt-2 text-base max-sm:mt-0 max-sm:text-sm;
+    color: var(--text-muted);
+    line-height: 1.5;
+    font-weight: 400;
+}
+
+/* Form inputs enhancement */
+.login-form-container input[type="email"].text-text-secondary,
+.login-form-container input[type="email"],
+.login-form-container input[type="password"].text-text-secondary,
+.login-form-container input[type="password"] {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+    line-height: 1.5 !important;
+    color: var(--text-primary) !important;
+    background-color: var(--surface-card) !important;
+    letter-spacing: 0.01em !important;
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    width: 100% !important;
+    border-radius: 0.375rem !important;
+    border: 1px solid var(--border-default) !important;
+}
+
+/* Password field specific - extra right padding for toggle button */
+.login-form-container input[type="password"].text-text-secondary,
+.login-form-container input[type="password"] {
+    padding-right: 3rem !important;
+}
+
+@media (max-width: 768px) {
+    .login-form-container input[type="email"],
+    .login-form-container input[type="password"] {
+        padding-top: 0.625rem !important;
+        padding-bottom: 0.625rem !important;
+    }
+}
+
+@media (max-width: 525px) {
+    .login-form-container input[type="email"],
+    .login-form-container input[type="password"] {
+        padding-top: 0.5rem !important;
+        padding-bottom: 0.5rem !important;
+    }
+}
+
+.login-form-container input[type="email"]:focus,
+.login-form-container input[type="password"]:focus {
+    border-color: var(--brand-primary) !important;
+    box-shadow: 0 0 0 3px var(--brand-primary-soft-alpha) !important;
+    outline: none !important;
+}
+
+.login-form-container input[type="email"]::placeholder,
+.login-form-container input[type="password"]::placeholder {
+    color: var(--text-muted) !important;
+    font-weight: 400 !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    font-size: 1rem !important;
+    opacity: 0.7 !important;
+}
+
+/* Form labels enhancement */
+.login-form-container label.text-gray-800,
+.login-form-container label.dark\:text-white,
+.login-form-container label.mb-1\.5,
+.login-form-container label {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    line-height: 1.5 !important;
+    color: var(--text-primary) !important;
+    margin-bottom: 0.5rem !important;
+    display: block !important;
+}
+
+/* Control group spacing */
+.login-form-container .mb-4 {
+    margin-bottom: 1.5rem !important;
+}
+
+/* Error messages enhancement */
+.login-form-container p.text-status-danger,
+.login-form-container p[class*="status-danger"],
+.login-form-container p.text-xs {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    font-size: 0.8125rem !important;
+    font-weight: 400 !important;
+    line-height: 1.4 !important;
+    color: var(--status-danger) !important;
+    margin-top: 0.375rem !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.25rem !important;
+}
+
+.login-form-container p.text-status-danger::before,
+.login-form-container p[class*="status-danger"]::before {
+    content: "⚠" !important;
+    font-size: 0.875rem !important;
+    margin-right: 0.25rem !important;
+}
+
+.dark .login-form-container input[type="email"],
+.dark .login-form-container input[type="password"] {
+    background-color: var(--surface-card) !important;
+    color: var(--text-primary) !important;
+}
+
+.dark .login-form-container input[type="email"]:focus,
+.dark .login-form-container input[type="password"]:focus {
+    border-color: var(--brand-primary) !important;
+    box-shadow: 0 0 0 3px var(--brand-primary-soft-alpha) !important;
+}
+
+.dark .login-form-container label {
+    color: var(--text-primary) !important;
+}
+
+/* Password toggle button inside field */
+.login-password-toggle {
+    color: var(--text-muted);
+    background: none;
+    border: none;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.login-password-icon {
+    font-family: "bagisto-admin" !important;
+    font-size: 1.25rem;
+}
+
+.login-password-icon.icon-view-close::before {
+    content: "\e946"; /* icon-view-close */
+}
+
+.login-password-icon.icon-view::before {
+    content: "\e93d"; /* icon-view */
+}
+
+.login-forgot-link {
+    @apply cursor-pointer text-base max-sm:text-sm;
+    color: var(--text-primary);
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.login-forgot-link:hover {
+    color: var(--brand-primary);
+}
+
+.login-primary-button {
+    @apply flex gap-x-1.5 items-center place-content-center font-semibold rounded-xl text-white border cursor-pointer;
+    background: linear-gradient(135deg,
+        var(--brand-primary) 0%,
+        var(--brand-primary-strong) 100%);
+    border-color: var(--brand-primary-strong);
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3),
+                0 2px 6px rgba(99, 102, 241, 0.2);
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.login-primary-button:hover {
+    background: linear-gradient(135deg,
+        var(--brand-primary-strong) 0%,
+        var(--brand-primary) 100%);
+    border-color: var(--brand-primary);
+}
+
+/* Dark mode enhancements */
+.dark .login-form-container {
+    border-color: var(--border-muted);
+    background-color: var(--surface-card);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3),
+                0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.dark .login-title {
+    color: var(--text-primary);
+    background: linear-gradient(135deg,
+        var(--text-primary) 0%,
+        var(--brand-primary-medium) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.dark .login-subtitle {
+    color: var(--text-muted);
+}
+
+.dark .login-forgot-link {
+    color: var(--text-primary);
+}
+
+.dark .login-primary-button {
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4),
+                0 2px 6px rgba(99, 102, 241, 0.3);
+}

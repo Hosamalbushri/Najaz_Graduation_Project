@@ -1,5 +1,6 @@
 <v-attribute-group-fields-manager
     :group-id="{{ $groupId }}"
+    :group-type="{{ $groupType ?? 'general' }}"
     :attribute-types='@json($attributeTypes ?? [])'
     :validations='@json($validations ?? [])'
     :validation-labels='@json($validationLabels ?? [])'
@@ -78,13 +79,14 @@
                                                 @lang('Admin::app.services.attribute-groups.edit.edit-field-btn')
                                             </p>
 
-                                            <!-- Remove Field -->
-                                            <p
-                                                class="cursor-pointer text-red-600 transition-all hover:underline"
-                                                @click="removeField(field)"
-                                            >
-                                                @lang('Admin::app.services.attribute-groups.edit.delete-field-btn')
-                                            </p>
+                                    <!-- Remove Field -->
+                                    <p
+                                        v-if="!isProtectedField(field)"
+                                        class="cursor-pointer text-red-600 transition-all hover:underline"
+                                        @click="removeField(field)"
+                                    >
+                                        @lang('Admin::app.services.attribute-groups.edit.delete-field-btn')
+                                    </p>
                                         </div>
                                     </div>
                                 </div>
@@ -508,6 +510,10 @@
                     type: Number,
                     required: true
                 },
+                groupType: {
+                    type: String,
+                    default: 'general'
+                },
                 attributeTypes: {
                     type: Array,
                     required: true
@@ -821,7 +827,27 @@
                     }
                 },
 
+                isProtectedField(field) {
+                    // Check if field is national_id_card in a citizen group
+                    if (this.groupType === 'citizen') {
+                        const attributeTypeInfo = this.getAttributeTypeInfo(field.service_attribute_type_id);
+                        if (attributeTypeInfo && attributeTypeInfo.code === 'national_id_card') {
+                            return true;
+                        }
+                    }
+                    return false;
+                },
+
                 removeField(field) {
+                    // Prevent deletion of protected fields
+                    if (this.isProtectedField(field)) {
+                        this.$emitter.emit('add-flash', {
+                            type: 'error',
+                            message: "@lang('Admin::app.services.attribute-groups.edit.cannot-delete-protected-field')"
+                        });
+                        return;
+                    }
+
                     if (!field.id) {
                         const index = this.fields.indexOf(field);
                         if (index > -1) {

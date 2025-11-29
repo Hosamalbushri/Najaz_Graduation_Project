@@ -3,6 +3,7 @@
 namespace Najaz\Admin\Providers;
 
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
 class AdminServiceProvider extends ServiceProvider
@@ -24,6 +25,12 @@ class AdminServiceProvider extends ServiceProvider
             __DIR__.'/../Resources/views' => resource_path('themes/admin/views'),
         ]);
         $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
+
+        // Load auth routes to override Webkul admin login routes
+        // Using booted callback to ensure routes load after Webkul routes
+        $this->app->booted(function () {
+            Route::middleware(['web'])->group(__DIR__.'/../Routes/auth-routes.php');
+        });
 
         $this->loadRoutesFrom(__DIR__.'/../Routes/admin-routes.php');
 

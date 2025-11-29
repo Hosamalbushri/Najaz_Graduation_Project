@@ -183,7 +183,7 @@ class DocumentTemplateService
 
     /**
      * Replace placeholders in template content.
-     * Supports both old format {{field_code}} and new format <code data-field="field_code">
+     * Supports both old format {{field_code}} and new format <span data-template-field data-field="field_code">
      *
      * @param  string  $content
      * @param  array  $fieldValues
@@ -252,7 +252,15 @@ class DocumentTemplateService
     }
 
     /**
-     * Replace <code data-field="field_code"> tags with field values.
+     * Replace <span data-template-field="true" data-field="field_code"> tags (and legacy tags) with field values.
+     *
+     * @param  string  $content
+     * @param  array  $fieldValues
+     * @return string
+     */
+    /**
+     * Replace field placeholder tags with actual field values.
+     * Uses DOMDocument for proper HTML parsing and manipulation.
      *
      * @param  string  $content
      * @param  array  $fieldValues
@@ -260,51 +268,121 @@ class DocumentTemplateService
      */
     protected function replaceCodeTags(string $content, array $fieldValues): string
     {
-        // Use regex to find and replace <code data-field="field_code"> tags
-        // This is more reliable than DOMDocument for partial HTML fragments
-        
-        // Pattern to match <code data-field="field_code">content</code>
-        // Handles various formats: <code data-field="...">, <code class="..." data-field="...">, etc.
-        $pattern = '/<code[^>]*\s+data-field=["\']([^"\']+)["\'][^>]*>(.*?)<\/code>/is';
-        
-        $result = preg_replace_callback($pattern, function ($matches) use ($fieldValues) {
-            $fieldCode = trim($matches[1]);
-            $originalContent = $matches[0]; // Full match including the tag
+        if (empty($content) || empty($fieldValues)) {
+            return $content;
+        }
+
+        // Helper function to get field value safely
+        $getFieldValue = function ($fieldCode) use ($fieldValues) {
+            if (!isset($fieldValues[$fieldCode])) {
+                return '';
+            }
+            $value = $fieldValues[$fieldCode];
+            return is_null($value) ? '' : (string) $value;
+        };
+
+        // Helper function to escape HTML
+        $escapeHtml = function ($value) {
+            return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+        };
+
+        // Try using DOMDocument for proper HTML parsing
+        try {
+            // Suppress warnings for malformed HTML
+            libxml_use_internal_errors(true);
             
-            // Get the field value
-            $fieldValue = '';
-            if (isset($fieldValues[$fieldCode])) {
-                $fieldValue = is_null($fieldValues[$fieldCode]) ? '' : (string) $fieldValues[$fieldCode];
+            $dom = new \DOMDocument('1.0', 'UTF-8');
+            $dom->encoding = 'UTF-8';
+            
+            // Wrap content in a container div to handle partial HTML
+            $wrappedContent = '<div>' . $content . '</div>';
+            
+            // Load HTML with UTF-8 encoding
+            @$dom->loadHTML('<?xml encoding="UTF-8">' . $wrappedContent, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+            
+            // Clear libxml errors
+            libxml_clear_errors();
+            
+            $xpath = new \DOMXPath($dom);
+            $replaced = false;
+            
+            // Replace <span data-template-field data-field="..."> tags
+            $spanNodes = $xpath->query('//span[@data-template-field and @data-field]');
+            foreach ($spanNodes as $node) {
+                $fieldCode = trim($node->getAttribute('data-field'));
+                if ($fieldCode) {
+                    $fieldValue = $escapeHtml($getFieldValue($fieldCode));
+                    $textNode = $dom->createTextNode($fieldValue);
+                    $node->parentNode->replaceChild($textNode, $node);
+                    $replaced = true;
+                }
             }
             
-            // Escape HTML in field value to prevent XSS, but preserve line breaks
-            $fieldValue = htmlspecialchars($fieldValue, ENT_QUOTES, 'UTF-8');
+            if ($replaced) {
+                // Get the inner HTML of the wrapper div
+                $body = $dom->getElementsByTagName('body')->item(0);
+                if ($body) {
+                    $div = $body->getElementsByTagName('div')->item(0);
+                    if ($div) {
+                        $result = '';
+                        foreach ($div->childNodes as $child) {
+                            $result .= $dom->saveHTML($child);
+                        }
+                        return $result;
+                    }
+                }
+            }
             
-            \Log::info('DocumentTemplateService - Replaced Code Tag:', [
-                'field_code' => $fieldCode,
-                'value' => $fieldValue,
-                'original_tag' => $originalContent,
+        } catch (\Exception $e) {
+            // Fallback to regex if DOMDocument fails
+            \Log::warning('DocumentTemplateService - DOMDocument parsing failed, using regex fallback', [
+                'error' => $e->getMessage(),
             ]);
-            
-            return $fieldValue;
-        }, $content);
+        }
         
-        // Also handle self-closing tags (though unlikely in our case)
-        $patternSelfClosing = '/<code[^>]*\s+data-field=["\']([^"\']+)["\'][^>]*\s*\/>/is';
-        $result = preg_replace_callback($patternSelfClosing, function ($matches) use ($fieldValues) {
-            $fieldCode = trim($matches[1]);
-            
-            // Get the field value
-            $fieldValue = '';
-            if (isset($fieldValues[$fieldCode])) {
-                $fieldValue = is_null($fieldValues[$fieldCode]) ? '' : (string) $fieldValues[$fieldCode];
+        // Fallback to regex for partial HTML or when DOMDocument fails
+        return $this->replaceCodeTagsWithRegex($content, $fieldValues);
+    }
+    
+    /**
+     * Fallback method using regex for partial HTML fragments.
+     *
+     * @param  string  $content
+     * @param  array  $fieldValues
+     * @return string
+     */
+    protected function replaceCodeTagsWithRegex(string $content, array $fieldValues): string
+    {
+        $getFieldValue = function ($fieldCode) use ($fieldValues) {
+            if (!isset($fieldValues[$fieldCode])) {
+                return '';
             }
-            
-            // Escape HTML in field value
-            $fieldValue = htmlspecialchars($fieldValue, ENT_QUOTES, 'UTF-8');
-            
-            return $fieldValue;
-        }, $result);
+            $value = $fieldValues[$fieldCode];
+            return is_null($value) ? '' : (string) $value;
+        };
+        
+        $escapeHtml = function ($value) {
+            return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+        };
+        
+        // Patterns for <span data-template-field data-field="...">
+        $patterns = [
+            // data-template-field first, then data-field
+            '/<span[^>]*\s+data-template-field(?:=["\']true["\'])?[^>]*\s+data-field=["\']([^"\']+)["\'][^>]*>(.*?)<\/span>/is',
+            // data-field first, then data-template-field
+            '/<span[^>]*\s+data-field=["\']([^"\']+)["\'][^>]*\s+data-template-field(?:=["\']true["\'])?[^>]*>(.*?)<\/span>/is',
+        ];
+        
+        $result = $content;
+        foreach ($patterns as $pattern) {
+            $result = preg_replace_callback($pattern, function ($matches) use ($getFieldValue, $escapeHtml) {
+                $fieldCode = trim($matches[1]);
+                if (!$fieldCode) {
+                    return $matches[0]; // Return original if no field code
+                }
+                return $escapeHtml($getFieldValue($fieldCode));
+            }, $result);
+        }
         
         return $result;
     }

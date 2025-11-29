@@ -76,12 +76,15 @@ module.exports = {
                     info: "var(--status-info)",
                     danger: "var(--status-danger)",
                 },
+                navyBlue: '#060C3B'
+
             },
 
             fontFamily: {
                 inter: ['Inter'],
-                icon: ['icomoon']
-            }
+                icon: ['icomoon'],
+                dmserif: ['DM Serif Display', 'serif']
+            },
         },
     },
 

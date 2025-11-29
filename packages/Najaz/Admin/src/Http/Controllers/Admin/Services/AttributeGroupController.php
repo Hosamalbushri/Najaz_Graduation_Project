@@ -53,6 +53,58 @@ class AttributeGroupController extends Controller
         ];
 
         $attributeGroup = $this->dataGroupRepository->create($data);
+
+        // If group type is citizen, automatically add national_id_card field
+        if ($data['group_type'] === 'citizen') {
+            $attributeTypeRepository = app(\Najaz\Service\Repositories\ServiceAttributeTypeRepository::class);
+            $nationalIdCardType = $attributeTypeRepository->findWhere(['code' => 'national_id_card'])->first();
+
+            if ($nationalIdCardType) {
+                $fieldRepository = app(\Najaz\Service\Repositories\ServiceAttributeFieldRepository::class);
+                
+                // Prepare validation rules (same logic as AttributeGroupFieldController)
+                $validationRules = null;
+                if ($nationalIdCardType->validation) {
+                    if (is_array($nationalIdCardType->validation)) {
+                        $validationRules = $nationalIdCardType->validation ?: null;
+                    } else {
+                        $formatted = is_string($nationalIdCardType->validation) ? trim($nationalIdCardType->validation) : null;
+                        if ($formatted) {
+                            if ($formatted === 'regex') {
+                                $pattern = is_string($nationalIdCardType->regex) ? trim($nationalIdCardType->regex) : '';
+                                if ($pattern) {
+                                    $validationRules = ['validation' => 'regex:' . $pattern];
+                                }
+                            } else {
+                                $validationRules = ['validation' => $formatted];
+                            }
+                        }
+                    }
+                }
+                
+                $fieldData = [
+                    'service_attribute_group_id' => $attributeGroup->id,
+                    'service_attribute_type_id'  => $nationalIdCardType->id,
+                    'code'                      => $nationalIdCardType->code,
+                    'type'                      => $nationalIdCardType->type,
+                    'validation_rules'          => $validationRules,
+                    'default_value'             => $nationalIdCardType->default_value,
+                    'sort_order'                => 0,
+                    'is_required'               => $nationalIdCardType->is_required ?? true,
+                ];
+
+                $field = $fieldRepository->create($fieldData);
+
+                // Save translations for all locales
+                foreach (core()->getAllLocales() as $locale) {
+                    $typeTranslation = $nationalIdCardType->translate($locale->code);
+                    $field->translateOrNew($locale->code)->fill([
+                        'label' => $typeTranslation?->name ?? $nationalIdCardType->code,
+                    ])->save();
+                }
+            }
+        }
+
         if (request()->expectsJson()) {
             return new JsonResponse([
                 'message'     => trans('Admin::app.services.attribute-groups.create-success'),

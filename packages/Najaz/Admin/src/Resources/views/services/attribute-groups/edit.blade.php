@@ -153,6 +153,7 @@
                 <!-- Fields Manager Component -->
                 @include('admin::services.attribute-groups.fields-manager', [
                     'groupId' => $attributeGroup->id,
+                    'groupType' => $attributeGroup->group_type,
                     'attributeTypes' => $attributeTypes,
                     'validations' => $validations,
                     'validationLabels' => $validationLabels,

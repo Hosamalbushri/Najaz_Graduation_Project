@@ -132,8 +132,18 @@ class AttributeGroupFieldController extends Controller
      */
     public function destroy(int $groupId, int $fieldId): JsonResponse
     {
-        $this->dataGroupRepository->findOrFail($groupId);
-        $this->fieldRepository->findOrFail($fieldId);
+        $attributeGroup = $this->dataGroupRepository->findOrFail($groupId);
+        $field = $this->fieldRepository->findOrFail($fieldId);
+
+        // Prevent deletion of national_id_card field in citizen groups
+        if ($attributeGroup->group_type === 'citizen') {
+            $attributeType = $this->fieldTypeRepository->find($field->service_attribute_type_id);
+            if ($attributeType && $attributeType->code === 'national_id_card') {
+                return new JsonResponse([
+                    'message' => trans('Admin::app.services.attribute-groups.edit.cannot-delete-protected-field'),
+                ], 422);
+            }
+        }
 
         $this->fieldRepository->delete($fieldId);
 

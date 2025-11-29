@@ -198,7 +198,12 @@
                     'serviceId' => $service->id,
                     'allAttributeGroups' => $attributeGroupOptions,
                     'initialSelection' => $serviceGroupInitialSelection,
+                    'currentLocale' => $currentLocale->code,
                 ])
+{{--                @include('admin::services.service-field-manager.index', [--}}
+{{--                    'serviceId' => $service->id,--}}
+{{--                    'availableGroups' => $attributeGroupOptions ?? [],--}}
+{{--                ])--}}
             </div>
 
             <!-- Right Section -->

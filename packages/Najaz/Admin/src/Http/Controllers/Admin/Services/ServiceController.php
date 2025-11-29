@@ -42,7 +42,7 @@ class ServiceController extends Controller
      */
     public function create(): View
     {
-        $currentLocale = app()->getLocale();
+        $currentLocale = core()->getRequestedLocaleCode();
 
         $attributeGroups = ServiceAttributeGroupProxy::modelClass()::with([
             'translations',
@@ -99,7 +99,7 @@ class ServiceController extends Controller
      */
     public function edit(int $id): View
     {
-        $currentLocale = app()->getLocale();
+        $currentLocale = core()->getRequestedLocaleCode();
 
         $service = $this->serviceRepository->with([
             'translations',
@@ -337,12 +337,19 @@ class ServiceController extends Controller
                         $attributeType = $field->attributeType;
                         $attributeTypeTranslation = $attributeType?->translate($locale);
 
+                        // Get labels for all locales
+                        $allLocales = core()->getAllLocales();
+                        $labels = [];
+                        foreach ($allLocales as $loc) {
+                            $translation = $field->translate($loc->code);
+                            $labels[$loc->code] = $translation?->label ?? $field->code ?? '';
+                        }
+
                         // Get options from custom field options first, then fall back to attribute type options
                         $options = [];
                         
                         // First, try custom field options (service_attribute_group_service_field_options)
                         if ($field->options && $field->options->isNotEmpty()) {
-                            $allLocales = core()->getAllLocales();
                             foreach ($field->options as $option) {
                                 $optionLabels = [];
                                 foreach ($allLocales as $loc) {
@@ -358,7 +365,6 @@ class ServiceController extends Controller
                             }
                         } elseif ($attributeType && $attributeType->options && $attributeType->options->isNotEmpty()) {
                             // Fall back to attribute type options if no custom options
-                            $allLocales = core()->getAllLocales();
                             foreach ($attributeType->options as $option) {
                                 $optionLabels = [];
                                 foreach ($allLocales as $loc) {
@@ -378,6 +384,7 @@ class ServiceController extends Controller
                             'id'                  => $field->id,
                             'code'                => $field->code,
                             'label'               => $fieldTranslation?->label ?? $field->code,
+                            'labels'              => $labels,
                             'type'                => $field->type,
                             'attribute_type_name' => $attributeTypeTranslation?->name ?? $attributeType?->code ?? '',
                             'sort_order'          => $field->sort_order ?? 0,

@@ -37,10 +37,9 @@ class ServiceGroupController extends Controller
             'sort_order'      => 'nullable|integer',
         ];
 
-        // Add validation rules for translations
-        foreach (core()->getAllLocales() as $locale) {
-            $rules['custom_name.'.$locale->code] = 'required|string|max:255';
-        }
+        // Add validation rules for translations (format: locale.code[name])
+        $currentLocale = core()->getRequestedLocaleCode();
+        $rules[$currentLocale.'.name'] = 'required|string|max:255';
 
         $this->validate(request(), $rules);
 
@@ -86,7 +85,11 @@ class ServiceGroupController extends Controller
             $isNotifiable = false;
         }
 
-        DB::transaction(function () use ($service, $templateGroupId, $pivotUid, $sortOrder, $isNotifiable, $customCode, $templateGroup) {
+        // Get locale data before transaction
+        $localeData = request()->input($currentLocale, []);
+        $customName = $localeData['name'] ?? '';
+
+        DB::transaction(function () use ($service, $templateGroupId, $pivotUid, $sortOrder, $isNotifiable, $customCode, $templateGroup, $currentLocale, $customName) {
             $pivotRelation = ServiceAttributeGroupService::create([
                 'service_id'                 => $service->id,
                 'service_attribute_group_id' => $templateGroupId,
@@ -96,13 +99,11 @@ class ServiceGroupController extends Controller
                 'custom_code'                => $customCode,
             ]);
 
-            // Save translations
-            foreach (core()->getAllLocales() as $locale) {
-                $pivotRelation->translations()->updateOrCreate(
-                    ['locale' => $locale->code],
-                    ['custom_name' => request()->input('custom_name.'.$locale->code)]
-                );
-            }
+            // Save translations (format: locale.code[name])
+            $pivotRelation->translations()->updateOrCreate(
+                ['locale' => $currentLocale],
+                ['custom_name' => $customName]
+            );
 
             // Copy fields from template when creating a new pivot relation
             if ($templateGroup->fields) {

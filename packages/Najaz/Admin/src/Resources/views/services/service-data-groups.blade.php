@@ -2212,7 +2212,7 @@
                 },
 
                 displayFieldTitle(field, index, group) {
-                    const label = field.label || field.code || `${this.defaultFieldName} ${index + 1}`;
+                    const label = this.getFieldLabel(field) || field.code || `${this.defaultFieldName} ${index + 1}`;
                     const attributeTypeInfo = this.getAttributeTypeInfo(field.service_attribute_type_id);
                     const attributeTypeName = attributeTypeInfo ? this.getAttributeTypeName(attributeTypeInfo) : '';
 

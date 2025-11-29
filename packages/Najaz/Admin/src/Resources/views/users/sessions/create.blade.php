@@ -4,106 +4,107 @@
         @lang('admin::app.users.sessions.title')
     </x-slot>
 
-    <div class="flex h-[100vh] items-center justify-center">
-        <div class="flex flex-col items-center gap-5">
-            <!-- Logo -->
-            @if ($logo = core()->getConfigData('general.design.admin_logo.logo_image'))
-                <img
-                    class="h-10 w-[110px]"
-                    src="{{ Storage::url($logo) }}"
-                    alt="{{ config('app.name') }}"
-                />
-            @else
-                <img
-                    class="w-max"
-                    src="{{ bagisto_asset('images/logo.svg') }}"
-                    alt="{{ config('app.name') }}"
-                />
-            @endif
+    <div class="container login-page-container">
+        <!-- Form Container -->
+        <div class="login-form-container">
+            <!-- Company Logo -->
+            <div class="login-logo-container">
+                @if ($logo = core()->getConfigData('general.design.admin_logo.logo_image'))
+                    <img
+                        src="{{ Storage::url($logo) }}"
+                        alt="{{ config('app.name') }}"
+                    />
+                @else
+                    <img
+                        src="{{ bagisto_asset('images/logo.svg') }}"
+                        alt="{{ config('app.name') }}"
+                    />
+                @endif
+            </div>
 
-            <div class="box-shadow flex min-w-[300px] flex-col rounded-md bg-white dark:bg-gray-900">
-                <!-- Login Form -->
+            <h1 class="login-title">
+                @lang('admin::app.users.sessions.title')
+            </h1>
+
+            <div class="mt-8 rounded max-sm:mt-6">
                 <x-admin::form :action="route('admin.session.store')">
-                    <p class="p-4 text-xl font-bold text-gray-800 dark:text-white">
-                        @lang('admin::app.users.sessions.title')
-                    </p>
+                    <!-- Email -->
+                    <x-admin::form.control-group>
+                        <x-admin::form.control-group.label class="required">
+                            @lang('admin::app.users.sessions.email')
+                        </x-admin::form.control-group.label>
 
-                    <div class="border-y p-4 dark:border-gray-800">
-                        <!-- Email -->
-                        <x-admin::form.control-group>
-                            <x-admin::form.control-group.label class="required">
-                                @lang('admin::app.users.sessions.email')
-                            </x-admin::form.control-group.label>
+                        <x-admin::form.control-group.control
+                            type="email"
+                            class="px-4 py-3 max-md:py-2.5 max-sm:py-2"
+                            id="email"
+                            name="email"
+                            rules="required|email"
+                            :label="trans('admin::app.users.sessions.email')"
+                            placeholder="email@example.com"
+                            :aria-label="trans('admin::app.users.sessions.email')"
+                            aria-required="true"
+                        />
 
-                            <x-admin::form.control-group.control
-                                type="email"
-                                class="w-[254px] max-w-full"
-                                id="email"
-                                name="email"
-                                rules="required|email"
-                                :label="trans('admin::app.users.sessions.email')"
-                                :placeholder="trans('admin::app.users.sessions.email')"
-                            />
+                        <x-admin::form.control-group.error control-name="email" />
+                    </x-admin::form.control-group>
 
-                            <x-admin::form.control-group.error control-name="email" />
-                        </x-admin::form.control-group>
+                    <!-- Password -->
+                    <x-admin::form.control-group class="relative">
+                        <x-admin::form.control-group.label class="required">
+                            @lang('admin::app.users.sessions.password')
+                        </x-admin::form.control-group.label>
 
-                        <!-- Password -->
-                        <x-admin::form.control-group class="relative w-full">
-                            <x-admin::form.control-group.label class="required">
-                                @lang('admin::app.users.sessions.password')
-                            </x-admin::form.control-group.label>
-
+                        <div class="relative">
                             <x-admin::form.control-group.control
                                 type="password"
-                                class="w-[254px] max-w-full ltr:pr-10 rtl:pl-10"
+                                class="px-4 py-3 pr-12 max-md:py-2.5 max-sm:py-2"
                                 id="password"
                                 name="password"
                                 rules="required|min:6"
                                 :label="trans('admin::app.users.sessions.password')"
                                 :placeholder="trans('admin::app.users.sessions.password')"
+                                :aria-label="trans('admin::app.users.sessions.password')"
+                                aria-required="true"
                             />
 
-                            <span
-                                class="icon-view absolute top-[42px] -translate-y-2/4 cursor-pointer text-2xl ltr:right-2 rtl:left-2"
+                            <!-- Password Toggle Button -->
+                            <button
+                                type="button"
+                                class="login-password-toggle absolute top-1/2 -translate-y-1/2 cursor-pointer text-xl ltr:right-3 rtl:left-3"
                                 onclick="switchVisibility()"
-                                id="visibilityIcon"
-                                role="presentation"
-                                tabindex="0"
+                                aria-label="{{ trans('admin::app.users.sessions.show-password') ?: 'إظهار كلمة المرور' }}"
                             >
-                            </span>
+                                <span class="login-password-icon icon-view"></span>
+                            </button>
+                        </div>
 
-                            <x-admin::form.control-group.error control-name="password" />
-                        </x-admin::form.control-group>
+                        <x-admin::form.control-group.error control-name="password" />
+                    </x-admin::form.control-group>
+
+                    <div class="flex justify-end mt-4">
+                        <a
+                            href="{{ route('admin.forget_password.create') }}"
+                            class="login-forgot-link"
+                        >
+                            <span>
+                                @lang('admin::app.users.sessions.forget-password-link')
+                            </span>
+                        </a>
                     </div>
 
-                    <div class="flex items-center justify-between p-4">
-                        <!-- Forgot Password Link -->
-                        <a
-                            class="cursor-pointer text-xs font-semibold leading-6 text-blue-600"
-                            href="{{ route('admin.forget_password.create') }}"
-                        >
-                            @lang('admin::app.users.sessions.forget-password-link')
-                        </a>
-
-                        <!-- Submit Button -->
+                    <!-- Submit Button -->
+                    <div class="mt-6 flex flex-wrap items-center gap-9 max-sm:justify-center max-sm:gap-5 max-sm:text-center">
                         <button
-                            class="cursor-pointer rounded-md border border-blue-700 bg-blue-600 px-3.5 py-1.5 font-semibold text-gray-50"
-                            aria-label="{{ trans('admin::app.users.sessions.submit-btn')}}"
+                            class="login-primary-button m-0 mx-auto block w-full max-w-full rounded-xl px-8 py-3 text-center text-sm max-md:max-w-full max-md:rounded-lg max-md:py-2.5 max-sm:py-2 ltr:ml-0 rtl:mr-0"
+                            type="submit"
+                            aria-label="{{ trans('admin::app.users.sessions.submit-btn') }}"
                         >
                             @lang('admin::app.users.sessions.submit-btn')
                         </button>
                     </div>
                 </x-admin::form>
             </div>
-
-{{--            <!-- Powered By -->--}}
-{{--            <div class="text-sm font-normal">--}}
-{{--                @lang('admin::app.users.sessions.powered-by-description', [--}}
-{{--                    'bagisto' => '<a class="text-blue-600 hover:underline" href="https://bagisto.com/en/">Bagisto</a>',--}}
-{{--                    'webkul' => '<a class="text-blue-600 hover:underline" href="https://webkul.com/">Webkul</a>',--}}
-{{--                ])--}}
-{{--            </div>--}}
         </div>
     </div>
 
@@ -111,10 +112,17 @@
         <script>
             function switchVisibility() {
                 let passwordField = document.getElementById("password");
-                let visibilityIcon = document.getElementById("visibilityIcon");
+                let passwordIcon = document.querySelector('.login-password-icon');
 
-                passwordField.type = passwordField.type === "password" ? "text" : "password";
-                visibilityIcon.classList.toggle("icon-view-close");
+                if (passwordField.type === "password") {
+                    passwordField.type = "text";
+                    passwordIcon.classList.remove("icon-view");
+                    passwordIcon.classList.add("icon-view-close");
+                } else {
+                    passwordField.type = "password";
+                    passwordIcon.classList.remove("icon-view-close");
+                    passwordIcon.classList.add("icon-view");
+                }
             }
         </script>
     @endpush
