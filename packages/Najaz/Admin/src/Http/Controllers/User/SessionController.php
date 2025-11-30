@@ -71,3 +71,4 @@ class SessionController extends BaseSessionController
         return redirect()->intended(route('najaz.admin.dashboard.index'));
     }
 }
+

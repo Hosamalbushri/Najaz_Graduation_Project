@@ -20,3 +20,4 @@ Route::group(['prefix' => config('app.admin_url')], function () {
         Route::post('', 'store')->name('admin.session.store');
     });
 });
+

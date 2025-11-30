@@ -161,10 +161,9 @@ class ServiceGroupController extends Controller
             'is_notifiable' => 'nullable|boolean',
         ];
 
-        // Add validation rules for translations
-        foreach (core()->getAllLocales() as $locale) {
-            $rules['custom_name.'.$locale->code] = 'required|string|max:255';
-        }
+        // Add validation rules for translations (format: locale.code[name])
+        $currentLocale = core()->getRequestedLocaleCode();
+        $rules[$currentLocale.'.name'] = 'required|string|max:255';
 
         $this->validate(request(), $rules);
 
@@ -199,13 +198,14 @@ class ServiceGroupController extends Controller
             'is_notifiable' => $isNotifiable,
         ]);
 
-        // Update translations
-        foreach (core()->getAllLocales() as $locale) {
-            $pivotRelation->translations()->updateOrCreate(
-                ['locale' => $locale->code],
-                ['custom_name' => request()->input('custom_name.'.$locale->code)]
-            );
-        }
+        // Update translations (format: locale.code[name])
+        $localeData = request()->input($currentLocale, []);
+        $customName = $localeData['name'] ?? '';
+        
+        $pivotRelation->translations()->updateOrCreate(
+            ['locale' => $currentLocale],
+            ['custom_name' => $customName]
+        );
 
         // Reload the pivot relation with updated data
         $pivotRelation = ServiceAttributeGroupService::with([
