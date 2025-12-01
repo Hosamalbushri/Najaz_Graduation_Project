@@ -9,6 +9,7 @@
             'strval',
             old('citizen_type_ids', $service->citizenTypes->pluck('id')->toArray())
         );
+        $citizenTypeTree = \Najaz\Service\Repositories\ServiceRepository::getCitizenTypeTree();
     @endphp
 
     {!! view_render_event('bagisto.admin.services.edit.before', ['service' => $service]) !!}
@@ -194,14 +195,8 @@
                     </x-admin::form.control-group>
                 </div>
 
-                @include('admin::services.services.service-data-groups.index', [
-                    'serviceId' => $service->id,
-                    'allAttributeGroups' => $attributeGroupOptions,
-                    'initialSelection' => $serviceGroupInitialSelection,
-                    'attributeTypes' => $attributeTypes ?? [],
-                    'validations' => $validations ?? [],
-                    'validationLabels' => $validationLabels ?? [],
-                    'currentLocale' => $currentLocale,
+                @include('admin::services.services.service-filed-groups.index', [
+                    'service' => $service,
                 ])
                 {{--                @include('admin::services.service-field-manager.index', [--}}
                 {{--                    'serviceId' => $service->id,--}}

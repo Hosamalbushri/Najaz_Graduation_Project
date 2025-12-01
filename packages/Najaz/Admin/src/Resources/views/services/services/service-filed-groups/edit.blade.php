@@ -3,103 +3,107 @@
         type="text/x-template"
         id="v-service-data-group-edit-template"
     >
-        <div>
-            <x-admin::modal
-                ref="editGroupModal"
-                @toggle="handleModalToggle"
-            >
-                <x-slot:header>
-                    <p class="text-lg font-bold text-gray-800 dark:text-white">
-                        @lang('Admin::app.services.services.attribute-groups.modal-title')
-                    </p>
-                </x-slot:header>
+        <x-admin::form
+            v-slot="{ meta, errors, handleSubmit }"
+            as="div"
+        >
+            <form @submit="handleSubmit($event, update)">
+                <x-admin::modal
+                    ref="editGroupModal"
+                    @toggle="handleModalToggle"
+                >
+                    <x-slot:header>
+                        <p class="text-lg font-bold text-gray-800 dark:text-white">
+                            @lang('Admin::app.services.services.edit.service-field-groups.edit.modal-title')
+                        </p>
+                    </x-slot:header>
 
-                <x-slot:content>
-                    <div v-if="group && group.service_attribute_group_id">
-                        <x-admin::form.control-group>
-                            <x-admin::form.control-group.label>
-                                @lang('Admin::app.services.services.attribute-groups.code-label')
-                            </x-admin::form.control-group.label>
+                    <x-slot:content>
+                        <div v-if="group && group.service_attribute_group_id">
+                            <x-admin::form.control-group>
+                                <x-admin::form.control-group.label class="required">
+                                    @lang('Admin::app.services.services.edit.service-field-groups.edit.code-label')
+                                </x-admin::form.control-group.label>
 
+                                <x-admin::form.control-group.control
+                                    type="text"
+                                    name="code"
+                                    rules="required"
+                                    ::value="group.code"
+                                    :label="trans('Admin::app.services.services.edit.service-field-groups.edit.code-label')"
+                                    :placeholder="trans('Admin::app.services.services.edit.service-field-groups.edit.code-label')"
+                                    :readonly="true"
+                                    class="cursor-not-allowed bg-gray-100 dark:bg-gray-800"
+                                />
+
+                                <x-admin::form.control-group.error control-name="code" />
+                            </x-admin::form.control-group>
+
+                            <x-admin::form.control-group>
+                                <x-admin::form.control-group.label class="required">
+                                    @lang('Admin::app.services.services.edit.service-field-groups.edit.name-label') ({{ $currentLocale->name }})
+                                </x-admin::form.control-group.label>
+
+                                <x-admin::form.control-group.control
+                                    type="text"
+                                    name="name"
+                                    rules="required"
+                                    ::value="groupName"
+                                    :label="trans('Admin::app.services.services.edit.service-field-groups.edit.name-label')"
+                                    placeholder="{{ trans('Admin::app.services.services.edit.service-field-groups.edit.name-label') }} ({{ $currentLocale->name }})"
+                                />
+
+                                <x-admin::form.control-group.error control-name="name" />
+                            </x-admin::form.control-group>
+
+                            <!-- Hidden field for current locale -->
                             <x-admin::form.control-group.control
-                                type="text"
-                                name="group_code"
-                                v-model="groupToEdit.code"
-                                :label="trans('Admin::app.services.services.attribute-groups.code-label')"
-                                :readonly="true"
-                                class="cursor-not-allowed bg-gray-100 dark:bg-gray-800"
-                            />
-                        </x-admin::form.control-group>
-
-                        <x-admin::form.control-group>
-                            <x-admin::form.control-group.label class="required">
-                                @lang('Admin::app.services.services.attribute-groups.name-label') (@{{ currentLocaleName }})
-                            </x-admin::form.control-group.label>
-
-                            <x-admin::form.control-group.control
-                                type="text"
-                                :name="`custom_name[${currentLocale}]`"
-                                v-model="groupToEdit.custom_name[currentLocale]"
-                                :label="trans('Admin::app.services.services.attribute-groups.name-label')"
-                            />
-
-                            <x-admin::form.control-group.error :control-name="`custom_name.${currentLocale}`" />
-                        </x-admin::form.control-group>
-
-                        <x-admin::form.control-group>
-                            <x-admin::form.control-group.label>
-                                @lang('Admin::app.services.services.attribute-groups.description-label')
-                            </x-admin::form.control-group.label>
-
-                            <x-admin::form.control-group.control
-                                type="textarea"
-                                name="description"
-                                v-model="groupToEdit.description"
-                                :label="trans('Admin::app.services.services.attribute-groups.description-label')"
-                            />
-                        </x-admin::form.control-group>
-
-                        <x-admin::form.control-group v-if="groupSupportsNotification(group)">
-                            <x-admin::form.control-group.label>
-                                @lang('Admin::app.services.services.attribute-groups.notify-label')
-                            </x-admin::form.control-group.label>
-
-                            <x-admin::form.control-group.control
-                                type="switch"
-                                name="group_is_notifiable"
-                                value="1"
-                                v-model="groupToEdit.is_notifiable"
-                                :label="trans('Admin::app.services.services.attribute-groups.notify-label')"
+                                    type="hidden"
+                                    name="locale"
+                                    value="{{ $currentLocale->code }}"
                             />
 
-                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                @lang('Admin::app.services.services.attribute-groups.notify-help')
-                            </p>
-                        </x-admin::form.control-group>
-                    </div>
-                </x-slot:content>
+                            <x-admin::form.control-group v-if="groupSupportsNotification(group)">
+                                <x-admin::form.control-group.label>
+                                    @lang('Admin::app.services.services.edit.service-field-groups.edit.notify-label')
+                                </x-admin::form.control-group.label>
 
-                <x-slot:footer>
-                    <div class="flex flex-wrap items-center justify-end gap-2">
-                        <x-admin::button
-                            button-type="button"
-                            button-class="secondary-button"
-                            :title="trans('Admin::app.services.services.create.cancel-btn')"
-                            @click="$refs.editGroupModal.close()"
-                        />
+                                <x-admin::form.control-group.control
+                                    type="text"
+                                    name="is_notifiable"
+                                    ::value="group.is_notifiable"
+{{--                                    ::checked="group.is_notifiable"--}}
+                                    :label="trans('Admin::app.services.services.edit.service-field-groups.edit.notify-label')"
+                                />
 
-                        <x-admin::button
-                            button-type="button"
-                            button-class="primary-button"
-                            :title="trans('Admin::app.services.services.attribute-groups.update-group-btn')"
-                            ::disabled="isLoading"
-                            ::loading="isLoading"
-                            @click="updateGroup"
-                        />
-                    </div>
-                </x-slot:footer>
-            </x-admin::modal>
-        </div>
+                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    @lang('Admin::app.services.services.edit.service-field-groups.edit.notify-help')
+                                </p>
+                            </x-admin::form.control-group>
+                        </div>
+                    </x-slot:content>
+
+                    <x-slot:footer>
+                        <div class="flex flex-wrap items-center justify-end gap-2">
+                            <x-admin::button
+                                button-type="button"
+                                button-class="secondary-button"
+                                :title="trans('Admin::app.services.services.create.cancel-btn')"
+                                @click="$refs.editGroupModal.close()"
+                            />
+
+                            <x-admin::button
+                                button-type="submit"
+                                button-class="primary-button"
+                                :title="trans('Admin::app.services.services.edit.service-field-groups.edit.update-group-btn')"
+                                ::loading="isLoading"
+                                ::disabled="isLoading"
+                            />
+                        </div>
+                    </x-slot:footer>
+                </x-admin::modal>
+            </form>
+        </x-admin::form>
     </script>
 
     <script type="module">
@@ -115,49 +119,40 @@
                     type: Object,
                     default: null,
                 },
-                locales: {
-                    type: Array,
-                    default: () => [],
-                },
-                currentLocale: {
-                    type: String,
-                    default: '{{ app()->getLocale() }}',
-                },
             },
 
             emits: ['group-updated'],
 
             data() {
-                const custom_name = {};
-                // Initialize custom_name for current locale only
-                custom_name[this.currentLocale] = '';
-
                 return {
                     isLoading: false,
-                    groupToEdit: {
-                        code: '',
-                        custom_name: custom_name,
-                        description: '',
-                        is_notifiable: false,
-                        pivot_uid: '',
-                    },
                 };
             },
 
             computed: {
-                currentLocaleName() {
-                    const localesArray = Array.isArray(this.locales) ? this.locales : [];
-                    const locale = localesArray.find(l => l.code === this.currentLocale);
-                    return locale ? locale.name : this.currentLocale;
+                groupName() {
+                    if (!this.group) return '';
+                    
+                    // Get current locale code from service locale
+                    const currentLocaleCode = '{{ $currentLocale->code }}';
+                    
+                    // Only return name if translation exists for current locale
+                    if (this.group.custom_name && typeof this.group.custom_name === 'object') {
+                        const customName = this.group.custom_name[currentLocaleCode];
+                        if (customName && customName.trim()) {
+                            return customName;
+                        }
+                    }
+                    
+                    // Return empty if no translation for current locale
+                    return '';
                 },
             },
 
             watch: {
                 group: {
                     handler(newGroup) {
-                        if (newGroup) {
-                            this.loadGroupData(newGroup);
-                        }
+                        // Group data is loaded via form value binding
                     },
                     immediate: true,
                     deep: true,
@@ -166,57 +161,7 @@
 
             methods: {
                 handleModalToggle(isOpen) {
-                    if (!isOpen) {
-                        this.resetForm();
-                    }
-                },
-
-                loadGroupData(group) {
-                    if (!group) {
-                        return;
-                    }
-
-                    const custom_name = {};
-                    // Initialize custom_name for current locale only
-                    if (group.custom_name && group.custom_name[this.currentLocale]) {
-                        custom_name[this.currentLocale] = group.custom_name[this.currentLocale];
-                    } else {
-                        custom_name[this.currentLocale] = group.display_name || group.name || '';
-                    }
-
-                    this.groupToEdit = {
-                        code: group.code || '',
-                        custom_name: custom_name,
-                        description: group.description || '',
-                        is_notifiable: this.normalizeBoolean(group.is_notifiable ?? false),
-                        pivot_uid: group.pivot_uid || '',
-                    };
-                },
-
-                resetForm() {
-                    const custom_name = {};
-                    // Initialize custom_name for current locale only
-                    custom_name[this.currentLocale] = '';
-
-                    this.groupToEdit = {
-                        code: '',
-                        custom_name: custom_name,
-                        description: '',
-                        is_notifiable: false,
-                        pivot_uid: '',
-                    };
-                },
-
-                normalizeBoolean(value) {
-                    if (typeof value === 'string') {
-                        return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase());
-                    }
-
-                    if (typeof value === 'number') {
-                        return value === 1;
-                    }
-
-                    return !!value;
+                    // Reset form handled by form component
                 },
 
                 groupSupportsNotification(group) {
@@ -228,100 +173,61 @@
                     return type === 'citizen';
                 },
 
-                async updateGroup() {
-                    if (!this.group) {
-                        return;
-                    }
-
-                    // Validate custom_name for current locale only
-                    if (!this.groupToEdit.custom_name || !this.groupToEdit.custom_name[this.currentLocale] || !this.groupToEdit.custom_name[this.currentLocale].trim()) {
-                        this.$emitter.emit('add-flash', {
-                            type: 'warning',
-                            message: "@lang('Admin::app.services.services.attribute-groups.missing-required-fields')",
-                        });
-
-                        return;
-                    }
-
-                    if (!this.groupToEdit.code) {
-                        this.$emitter.emit('add-flash', {
-                            type: 'warning',
-                            message: "@lang('Admin::app.services.services.attribute-groups.missing-required-fields')",
-                        });
-
-                        return;
-                    }
-
-                    if (!this.serviceId) {
+                update(params, { resetForm, setErrors }) {
+                    if (!this.group || !this.group.service_attribute_group_id) {
                         this.$emitter.emit('add-flash', {
                             type: 'error',
-                            message: "@lang('Admin::app.services.services.attribute-groups.service-id-required')",
+                            message: "@lang('Admin::app.services.services.edit.service-field-groups.edit.group-id-required')",
                         });
-
-                        return;
-                    }
-
-                    const pivotId = this.group.service_attribute_group_id;
-                    
-                    if (!pivotId) {
-                        this.$emitter.emit('add-flash', {
-                            type: 'error',
-                            message: "@lang('Admin::app.services.services.attribute-groups.pivot-id-required')",
-                        });
-
                         return;
                     }
 
                     this.isLoading = true;
 
-                    try {
-                        const updateUrl = `{{ url('admin/services') }}/${this.serviceId}/groups/${pivotId}`;
-                        // Build payload with locale.code[name] format for backend
-                        const updateData = {
-                            code: this.groupToEdit.code,
-                            description: this.groupToEdit.description || '',
-                            is_notifiable: this.groupToEdit.is_notifiable,
-                        };
-                        
-                        // Add locale code with name field (e.g., ar[name], en[name])
-                        if (this.groupToEdit.custom_name && this.currentLocale) {
-                            updateData[this.currentLocale] = {
-                                name: this.groupToEdit.custom_name[this.currentLocale] || ''
-                            };
-                        }
+                    const pivotId = this.group.service_attribute_group_id;
+                    const updateUrl = `{{ route('admin.services.groups.update', ['serviceId' => ':serviceId', 'pivotId' => ':pivotId']) }}`
+                        .replace(':serviceId', this.serviceId)
+                        .replace(':pivotId', pivotId);
 
-                        const response = await this.$axios.put(updateUrl, updateData);
+                    this.$axios.put(updateUrl, params)
+                        .then((response) => {
+                            this.$refs.editGroupModal.close();
 
-                        this.$emitter.emit('add-flash', {
-                            type: 'success',
-                            message: response.data?.message || "@lang('Admin::app.services.services.attribute-groups.update-success')",
+                            this.$emit('group-updated', response.data?.data || this.group);
+
+                            this.$emitter.emit('add-flash', {
+                                type: 'success',
+                                message: response.data?.message || "@lang('Admin::app.services.services.edit.service-field-groups.edit.update-success')",
+                            });
+
+                            resetForm();
+                            this.isLoading = false;
+                        })
+                        .catch(error => {
+                            this.isLoading = false;
+
+                            if (error.response?.status === 422) {
+                                setErrors(error.response.data.errors);
+                            } else {
+                                const message = error.response?.data?.message || 
+                                    error.message || 
+                                    "@lang('Admin::app.services.services.edit.service-field-groups.edit.error-occurred')";
+
+                                this.$emitter.emit('add-flash', {
+                                    type: 'error',
+                                    message: message,
+                                });
+                            }
                         });
-
-                        this.$emit('group-updated', response.data?.data || this.group);
-
-                        this.$refs.editGroupModal.close();
-                    } catch (error) {
-                        const message = error.response?.data?.message || 
-                            error.message || 
-                            "@lang('Admin::app.services.services.attribute-groups.error-occurred')";
-
-                        this.$emitter.emit('add-flash', {
-                            type: 'error',
-                            message: message,
-                        });
-                    } finally {
-                        this.isLoading = false;
-                    }
                 },
 
                 openModal(group) {
                     if (group && group.service_attribute_group_id) {
-                        this.loadGroupData(group);
                         this.$refs.editGroupModal.open();
                     } else {
                         this.$emitter.emit('add-flash', {
                             type: 'error',
-                            message: "@lang('Admin::app.services.services.attribute-groups.group-id-required')",
+                            message: "@lang('Admin::app.services.services.edit.service-field-groups.edit.group-id-required')",
                         });
                     }
                 },
@@ -329,4 +235,3 @@
         });
     </script>
 @endPushOnce
-

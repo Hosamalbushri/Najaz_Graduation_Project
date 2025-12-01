@@ -6,6 +6,7 @@
     @php
         $currentLocale = core()->getRequestedLocale();
         $initialCitizenTypeIds = array_map('strval', old('citizen_type_ids', []));
+        $citizenTypeTree = \Najaz\Service\Repositories\ServiceRepository::getCitizenTypeTree();
     @endphp
 
     {!! view_render_event('bagisto.admin.services.create.before') !!}

@@ -1,5 +1,19 @@
 @php
-    $currentLocale = $currentLocale ?? core()->getRequestedLocale();
+    $currentLocale = core()->getRequestedLocale();
+    
+    // Get data from Service Model (like Product Model)
+    $allAttributeGroups = $service->getAllAttributeGroups()->map(function ($group) use ($currentLocale) {
+        return $group->toArrayForCatalog($currentLocale->code);
+    })->filter()->values()->toArray();
+    
+    $attributeTypes = $service->getAttributeTypes()->toArray();
+    
+    $validations = \Najaz\Service\Models\Service::getValidations();
+    $validationLabels = \Najaz\Service\Models\Service::getValidationLabels();
+    $fileExtensions = \Najaz\Service\Models\Service::getFileExtensions();
+    
+    // Prepare service data for Vue component using Service Model method
+    $serviceData = $service->getDataForVue($currentLocale->code);
 @endphp
 
 @include('admin::services.services.service-filed-groups.create', ['currentLocale' => $currentLocale])
@@ -7,9 +21,13 @@
 @include('admin::services.services.service-filed-groups.fields.index')
 
 <v-service-attribute-groups
-    :service-id="{{ $serviceId ?? 'null' }}"
+    :service-id="{{ $service->id ?? 'null' }}"
+    :service='@json($serviceData ?? null)'
     :all-attribute-groups='@json($allAttributeGroups ?? [])'
-    :initial-selection='@json($initialSelection ?? ["groups" => [], "fields" => []])'
+    :attribute-types='@json($attributeTypes ?? [])'
+    :validations='@json($validations ?? [])'
+    :validation-labels='@json($validationLabels ?? [])'
+    :file-extensions='@json($fileExtensions ?? [])'
 ></v-service-attribute-groups>
 
 @pushOnce('scripts')
@@ -49,7 +67,8 @@
                         :groups="selectedGroups"
                         :attribute-types="attributeTypesList"
                         :validations="validationsList"
-                        :validation-labels="validationLabels"
+                        :validation-labels="validationLabelsComputed"
+                        :file-extensions="fileExtensionsComputed"
                         :locales="locales"
                         :current-locale="currentLocale"
                         @group-updated="(data) => onGroupUpdated(data.group)"
@@ -92,27 +111,6 @@
     </script>
 
     <script type="module">
-        // Helper functions
-        const normalizeBoolean = (value) => {
-            if (value === null || value === undefined) {
-                return false;
-            }
-
-            if (typeof value === 'boolean') {
-                return value;
-            }
-
-            if (typeof value === 'number') {
-                return value === 1;
-            }
-
-            if (typeof value === 'string') {
-                return ['1', 'true', 'on', 'yes'].includes(value.toLowerCase());
-            }
-
-            return false;
-        };
-
         app.component('v-service-attribute-groups', {
             template: '#v-service-attribute-groups-template',
 
@@ -121,16 +119,29 @@
                     type: [Number, String],
                     default: null,
                 },
+                service: {
+                    type: Object,
+                    default: null,
+                },
                 allAttributeGroups: {
                     type: Array,
                     default: () => [],
                 },
-                initialSelection: {
+                attributeTypes: {
+                    type: Array,
+                    default: () => [],
+                },
+                validations: {
+                    type: Array,
+                    default: () => [],
+                },
+                validationLabels: {
                     type: Object,
-                    default: () => ({
-                        groups: [],
-                        fields: {},
-                    }),
+                    default: () => ({}),
+                },
+                fileExtensions: {
+                    type: Array,
+                    default: () => [],
                 },
             },
 
@@ -141,9 +152,6 @@
                     uidIncrement: 0,
                     editingIndex: null,
                     editingGroup: null,
-                    attributeTypesList: @json($attributeTypes ?? []),
-                    validationsList: @json($validations ?? []),
-                    validationLabels: @json($validationLabels ?? []),
                     locales: (function() {
                         try {
                             const locales = @json(core()->getAllLocales()->map(fn($locale) => ["code" => $locale->code, "name" => $locale->name])->toArray());
@@ -153,11 +161,23 @@
                             return [];
                         }
                     })(),
-                    currentLocale: '{{ app()->getLocale() }}',
+                    currentLocale: '{{ $currentLocale->code }}',
                 };
             },
 
             computed: {
+                attributeTypesList() {
+                    return Array.isArray(this.attributeTypes) ? this.attributeTypes : [];
+                },
+                validationsList() {
+                    return Array.isArray(this.validations) ? this.validations : [];
+                },
+                validationLabelsComputed() {
+                    return this.validationLabels || {};
+                },
+                fileExtensionsComputed() {
+                    return Array.isArray(this.fileExtensions) ? this.fileExtensions : [];
+                },
                 availableGroups() {
                     return this.groupsCatalog;
                 },
@@ -206,12 +226,18 @@
                                 });
                             }
 
+                            // Get name for current locale from translations if available
+                            let displayName = group.name || group.code || '';
+                            if (translations[this.currentLocale] && translations[this.currentLocale].name) {
+                                displayName = translations[this.currentLocale].name;
+                            }
+
                             return {
                                 id: group.id,
                                 code: group.code,
                                 group_type: group.group_type || 'general',
-                                name: group.name,
-                                description: group.description,
+                                name: displayName,
+                                description: translations[this.currentLocale]?.description || group.description || '',
                                 translations: translations,
                                 sort_order: group.sort_order ?? 0,
                                 is_notifiable: !!group.is_notifiable,
@@ -234,11 +260,10 @@
                 },
 
                 bootstrapSelection() {
-                    const groupSelection = Array.isArray(this.initialSelection.groups)
-                        ? this.initialSelection.groups
-                        : [];
-
-                    const fieldSelection = this.initialSelection.fields || {};
+                    if (!this.service || !this.service.attribute_groups) {
+                        this.selectedGroups = [];
+                        return;
+                    }
 
                     // Create a map for faster lookup
                     const catalogMap = new Map();
@@ -246,100 +271,166 @@
                         catalogMap.set(group.id, group);
                     });
 
-                    const selected = groupSelection.map((selection, index) => {
-                        // Use map for O(1) lookup instead of O(n) find
-                        const base = catalogMap.get(selection.service_attribute_group_id) 
-                            || catalogMap.get(selection.template_id);
+                    const selected = this.service.attribute_groups
+                        .filter(group => {
+                            // Check if group has saved fields or template fields
+                            const pivotId = group.pivot?.id;
+                            if (pivotId) {
+                                // Check if pivot has fields loaded
+                                const pivotRelation = group.pivot;
+                                if (pivotRelation && pivotRelation.fields && pivotRelation.fields.length > 0) {
+                                    return true;
+                                }
+                            }
+                            // Fallback to template fields
+                            return group.fields && group.fields.length > 0;
+                        })
+                        .map((group, index) => {
+                            const pivotId = group.pivot?.id;
+                            const pivotRelation = pivotId ? group.pivot : null;
+                            
+                            // Use saved fields if available, otherwise use template fields
+                            const fieldsToUse = pivotRelation && pivotRelation.fields && pivotRelation.fields.length > 0
+                                ? pivotRelation.fields
+                                : (group.fields || []);
 
-                        const cloneBase = base ? this.cloneGroup(base) : {
-                            uid: `group_${selection.service_attribute_group_id}_${this.uidIncrement++}`,
-                            id: selection.template_id || selection.service_attribute_group_id,
-                            template_id: selection.template_id || selection.service_attribute_group_id,
-                            service_attribute_group_id: selection.service_attribute_group_id ?? null,
-                            code: selection.code || '',
-                            group_type: selection.group_type || 'general',
-                            display_name: selection.name || '',
-                            description: selection.description || '',
-                            sort_order: selection.sort_order ?? index,
-                            is_notifiable: this.normalizeBoolean(selection.is_notifiable ?? false),
-                            pivot_uid: selection.pivot_uid || '',
-                            fields: [],
-                        };
+                            if (fieldsToUse.length === 0) {
+                                return null;
+                            }
 
-                        const clone = {
-                            ...cloneBase,
-                            service_attribute_group_id: selection.service_attribute_group_id ?? null,
-                            template_id: selection.template_id || cloneBase.template_id || cloneBase.id,
-                            code: selection.code || cloneBase.code,
-                            group_type: selection.group_type || cloneBase.group_type || base?.group_type || 'general',
-                            display_name: selection.name || cloneBase.display_name || cloneBase.name,
-                            description: selection.description ?? cloneBase.description ?? '',
-                            sort_order: selection.sort_order ?? index,
-                            is_notifiable: this.normalizeBoolean(selection.is_notifiable ?? cloneBase.is_notifiable ?? base?.is_notifiable ?? false),
-                            supports_notification: this.normalizeBoolean(selection.supports_notification ?? cloneBase.supports_notification ?? base?.supports_notification ?? false),
-                            pivot_uid: selection.pivot_uid || cloneBase.pivot_uid || '',
-                        };
-                        clone.name = clone.display_name;
-
-                        const baseFields = selection.fields || base?.fields || [];
-
-                        // Prepare labels template once
-                        const labelsTemplate = {};
-                        const localesArray = Array.isArray(this.locales) ? this.locales : [];
-                        localesArray.forEach(locale => {
-                            labelsTemplate[locale.code] = '';
-                        });
-
-                        clone.fields = baseFields.map((field, fieldIndex) => {
-                            const fieldKey = field.service_attribute_field_id ?? field.id;
-                            const existingField = fieldSelection[fieldKey] || {};
-
-                            // Merge existing labels with template (faster than forEach)
-                            const labels = Object.assign({}, labelsTemplate, field.labels || {});
-
-                            // Ensure all options have uid
-                            const options = (field.options || []).map((opt, optIndex) => ({
-                                ...opt,
-                                uid: opt.uid || `option_${opt.id || optIndex || Date.now()}`,
-                            }));
-
-                            return {
-                                uid: `field_${fieldKey}_${this.uidIncrement++}`,
-                                id: fieldKey ?? null,
-                                service_attribute_field_id: fieldKey ?? null,
-                                template_field_id: field.template_field_id ?? field.id ?? null,
-                                code: field.code,
-                                label: field.label,
-                                type: field.type,
-                                attribute_type_name: field.attribute_type_name,
-                                sort_order: existingField.sort_order ?? field.sort_order ?? fieldIndex,
-                                service_attribute_type_id: field.service_attribute_type_id ?? null,
-                                is_required: this.normalizeBoolean(field.is_required ?? false),
-                                validation_rules: field.validation_rules ?? null,
-                                default_value: field.default_value ?? null,
-                                labels: labels,
-                                options: options,
+                            // Get base from catalog
+                            const base = catalogMap.get(group.id);
+                            const cloneBase = base ? this.cloneGroup(base) : {
+                                uid: `group_${pivotId || group.id}_${this.uidIncrement++}`,
+                                id: group.id,
+                                template_id: group.id,
+                                code: group.code,
+                                group_type: group.group_type || 'general',
+                                name: group.name || group.translations?.[this.currentLocale]?.name || group.code,
+                                display_name: group.name || group.translations?.[this.currentLocale]?.name || group.code,
+                                description: group.description || group.translations?.[this.currentLocale]?.description || '',
+                                sort_order: pivotRelation?.sort_order ?? group.sort_order ?? index,
+                                is_notifiable: this.normalizeBoolean(pivotRelation?.is_notifiable ?? false),
+                                supports_notification: false,
+                                pivot_uid: pivotRelation?.pivot_uid || '',
+                                fields: [],
                             };
-                        });
 
-                        // Sort only once after mapping
-                        clone.fields.sort((a, b) => a.sort_order - b.sort_order);
+                            // Get custom_name from pivot translations
+                            const customName = {};
+                            if (pivotRelation && pivotRelation.translations) {
+                                pivotRelation.translations.forEach(trans => {
+                                    if (trans.custom_name) {
+                                        customName[trans.locale] = trans.custom_name;
+                                    }
+                                });
+                            }
 
-                        if (! clone.fields.length) {
-                            return null;
-                        }
+                            // Get display name for current locale
+                            const displayName = customName[this.currentLocale] 
+                                || group.translations?.[this.currentLocale]?.name 
+                                || group.name 
+                                || group.code;
 
-                         clone.supports_notification = this.groupSupportsNotification(clone);
+                            const clone = {
+                                ...cloneBase,
+                                service_attribute_group_id: pivotId ?? null,
+                                template_id: group.id,
+                                code: pivotRelation?.custom_code || group.code,
+                                group_type: group.group_type || 'general',
+                                display_name: displayName,
+                                custom_name: customName,
+                                name: displayName,
+                                description: group.translations?.[this.currentLocale]?.description || group.description || '',
+                                sort_order: pivotRelation?.sort_order ?? group.sort_order ?? index,
+                                is_notifiable: this.normalizeBoolean(pivotRelation?.is_notifiable ?? false),
+                                pivot_uid: pivotRelation?.pivot_uid || '',
+                            };
 
-                         if (! clone.supports_notification) {
-                             clone.is_notifiable = false;
-                         }
+                            // Prepare labels template
+                            const labelsTemplate = {};
+                            const localesArray = Array.isArray(this.locales) ? this.locales : [];
+                            localesArray.forEach(locale => {
+                                labelsTemplate[locale.code] = '';
+                            });
 
-                         // Initialize hasFieldOrderChanged
-                         clone.hasFieldOrderChanged = false;
+                            clone.fields = fieldsToUse.map((field, fieldIndex) => {
+                                const fieldId = field.id ?? null;
+                                const templateFieldId = field.service_attribute_field_id ?? field.id;
 
-                        return clone;
-                    }).filter(Boolean);
+                                // Get labels for all locales
+                                const labels = {};
+                                if (field.translations) {
+                                    field.translations.forEach(trans => {
+                                        labels[trans.locale] = trans.label || '';
+                                    });
+                                } else {
+                                    Object.assign(labels, labelsTemplate);
+                                    if (field.label) {
+                                        labels[this.currentLocale] = field.label;
+                                    }
+                                }
+
+                                // Get options
+                                const options = (field.options || []).map((opt, optIndex) => {
+                                    const optionLabels = {};
+                                    if (opt.translations) {
+                                        opt.translations.forEach(trans => {
+                                            optionLabels[trans.locale] = trans.label || opt.admin_name || '';
+                                        });
+                                    } else if (opt.labels) {
+                                        Object.assign(optionLabels, opt.labels);
+                                    }
+
+                                    return {
+                                        ...opt,
+                                        uid: opt.uid || `option_${opt.id || optIndex || Date.now()}`,
+                                        labels: optionLabels,
+                                    };
+                                });
+
+                                return {
+                                    uid: `field_${fieldId || fieldIndex}_${this.uidIncrement++}`,
+                                    id: fieldId,
+                                    service_attribute_field_id: fieldId,
+                                    template_field_id: templateFieldId,
+                                    code: field.code,
+                                    label: field.translations?.find(t => t.locale === this.currentLocale)?.label 
+                                        || field.label 
+                                        || '',
+                                    type: field.type,
+                                    attribute_type_name: field.attribute_type?.translations?.find(t => t.locale === this.currentLocale)?.name 
+                                        || field.attribute_type?.name 
+                                        || field.attribute_type_name 
+                                        || field.type,
+                                    sort_order: field.sort_order ?? fieldIndex,
+                                    service_attribute_type_id: field.service_attribute_type_id ?? null,
+                                    is_required: this.normalizeBoolean(field.is_required ?? false),
+                                    validation_rules: field.validation_rules ?? null,
+                                    default_value: field.default_value ?? null,
+                                    labels: labels,
+                                    options: options,
+                                };
+                            });
+
+                            // Sort fields
+                            clone.fields.sort((a, b) => a.sort_order - b.sort_order);
+
+                            if (!clone.fields.length) {
+                                return null;
+                            }
+
+                            clone.supports_notification = this.groupSupportsNotification(clone);
+
+                            if (!clone.supports_notification) {
+                                clone.is_notifiable = false;
+                            }
+
+                            clone.hasFieldOrderChanged = false;
+
+                            return clone;
+                        })
+                        .filter(Boolean);
 
                     selected.sort((a, b) => a.sort_order - b.sort_order);
 
@@ -566,14 +657,14 @@
 
                                         <div class="flex flex-col gap-1 min-w-0">
                                             <p class="text-base font-semibold text-gray-800 dark:text-white mb-1 break-words">
-                                                @{{ group.display_name || group.name || group.code }}
+                                                @{{ getGroupDisplayName(group) }}
                                             </p>
 
                                             <p
-                                                v-if="group.description"
-                                                class="text-sm text-gray-600 dark:text-gray-400 break-words"
+                                                v-if="!hasGroupTranslationForCurrentLocale(group) && getFirstAvailableTranslation(group)"
+                                                class="text-sm text-gray-600 dark:text-gray-400 break-words italic"
                                             >
-                                                @{{ group.description }}
+                                                @{{ getFirstAvailableTranslation(group) }}
                                             </p>
                                         </div>
                                     </div>
@@ -607,6 +698,7 @@
                                         :attribute-types="attributeTypes"
                                         :validations="validations"
                                         :validation-labels="validationLabels"
+                                        :file-extensions="fileExtensions"
                                         :locales="locales"
                                         :current-locale="currentLocale"
                                         @field-created="(fieldData) => onFieldCreated(index, fieldData)"
@@ -702,6 +794,10 @@
                     type: Object,
                     default: () => ({}),
                 },
+                fileExtensions: {
+                    type: Array,
+                    default: () => [],
+                },
                 locales: {
                     type: Array,
                     default: () => [],
@@ -731,6 +827,7 @@
                 };
             },
 
+
             methods: {
                 normalizeBoolean(value) {
                     if (typeof value === 'string') {
@@ -742,6 +839,50 @@
                     }
 
                     return !!value;
+                },
+
+                getGroupDisplayName(group) {
+                    if (!group) return '';
+                    
+                    // Only return name if translation exists for current locale
+                    if (group.custom_name && typeof group.custom_name === 'object') {
+                        const customName = group.custom_name[this.currentLocale];
+                        if (customName && customName.trim()) {
+                            return customName;
+                        }
+                    }
+                    
+                    // Return empty if no translation for current locale
+                    return '';
+                },
+
+                hasGroupTranslationForCurrentLocale(group) {
+                    if (!group) return false;
+                    
+                    if (group.custom_name && typeof group.custom_name === 'object') {
+                        const customName = group.custom_name[this.currentLocale];
+                        return customName && customName.trim().length > 0;
+                    }
+                    
+                    return false;
+                },
+
+                getFirstAvailableTranslation(group) {
+                    if (!group || !group.custom_name || typeof group.custom_name !== 'object') {
+                        return '';
+                    }
+                    
+                    // Find first available translation (excluding current locale)
+                    for (const localeCode in group.custom_name) {
+                        if (localeCode !== this.currentLocale) {
+                            const translation = group.custom_name[localeCode];
+                            if (translation && translation.trim()) {
+                                return translation;
+                            }
+                        }
+                    }
+                    
+                    return '';
                 },
 
                 groupSupportsNotification(group) {
@@ -1051,11 +1192,11 @@
                         });
                     }
 
-                    // Get label for display
+                    // Get label for display (don't use code as fallback)
                     const displayLabel = fieldData.translations?.[0]?.label 
                         || labels[this.currentLocale] 
                         || Object.values(labels).find(v => v) 
-                        || fieldData.code;
+                        || '';
 
                     // Get attribute type info
                     const attributeType = this.getAttributeTypeInfo(fieldData.service_attribute_type_id);

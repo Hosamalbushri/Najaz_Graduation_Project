@@ -99,5 +99,6 @@ class ServiceAttributeGroupServiceField extends TranslatableModel implements Ser
             'id'
         )->orderBy('sort_order');
     }
+
 }
 

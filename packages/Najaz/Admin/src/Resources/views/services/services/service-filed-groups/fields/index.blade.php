@@ -30,35 +30,57 @@
                             >
                                 <x-slot:header>
                                     <div class="flex items-center justify-between gap-4 w-full" @click.stop>
-                                        <div class="flex flex-1 items-start gap-2.5">
-                                            <i class="icon-drag cursor-grab text-xl transition-all hover:text-gray-700 dark:text-gray-300"
+                                        <div class="flex items-center gap-3 flex-1 min-w-0">
+                                            <i class="icon-drag cursor-grab text-xl text-gray-500 transition-all hover:text-gray-700 dark:text-gray-300 flex-shrink-0"
                                                @click.stop></i>
 
-                                            <div class="flex flex-col gap-1 flex-1">
-                                                <p class="text-sm font-semibold text-gray-800 dark:text-white">
-                                                    @{{ field.label || field.code }}
+                                            <div class="flex flex-col gap-1 min-w-0 flex-1">
+                                                <p
+                                                    v-if="getFieldDisplayName(field)"
+                                                    class="text-base font-semibold text-gray-800 dark:text-white mb-1 break-words"
+                                                >
+                                                    @{{ getFieldDisplayName(field) }}
                                                 </p>
+
+                                                <div class="flex items-center gap-2 flex-wrap">
+                                                    <span
+                                                        v-if="!hasFieldTranslationForCurrentLocale(field) && getFirstAvailableFieldTranslation(field)"
+                                                        class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800 dark:bg-gray-800 dark:text-gray-200"
+                                                    >
+                                                        @{{ getFirstAvailableFieldTranslation(field) }}
+                                                    </span>
+
+                                                    <span
+                                                        v-if="normalizeBoolean(field.is_required)"
+                                                        class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/60 dark:text-red-200"
+                                                    >
+                                                        @lang('Admin::app.services.attribute-groups.attribute-group-fields.is-required')
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
 
-                                        <div class="flex items-center gap-3 text-sm font-medium" @click.stop>
+                                        <div class="flex items-center gap-2 flex-shrink-0">
                                             <span
-                                                    class="cursor-pointer text-blue-600 transition-all hover:underline"
-                                                    @click="openEditFieldModal(field)"
+                                                    v-if="pivotId && field.id"
+                                                    class="cursor-pointer text-blue-600 dark:text-blue-400 transition-all hover:text-blue-700 dark:hover:text-blue-300 hover:underline text-base font-semibold whitespace-nowrap"
+                                                    @click.stop="openEditFieldModal(field)"
                                             >
                                                 @lang('Admin::app.services.attribute-groups.edit.edit-field-btn')
                                             </span>
 
                                             <span
-                                                    class="cursor-pointer text-green-600 transition-all hover:underline"
-                                                    @click="openAddOptionModalForField(field)"
+                                                    v-if="fieldRequiresOptions(field) && pivotId && field.id"
+                                                    class="cursor-pointer text-green-600 dark:text-green-400 transition-all hover:text-green-700 dark:hover:text-green-300 hover:underline text-base font-semibold whitespace-nowrap"
+                                                    @click.stop="openAddOptionModalForField(field)"
                                             >
                                                 @lang('Admin::app.services.services.groups.fields.options.add-option')
                                             </span>
 
                                             <span
-                                                    class="cursor-pointer text-red-600 transition-all hover:underline"
-                                                    @click="deleteField(field)"
+                                                    v-if="pivotId && field.id"
+                                                    class="cursor-pointer text-red-600 dark:text-red-400 transition-all hover:text-red-700 dark:hover:text-red-300 hover:underline text-base font-semibold whitespace-nowrap"
+                                                    @click.stop="deleteField(field)"
                                             >
                                                 @lang('Admin::app.services.attribute-groups.edit.delete-field-btn')
                                             </span>
@@ -91,20 +113,39 @@
                                     class="mb-2.5 rounded border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"
                             >
                                 <div class="flex items-center justify-between gap-4 p-4">
-                                    <div class="flex flex-1 items-start gap-2.5">
-                                        <i class="icon-drag cursor-grab text-xl transition-all hover:text-gray-700 dark:text-gray-300"></i>
+                                    <div class="flex items-center gap-3 flex-1 min-w-0">
+                                        <i class="icon-drag cursor-grab text-xl text-gray-500 transition-all hover:text-gray-700 dark:text-gray-300 flex-shrink-0"></i>
 
-                                        <div class="flex flex-col gap-1 flex-1">
-                                            <p class="text-sm font-semibold text-gray-800 dark:text-white">
-                                                @{{ field.label || field.code }}
+                                        <div class="flex flex-col gap-1 min-w-0 flex-1">
+                                            <p
+                                                v-if="getFieldDisplayName(field)"
+                                                class="text-base font-semibold text-gray-800 dark:text-white mb-1 break-words"
+                                            >
+                                                @{{ getFieldDisplayName(field) }}
                                             </p>
+
+                                            <div class="flex items-center gap-2 flex-wrap">
+                                                <span
+                                                    v-if="!hasFieldTranslationForCurrentLocale(field) && getFirstAvailableFieldTranslation(field)"
+                                                    class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800 dark:bg-gray-800 dark:text-gray-200"
+                                                >
+                                                    @{{ getFirstAvailableFieldTranslation(field) }}
+                                                </span>
+
+                                                <span
+                                                    v-if="normalizeBoolean(field.is_required)"
+                                                    class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/60 dark:text-red-200"
+                                                >
+                                                    @lang('Admin::app.services.attribute-groups.attribute-group-fields.is-required')
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div class="flex items-center gap-3 text-sm font-medium">
+                                    <div class="flex items-center gap-2 flex-shrink-0">
                                         <span
                                                 v-if="pivotId && field.id"
-                                                class="cursor-pointer text-blue-600 transition-all hover:underline"
+                                                class="cursor-pointer text-blue-600 dark:text-blue-400 transition-all hover:text-blue-700 dark:hover:text-blue-300 hover:underline text-base font-semibold whitespace-nowrap"
                                                 @click="openEditFieldModal(field)"
                                         >
                                             @lang('Admin::app.services.attribute-groups.edit.edit-field-btn')
@@ -112,7 +153,7 @@
 
                                         <span
                                                 v-if="pivotId && field.id"
-                                                class="cursor-pointer text-red-600 transition-all hover:underline"
+                                                class="cursor-pointer text-red-600 dark:text-red-400 transition-all hover:text-red-700 dark:hover:text-red-300 hover:underline text-base font-semibold whitespace-nowrap"
                                                 @click="deleteField(field)"
                                         >
                                             @lang('Admin::app.services.attribute-groups.edit.delete-field-btn')
@@ -183,6 +224,7 @@
                     :attribute-types="attributeTypes"
                     :validations="validations"
                     :validation-labels="validationLabels"
+                    :file-extensions="fileExtensionsComputed"
                     :locales="locales"
                     :sort-order="currentFieldSortOrder"
                     @field-created="onFieldCreated"
@@ -197,6 +239,7 @@
                     :attribute-types="attributeTypes"
                     :validations="validations"
                     :validation-labels="validationLabels"
+                    :file-extensions="fileExtensionsComputed"
                     :locales="locales"
                     @field-updated="onFieldUpdated"
             ></v-service-data-group-field-edit>
@@ -233,6 +276,10 @@
                     type: Object,
                     default: () => ({}),
                 },
+                fileExtensions: {
+                    type: Array,
+                    default: () => [],
+                },
                 locales: {
                     type: Array,
                     default: () => [],
@@ -264,6 +311,9 @@
             },
 
             computed: {
+                fileExtensionsComputed() {
+                    return Array.isArray(this.fileExtensions) ? this.fileExtensions : [];
+                },
                 sortedFields() {
                     const fieldsArray = Array.isArray(this.fields) ? this.fields : [];
                     if (fieldsArray.length === 0) {
@@ -286,6 +336,108 @@
             },
 
             methods: {
+                normalizeBoolean(value) {
+                    if (typeof value === 'string') {
+                        return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase());
+                    }
+                    if (typeof value === 'number') {
+                        return value === 1;
+                    }
+                    return !!value;
+                },
+
+                getFieldDisplayName(field) {
+                    if (!field) return '';
+                    
+                    // Get label for current locale from field.labels object
+                    if (field.labels && typeof field.labels === 'object') {
+                        const label = field.labels[this.currentLocale];
+                        if (label && label.trim()) {
+                            return label;
+                        }
+                    }
+                    
+                    // Fallback to field.label (single string) only, don't show code
+                    return field.label || '';
+                },
+
+                hasFieldTranslationForCurrentLocale(field) {
+                    if (!field) return false;
+                    
+                    if (field.labels && typeof field.labels === 'object') {
+                        const label = field.labels[this.currentLocale];
+                        return label && label.trim().length > 0;
+                    }
+                    
+                    // If field.label exists as string, consider it as current locale
+                    return !!(field.label && field.label.trim());
+                },
+
+                getFirstAvailableFieldTranslation(field) {
+                    if (!field || !field.labels || typeof field.labels !== 'object') {
+                        return '';
+                    }
+                    
+                    // Find first available translation (excluding current locale)
+                    for (const localeCode in field.labels) {
+                        if (localeCode !== this.currentLocale) {
+                            const translation = field.labels[localeCode];
+                            if (translation && translation.trim()) {
+                                return translation;
+                            }
+                        }
+                    }
+                    
+                    return '';
+                },
+
+                getFieldTypeName(field) {
+                    if (!field || !field.service_attribute_type_id) {
+                        return '';
+                    }
+                    const attributeType = this.getAttributeTypeInfo(field.service_attribute_type_id);
+                    if (!attributeType) {
+                        return '';
+                    }
+                    // Try to get name from translations or use code
+                    if (attributeType.name) {
+                        return attributeType.name;
+                    }
+                    if (attributeType.translations && Array.isArray(attributeType.translations)) {
+                        const translation = attributeType.translations.find(t => t.locale === this.currentLocale);
+                        if (translation && translation.name) {
+                            return translation.name;
+                        }
+                        if (attributeType.translations.length > 0 && attributeType.translations[0].name) {
+                            return attributeType.translations[0].name;
+                        }
+                    }
+                    return attributeType.code || '';
+                },
+
+                getFieldAvailableLocales(field) {
+                    if (!field || !field.labels || typeof field.labels !== 'object') {
+                        return [];
+                    }
+                    
+                    const availableLocales = [];
+                    const localesArray = Array.isArray(this.locales) ? this.locales : [];
+                    
+                    for (const localeCode in field.labels) {
+                        const label = field.labels[localeCode];
+                        if (label && label.trim()) {
+                            const locale = localesArray.find(l => l.code === localeCode);
+                            if (locale && locale.name) {
+                                availableLocales.push(locale.name);
+                            } else {
+                                availableLocales.push(localeCode.toUpperCase());
+                            }
+                        }
+                    }
+                    
+                    return availableLocales;
+                },
+
                 fieldRequiresOptions(field) {
                     if (!field || !field.service_attribute_type_id) {
                         return false;

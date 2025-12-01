@@ -3,14 +3,13 @@
 namespace Najaz\Admin\Http\Controllers\Admin\Services;
 
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Najaz\Admin\Http\Controllers\Controller;
 use Najaz\Service\Models\ServiceAttributeGroupProxy;
 use Najaz\Service\Models\ServiceAttributeGroupService;
 use Najaz\Service\Repositories\ServiceAttributeGroupServiceFieldRepository;
 use Najaz\Service\Repositories\ServiceRepository;
-use Najaz\Admin\Http\Controllers\Controller;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 
 class ServiceGroupController extends Controller
 {
@@ -32,14 +31,12 @@ class ServiceGroupController extends Controller
         $rules = [
             'template_id'     => 'required|exists:service_attribute_groups,id',
             'code'            => 'required|string|max:255',
+            'name'            => 'required|string|max:255',
+            'locale'          => 'required|string',
             'description'     => 'nullable|string',
             'is_notifiable'   => 'nullable|boolean',
             'sort_order'      => 'nullable|integer',
         ];
-
-        // Add validation rules for translations (format: locale.code[name])
-        $currentLocale = core()->getRequestedLocaleCode();
-        $rules[$currentLocale.'.name'] = 'required|string|max:255';
 
         $this->validate(request(), $rules);
 
@@ -53,7 +50,7 @@ class ServiceGroupController extends Controller
         // Check for duplicate code
         $customCode = request()->input('code');
         $normalizedCode = mb_strtolower(trim($customCode));
-        
+
         $existingGroup = ServiceAttributeGroupService::where('service_id', $serviceId)
             ->where(function ($query) use ($normalizedCode) {
                 $query->whereRaw('LOWER(custom_code) = ?', [$normalizedCode])
@@ -80,16 +77,16 @@ class ServiceGroupController extends Controller
         // Check if group supports notification
         $groupType = $templateGroup->group_type ?? 'general';
         $supportsNotification = $this->groupSupportsNotification($templateGroup);
-        
+
         if (! $supportsNotification) {
             $isNotifiable = false;
         }
 
-        // Get locale data before transaction
-        $localeData = request()->input($currentLocale, []);
-        $customName = $localeData['name'] ?? '';
+        // Get locale and name from request
+        $locale = request()->input('locale');
+        $customName = request()->input('name', '');
 
-        DB::transaction(function () use ($service, $templateGroupId, $pivotUid, $sortOrder, $isNotifiable, $customCode, $templateGroup, $currentLocale, $customName) {
+        DB::transaction(function () use ($service, $templateGroupId, $pivotUid, $sortOrder, $isNotifiable, $customCode, $templateGroup, $locale, $customName) {
             $pivotRelation = ServiceAttributeGroupService::create([
                 'service_id'                 => $service->id,
                 'service_attribute_group_id' => $templateGroupId,
@@ -99,9 +96,9 @@ class ServiceGroupController extends Controller
                 'custom_code'                => $customCode,
             ]);
 
-            // Save translations (format: locale.code[name])
+            // Save translations using the locale sent from the form
             $pivotRelation->translations()->updateOrCreate(
-                ['locale' => $currentLocale],
+                ['locale' => $locale],
                 ['custom_name' => $customName]
             );
 
@@ -147,7 +144,7 @@ class ServiceGroupController extends Controller
     public function update(int $serviceId, int $pivotId): JsonResponse
     {
         $service = $this->serviceRepository->findOrFail($serviceId);
-        
+
         $pivotRelation = ServiceAttributeGroupService::findOrFail($pivotId);
 
         // Verify that this pivot belongs to the service
@@ -156,54 +153,30 @@ class ServiceGroupController extends Controller
         }
 
         $rules = [
-            'code'          => 'required|string|max:255',
-            'description'   => 'nullable|string',
+            'name'          => 'required|string|max:255',
+            'locale'        => 'required|string',
             'is_notifiable' => 'nullable|boolean',
         ];
 
-        // Add validation rules for translations (format: locale.code[name])
-        $currentLocale = core()->getRequestedLocaleCode();
-        $rules[$currentLocale.'.name'] = 'required|string|max:255';
-
         $this->validate(request(), $rules);
-
-        $customCode = request()->input('code');
-        $normalizedCode = mb_strtolower(trim($customCode));
-        
-        // Check for duplicate code (excluding current pivot)
-        $existingGroup = ServiceAttributeGroupService::where('service_id', $serviceId)
-            ->where('id', '!=', $pivotId)
-            ->where(function ($query) use ($normalizedCode) {
-                $query->whereRaw('LOWER(custom_code) = ?', [$normalizedCode])
-                    ->orWhereHas('attributeGroup', function ($q) use ($normalizedCode) {
-                        $q->whereRaw('LOWER(code) = ?', [$normalizedCode]);
-                    });
-            })
-            ->first();
-
-        if ($existingGroup) {
-            return new JsonResponse([
-                'message' => trans('Admin::app.services.services.attribute-groups.duplicate-code', ['code' => $customCode]),
-            ], 422);
-        }
 
         $group = $pivotRelation->attributeGroup;
         $supportsNotification = $this->groupSupportsNotification($group);
-        $isNotifiable = $supportsNotification 
+        $isNotifiable = $supportsNotification
             ? $this->toBoolean(request()->input('is_notifiable', false))
             : false;
 
+        // Only update is_notifiable, do not update custom_code
         $pivotRelation->update([
-            'custom_code'   => $customCode,
             'is_notifiable' => $isNotifiable,
         ]);
 
-        // Update translations (format: locale.code[name])
-        $localeData = request()->input($currentLocale, []);
-        $customName = $localeData['name'] ?? '';
-        
+        // Update translations using the locale sent from the form
+        $locale = request()->input('locale');
+        $customName = request()->input('name', '');
+
         $pivotRelation->translations()->updateOrCreate(
-            ['locale' => $currentLocale],
+            ['locale' => $locale],
             ['custom_name' => $customName]
         );
 
@@ -217,7 +190,7 @@ class ServiceGroupController extends Controller
         ])->findOrFail($pivotId);
 
         return new JsonResponse([
-            'message' => trans('Admin::app.services.services.attribute-groups.update-success'),
+            'message' => trans('Admin::app.services.services.edit.service-field-groups.edit.update-success'),
             'data'    => $this->formatPivotForResponse($pivotRelation),
         ]);
     }
@@ -228,7 +201,7 @@ class ServiceGroupController extends Controller
     public function destroy(int $serviceId, int $pivotId): JsonResponse
     {
         $service = $this->serviceRepository->findOrFail($serviceId);
-        
+
         $pivotRelation = ServiceAttributeGroupService::findOrFail($pivotId);
 
         // Verify that this pivot belongs to the service
@@ -238,13 +211,13 @@ class ServiceGroupController extends Controller
 
         // Check if this group is used in any requests
         $groupCode = $pivotRelation->custom_code ?? $pivotRelation->attributeGroup->code;
-        
+
         $hasRequests = DB::table('service_request_form_data')
             ->join('service_requests', 'service_request_form_data.service_request_id', '=', 'service_requests.id')
             ->where('service_requests.service_id', $serviceId)
             ->where('service_request_form_data.group_code', $groupCode)
             ->exists();
-        
+
         if ($hasRequests) {
             return new JsonResponse([
                 'message' => trans(
@@ -269,7 +242,7 @@ class ServiceGroupController extends Controller
         $service = $this->serviceRepository->findOrFail($serviceId);
 
         $this->validate(request(), [
-            'pivot_ids' => 'required|array',
+            'pivot_ids'   => 'required|array',
             'pivot_ids.*' => 'required|integer|exists:service_attribute_group_service,id',
         ]);
 
@@ -308,100 +281,8 @@ class ServiceGroupController extends Controller
             throw new \Exception('Pivot relation not found');
         }
 
-        $locale = app()->getLocale();
-        $group = $pivotRelation->attributeGroup;
-
-        if (! $group) {
-            throw new \Exception('Attribute group not found for pivot relation');
-        }
-
-        $fields = ($pivotRelation->fields ?? collect())->map(function ($field) use ($locale) {
-            // Get labels for all locales
-            $labels = [];
-            foreach (core()->getAllLocales() as $loc) {
-                $translation = $field->translate($loc->code);
-                $labels[$loc->code] = $translation?->label ?? '';
-            }
-            
-            // Get options with labels for all locales
-            $options = [];
-            if ($field->options) {
-                foreach ($field->options as $option) {
-                    $optionLabels = [];
-                    foreach (core()->getAllLocales() as $loc) {
-                        $optionTranslation = $option->translate($loc->code);
-                        $optionLabels[$loc->code] = $optionTranslation?->label ?? $option->admin_name ?? $option->code ?? '';
-                    }
-                    
-                    $options[] = [
-                        'id' => $option->id,
-                        'uid' => "option_{$option->id}",
-                        'service_attribute_type_option_id' => $option->service_attribute_type_option_id ?? null,
-                        'admin_name' => $option->admin_name ?? '',
-                        'code' => $option->code ?? $option->admin_name ?? '',
-                        'labels' => $optionLabels,
-                        'sort_order' => $option->sort_order ?? 0,
-                        'is_custom' => $option->is_custom ?? false,
-                    ];
-                }
-            }
-            
-            return [
-                'id'                      => $field->id,
-                'service_attribute_field_id' => $field->service_attribute_field_id ?? null,
-                'template_field_id'       => $field->template_field_id ?? $field->id ?? null,
-                'code'                    => $field->code,
-                'label'                   => $field->translate($locale)?->label ?? $field->code,
-                'labels'                  => $labels,
-                'type'                    => $field->type,
-                'attribute_type_name'     => $field->attributeType?->translate($locale)?->name ?? $field->type,
-                'service_attribute_type_id' => $field->service_attribute_type_id ?? null,
-                'validation_rules'        => $field->validation_rules ?? null,
-                'default_value'           => $field->default_value ?? null,
-                'is_required'             => $field->is_required ?? false,
-                'sort_order'              => $field->sort_order ?? 0,
-                'options'                 => $options,
-            ];
-        })->sortBy('sort_order')->values()->toArray();
-
-        // Get translations for custom_name
-        $customNameTranslations = [];
-        $displayName = '';
-        
-        // Load translations if not loaded
-        if (! $pivotRelation->relationLoaded('translations')) {
-            $pivotRelation->load('translations');
-        }
-        
-        foreach (core()->getAllLocales() as $loc) {
-            $translation = $pivotRelation->translations->where('locale', $loc->code)->first();
-            $customNameTranslations[$loc->code] = $translation?->custom_name ?? '';
-            
-            if ($loc->code === $locale && !empty($customNameTranslations[$loc->code])) {
-                $displayName = $customNameTranslations[$loc->code];
-            }
-        }
-
-        // Fallback to group name if no custom name
-        if (empty($displayName)) {
-            $displayName = $group->translate($locale)?->name ?? $group->code;
-        }
-
-        return [
-            'service_attribute_group_id' => $pivotRelation->id,
-            'template_id'                => $group->id,
-            'pivot_uid'                  => $pivotRelation->pivot_uid,
-            'code'                       => $pivotRelation->custom_code ?? $group->code,
-            'name'                       => $displayName,
-            'display_name'               => $displayName,
-            'custom_name'                => $customNameTranslations,
-            'description'                => $group->translate($locale)?->description ?? '',
-            'group_type'                 => $group->group_type ?? 'general',
-            'sort_order'                 => $pivotRelation->sort_order ?? 0,
-            'is_notifiable'              => $pivotRelation->is_notifiable ?? false,
-            'supports_notification'      => $this->groupSupportsNotification($group),
-            'fields'                     => $fields,
-        ];
+        // Use Model method to convert to frontend format
+        return $pivotRelation->toArrayForFrontend();
     }
 
     /**
@@ -423,6 +304,7 @@ class ServiceGroupController extends Controller
 
         return $fields->some(function ($field) {
             $code = strtolower($field->code ?? '');
+
             return $code === 'id_number';
         });
     }
@@ -447,4 +329,3 @@ class ServiceGroupController extends Controller
         return false;
     }
 }
-

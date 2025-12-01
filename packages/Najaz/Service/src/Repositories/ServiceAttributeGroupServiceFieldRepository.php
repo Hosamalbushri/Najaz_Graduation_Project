@@ -347,7 +347,7 @@ class ServiceAttributeGroupServiceFieldRepository extends Repository
      * @param  int|null  $attributeTypeId
      * @return string
      */
-    protected function generateUniqueFieldCode(ServiceAttributeGroupService $pivotRelation, string $baseCode, ?int $attributeTypeId = null): string
+    public function generateUniqueFieldCode(ServiceAttributeGroupService $pivotRelation, string $baseCode, ?int $attributeTypeId = null): string
     {
         // Check if base code already exists
         $existingField = $this->findWhere([
@@ -459,15 +459,23 @@ class ServiceAttributeGroupServiceFieldRepository extends Repository
 
     /**
      * Prepare validation rules.
+     * 
+     * Returns Laravel validation rules as string (e.g., "mimes:pdf,doc,docx|max:2048")
+     * or as array format for JSON storage.
      *
      * @param  mixed  $rules
      * @param  string|null  $regex
      * @return array|null
      */
-    protected function prepareValidationRules($rules, $regex = null): ?array
+    public function prepareValidationRules($rules, $regex = null): ?array
     {
         if (is_array($rules)) {
-            return $rules ?: null;
+            // If it's already an array, check if it has 'validation' key
+            if (isset($rules['validation'])) {
+                return $rules;
+            }
+            // Otherwise, convert to string format
+            $rules = implode('|', array_filter($rules));
         }
 
         $formatted = is_string($rules) ? trim($rules) : null;
@@ -476,17 +484,112 @@ class ServiceAttributeGroupServiceFieldRepository extends Repository
             return null;
         }
 
-        if ($formatted === 'regex') {
-            $pattern = is_string($regex) ? trim($regex) : '';
+        // Handle Laravel validation rules format (e.g., "mimes:pdf,doc,docx|max:2048")
+        // Store as array with 'validation' key for JSON column
+        return ['validation' => $formatted];
+    }
 
-            if (! $pattern) {
-                return null;
-            }
-
-            return ['validation' => 'regex:'.$pattern];
+    /**
+     * Format field data for frontend response.
+     *
+     * @param  \Najaz\Service\Models\ServiceAttributeGroupServiceField  $field
+     * @param  string|null  $locale
+     * @return array
+     */
+    public function formatFieldForResponse($field, ?string $locale = null): array
+    {
+        if (! $field) {
+            throw new \Exception('Field not found');
         }
 
-        return ['validation' => $formatted];
+        if (! $locale) {
+            $locale = core()->getRequestedLocaleCode();
+        }
+
+        // Check if field is ServiceAttributeGroupServiceField (has options relationship)
+        $isServiceField = $field instanceof \Najaz\Service\Models\ServiceAttributeGroupServiceField;
+
+        // Ensure relations are loaded
+        if (! $field->relationLoaded('translations')) {
+            $field->load('translations');
+        }
+
+        if (! $field->relationLoaded('attributeType')) {
+            $field->load('attributeType.translations');
+        }
+
+        // Only load options if field is ServiceAttributeGroupServiceField
+        if ($isServiceField && ! $field->relationLoaded('options')) {
+            $field->load('options.translations');
+        }
+
+        $fieldTranslation = $field->translate($locale);
+        $attributeType = $field->attributeType;
+        $attributeTypeTranslation = $attributeType?->translate($locale);
+
+        // Get labels for all locales
+        $labels = [];
+        foreach (core()->getAllLocales() as $loc) {
+            $translation = $field->translate($loc->code);
+            $labels[$loc->code] = $translation?->label ?? '';
+        }
+
+        // Get options from service field options (only for ServiceAttributeGroupServiceField)
+        $options = [];
+        if ($isServiceField && $field->options) {
+            foreach ($field->options as $option) {
+                $optionLabels = [];
+                foreach (core()->getAllLocales() as $loc) {
+                    $optionTranslation = $option->translate($loc->code);
+                    $optionLabels[$loc->code] = $optionTranslation?->label ?? $option->admin_name ?? '';
+                }
+
+                $options[] = [
+                    'id'                               => $option->id,
+                    'uid'                              => "option_{$option->id}",
+                    'service_attribute_type_option_id' => $option->service_attribute_type_option_id ?? null,
+                    'code'                             => $option->code ?? $option->admin_name ?? '',
+                    'admin_name'                       => $option->admin_name ?? '',
+                    'labels'                           => $optionLabels,
+                    'sort_order'                       => $option->sort_order ?? 0,
+                    'is_custom'                        => $option->is_custom ?? true,
+                ];
+            }
+        } elseif (! $isServiceField && $attributeType && $attributeType->options) {
+            // For template fields, get options from attribute type
+            foreach ($attributeType->options as $option) {
+                $optionLabels = [];
+                foreach (core()->getAllLocales() as $loc) {
+                    $optionTranslation = $option->translate($loc->code);
+                    $optionLabels[$loc->code] = $optionTranslation?->label ?? $option->admin_name ?? $option->code ?? '';
+                }
+
+                $options[] = [
+                    'id'         => $option->id,
+                    'code'       => $option->code ?? $option->admin_name ?? '',
+                    'admin_name' => $option->admin_name ?? '',
+                    'labels'     => $optionLabels,
+                    'sort_order' => $option->sort_order ?? 0,
+                ];
+            }
+        }
+
+        return [
+            'id'                         => $field->id,
+            'service_attribute_field_id' => $field->id,
+            'template_field_id'          => $field->service_attribute_field_id ?? $field->id,
+            'code'                       => $field->code,
+            'label'                      => $fieldTranslation?->label ?? '',
+            'labels'                     => $labels,
+            'type'                       => $field->type,
+            'attribute_type_name'        => $attributeTypeTranslation?->name ?? $attributeType?->code ?? '',
+            'service_attribute_type_id'  => $field->service_attribute_type_id ?? null,
+            'validation_rules'           => $field->validation_rules ?? null,
+            'default_value'              => $field->default_value ?? null,
+            'is_required'                => $field->is_required ?? false,
+            'sort_order'                 => $field->sort_order ?? 0,
+            'options'                    => $options,
+        ];
     }
 }
 

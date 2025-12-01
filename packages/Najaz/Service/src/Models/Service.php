@@ -134,4 +134,150 @@ class Service extends TranslatableModel implements ServiceContract
 
         return parent::getFallbackLocale();
     }
+
+    /**
+     * Scope to load attribute groups with all required relations for edit page.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeWithAttributeGroupsForEdit($query)
+    {
+        return $query->with([
+            'attributeGroups.translations',
+            'attributeGroups.fields.translations',
+            'attributeGroups.fields.attributeType.translations',
+            'attributeGroups.fields.attributeType.options.translations',
+        ]);
+    }
+
+    /**
+     * Get attribute groups formatted for edit page.
+     *
+     * @param  string|null  $locale
+     * @return \Illuminate\Support\Collection
+     */
+    public function getAttributeGroupsForEdit(?string $locale = null): \Illuminate\Support\Collection
+    {
+        if (! $locale) {
+            $locale = core()->getRequestedLocaleCode();
+        }
+
+        // Ensure relations are loaded
+        if (! $this->relationLoaded('attributeGroups')) {
+            $this->load([
+                'attributeGroups.translations',
+                'attributeGroups.fields.translations',
+                'attributeGroups.fields.attributeType.translations',
+                'attributeGroups.fields.attributeType.options.translations',
+            ]);
+        }
+
+        // Load pivot relations with translations and fields
+        $pivotIds = $this->attributeGroups->pluck('pivot.id')->filter();
+        if ($pivotIds->isNotEmpty()) {
+            \Najaz\Service\Models\ServiceAttributeGroupService::with([
+                'translations',
+                'fields.translations',
+                'fields.attributeType.translations',
+                'fields.options.translations',
+            ])->whereIn('id', $pivotIds)->get();
+        }
+
+        return $this->attributeGroups;
+    }
+
+    /**
+     * Get formatted attribute groups attribute.
+     *
+     * @return \Illuminate\Support\Collection
+     */
+    public function getFormattedAttributeGroupsAttribute(): \Illuminate\Support\Collection
+    {
+        return $this->getAttributeGroupsForEdit();
+    }
+
+    /**
+     * Get service data prepared for Vue component.
+     *
+     * @param  string|null  $locale
+     * @return array
+     */
+    public function getDataForVue(?string $locale = null): array
+    {
+        if (! $locale) {
+            $locale = core()->getRequestedLocaleCode();
+        }
+
+        $repository = app(\Najaz\Service\Repositories\ServiceRepository::class);
+        return $repository->prepareServiceForVue($this, $locale);
+    }
+
+    /**
+     * Get all available attribute groups for selection.
+     *
+     * @param  string|null  $locale
+     * @return \Illuminate\Support\Collection
+     */
+    public function getAllAttributeGroups(?string $locale = null): \Illuminate\Support\Collection
+    {
+        $repository = app(\Najaz\Service\Repositories\ServiceRepository::class);
+        return $repository->getAllAttributeGroups($locale);
+    }
+
+    /**
+     * Get all attribute types for field management.
+     *
+     * @param  string|null  $locale
+     * @return \Illuminate\Support\Collection
+     */
+    public function getAttributeTypes(?string $locale = null): \Illuminate\Support\Collection
+    {
+        $repository = app(\Najaz\Service\Repositories\ServiceRepository::class);
+        return $repository->getAttributeTypes($locale);
+    }
+
+    /**
+     * Get validations enum values.
+     *
+     * @return array
+     */
+    public static function getValidations(): array
+    {
+        $repository = app(\Najaz\Service\Repositories\ServiceRepository::class);
+        return $repository::getValidations();
+    }
+
+    /**
+     * Get validation labels.
+     *
+     * @return array
+     */
+    public static function getValidationLabels(): array
+    {
+        $repository = app(\Najaz\Service\Repositories\ServiceRepository::class);
+        return $repository::getValidationLabels();
+    }
+
+    /**
+     * Get file extensions.
+     *
+     * @return array
+     */
+    public static function getFileExtensions(): array
+    {
+        $repository = app(\Najaz\Service\Repositories\ServiceRepository::class);
+        return $repository::getFileExtensions();
+    }
+
+    /**
+     * Get citizen type tree.
+     *
+     * @return array
+     */
+    public static function getCitizenTypeTree(): array
+    {
+        $repository = app(\Najaz\Service\Repositories\ServiceRepository::class);
+        return $repository::getCitizenTypeTree();
+    }
 }

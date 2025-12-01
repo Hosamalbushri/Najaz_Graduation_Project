@@ -67,12 +67,16 @@ class ServiceGroupFieldController extends Controller
             $value => trans("Admin::app.services.attribute-types.index.datagrid.validation-{$value}"),
         ])->toArray();
 
+        // Get file extensions
+        $fileExtensions = ServiceRepository::getFileExtensions();
+
         return response()->view('admin::services.groups.fields._modal', [
             'service'          => $service,
             'pivotRelation'    => $pivotRelation,
             'attributeTypes'   => $attributeTypes,
             'validations'      => $validations,
             'validationLabels' => $validationLabels,
+            'fileExtensions'   => $fileExtensions,
         ]);
     }
 
@@ -146,6 +150,9 @@ class ServiceGroupFieldController extends Controller
         $validationLabels = collect($validations)->mapWithKeys(fn ($value) => [
             $value => trans("Admin::app.services.attribute-types.index.datagrid.validation-{$value}"),
         ])->toArray();
+
+        // Get file extensions
+        $fileExtensions = ServiceRepository::getFileExtensions();
 
         // Convert pivotRelation to array with fields
         $pivotRelationArray = [
@@ -229,6 +236,7 @@ class ServiceGroupFieldController extends Controller
             'attributeTypes'   => $attributeTypes,
             'validations'      => $validations,
             'validationLabels' => $validationLabels,
+            'fileExtensions'   => $fileExtensions,
         ]);
     }
 
@@ -248,8 +256,8 @@ class ServiceGroupFieldController extends Controller
 
         $this->validate(request(), [
             'service_attribute_type_id' => 'required|exists:service_attribute_types,id',
-            'label'                     => 'required|array',
-            'label.*'                   => 'required|string|max:255',
+            'label'                     => 'required|string|max:255',
+            'locale'                    => 'required|string',
             'sort_order'                => 'nullable|integer',
             'is_required'               => 'nullable|boolean',
             'validation_rules'          => 'nullable|string',
@@ -273,14 +281,14 @@ class ServiceGroupFieldController extends Controller
         $baseFieldCode = $groupCode ? $groupCode . '_' . $originalFieldCode : $originalFieldCode;
         
         // Generate unique field code by checking for duplicates and adding sequential number if needed
-        $fieldCode = $this->generateUniqueFieldCode($pivotRelation, $baseFieldCode, $attributeType->id);
+        $fieldCode = $this->groupServiceFieldRepository->generateUniqueFieldCode($pivotRelation, $baseFieldCode, $attributeType->id);
 
         $fieldData = [
             'service_attribute_group_service_id' => $pivotId,
             'service_attribute_type_id'          => $attributeType->id,
             'code'                               => $fieldCode,
             'type'                               => request()->input('type', $attributeType->type),
-            'validation_rules'                   => $this->prepareValidationRules(
+            'validation_rules'                   => $this->groupServiceFieldRepository->prepareValidationRules(
                 request()->input('validation_rules', $attributeType->validation),
                 $attributeType->regex
             ),
@@ -292,12 +300,12 @@ class ServiceGroupFieldController extends Controller
         $field = $this->groupServiceFieldRepository->create($fieldData);
 
         // Save translations
-        foreach (core()->getAllLocales() as $locale) {
-            $translationData = [
-                'label' => request()->input("label.{$locale->code}"),
-            ];
-
-            $field->translateOrNew($locale->code)->fill($translationData)->save();
+        $locale = request()->input('locale');
+        $label = request()->input('label');
+        
+        // Save label for the current locale
+        if ($locale && $label) {
+            $field->translateOrNew($locale)->fill(['label' => $label])->save();
         }
 
         return new JsonResponse([
@@ -410,8 +418,8 @@ class ServiceGroupFieldController extends Controller
         }
 
         $this->validate(request(), [
-            'label'           => 'required|array',
-            'label.*'         => 'required|string|max:255',
+            'label'           => 'required|string|max:255',
+            'locale'          => 'required|string',
             'sort_order'      => 'nullable|integer',
             'is_required'     => 'nullable|boolean',
             'validation_rules' => 'nullable|string',
@@ -425,7 +433,7 @@ class ServiceGroupFieldController extends Controller
             'code'             => $field->code,
             'sort_order'       => request()->input('sort_order', $field->sort_order),
             'is_required'      => request()->boolean('is_required', $field->is_required),
-            'validation_rules' => $this->prepareValidationRules(
+            'validation_rules' => $this->groupServiceFieldRepository->prepareValidationRules(
                 request()->input('validation_rules', $field->validation_rules),
                 $attributeType->regex ?? null
             ),
@@ -435,18 +443,24 @@ class ServiceGroupFieldController extends Controller
         $this->groupServiceFieldRepository->update($data, $fieldId);
 
         // Update translations
-        $field = $field->fresh();
-        foreach (core()->getAllLocales() as $locale) {
-            $translationData = [
-                'label' => request()->input("label.{$locale->code}"),
-            ];
-
-            $field->translateOrNew($locale->code)->fill($translationData)->save();
+        $locale = request()->input('locale');
+        $label = request()->input('label');
+        
+        // Save label for the current locale
+        if ($locale && $label) {
+            $field->translateOrNew($locale)->fill(['label' => $label])->save();
         }
+
+        // Reload the field with all required relations (same as groups)
+        $field = $this->groupServiceFieldRepository->with([
+            'translations',
+            'attributeType.translations',
+            'options.translations',
+        ])->findOrFail($fieldId);
 
         return new JsonResponse([
             'message' => trans('Admin::app.services.attribute-groups.attribute-group-fields.update-success'),
-            'data'    => $field->fresh(['attributeType', 'translations']),
+            'data'    => $this->groupServiceFieldRepository->formatFieldForResponse($field),
         ]);
     }
 
@@ -508,70 +522,6 @@ class ServiceGroupFieldController extends Controller
         ]);
     }
 
-    /**
-     * Prepare validation rules.
-     */
-    protected function prepareValidationRules($rules, $regex = null): ?array
-    {
-        if (is_array($rules)) {
-            return $rules ?: null;
-        }
-
-        $formatted = is_string($rules) ? trim($rules) : null;
-
-        if (! $formatted) {
-            return null;
-        }
-
-        if ($formatted === 'regex') {
-            $pattern = is_string($regex) ? trim($regex) : '';
-
-            if (! $pattern) {
-                return null;
-            }
-
-            return ['validation' => 'regex:'.$pattern];
-        }
-
-        return ['validation' => $formatted];
-    }
-
-    /**
-     * Generate a unique field code by checking for duplicates and adding sequential number if needed.
-     *
-     * @param  \Najaz\Service\Models\ServiceAttributeGroupService  $pivotRelation
-     * @param  string  $baseCode
-     * @param  int|null  $attributeTypeId
-     * @return string
-     */
-    protected function generateUniqueFieldCode(ServiceAttributeGroupService $pivotRelation, string $baseCode, ?int $attributeTypeId = null): string
-    {
-        // Check if base code already exists
-        $existingField = $this->groupServiceFieldRepository->findWhere([
-            'service_attribute_group_service_id' => $pivotRelation->id,
-            'code'                               => $baseCode,
-        ])->first();
-
-        // If base code doesn't exist, return it
-        if (! $existingField) {
-            return $baseCode;
-        }
-
-        // Add sequential number if code exists
-        $counter = 2;
-        $uniqueCode = $baseCode . '_' . $counter;
-
-        // Keep incrementing until we find a unique code
-        while ($this->groupServiceFieldRepository->findWhere([
-            'service_attribute_group_service_id' => $pivotRelation->id,
-            'code'                               => $uniqueCode,
-        ])->first()) {
-            $counter++;
-            $uniqueCode = $baseCode . '_' . $counter;
-        }
-
-        return $uniqueCode;
-    }
 
     /**
      * Reorder fields within a service attribute group.

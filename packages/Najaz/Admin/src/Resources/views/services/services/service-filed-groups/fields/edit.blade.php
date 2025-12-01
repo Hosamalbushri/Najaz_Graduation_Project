@@ -1,13 +1,21 @@
+@php
+    $currentLocale = core()->getRequestedLocale();
+@endphp
+
 @pushOnce('scripts')
     <script
         type="text/x-template"
         id="v-service-data-group-field-edit-template"
     >
-        <div>
-            <x-admin::modal
-                ref="editFieldModal"
-                @toggle="handleModalToggle"
-            >
+        <x-admin::form
+            v-slot="{ meta, errors, handleSubmit }"
+            as="div"
+        >
+            <form @submit="handleSubmit($event, update)">
+                <x-admin::modal
+                    ref="editFieldModal"
+                    @toggle="handleModalToggle"
+                >
                 <x-slot:header>
                     <p class="text-lg font-bold text-gray-800 dark:text-white">
                         @lang('Admin::app.services.attribute-groups.edit.edit-field-title')
@@ -25,7 +33,7 @@
                                 type="select"
                                 name="service_attribute_type_id"
                                 rules="required"
-                                v-model="fieldData.service_attribute_type_id"
+                                ::value="fieldData?.service_attribute_type_id"
                                 :label="trans('Admin::app.services.attribute-groups.attribute-group-fields.field-type')"
                                 :disabled="true"
                                 class="cursor-not-allowed bg-gray-100 dark:bg-gray-800"
@@ -41,45 +49,36 @@
                             </x-admin::form.control-group.control>
                         </x-admin::form.control-group>
 
+                        <!-- Hidden field for code (not editable) -->
+                        <x-admin::form.control-group.control
+                            type="hidden"
+                            name="code"
+                            ::value="fieldData?.code"
+                        />
+
                         <x-admin::form.control-group>
                             <x-admin::form.control-group.label class="required">
-                                @lang('Admin::app.services.services.groups.fields.edit.field-code')
+                                @lang('Admin::app.services.attribute-groups.edit.field-label') ({{ $currentLocale->name }})
                             </x-admin::form.control-group.label>
 
                             <x-admin::form.control-group.control
                                 type="text"
-                                name="code"
+                                name="label"
                                 rules="required"
-                                v-model="fieldData.code"
-                                :label="trans('Admin::app.services.services.groups.fields.edit.field-code')"
-                                :readonly="true"
-                                class="cursor-not-allowed bg-gray-100 dark:bg-gray-800"
+                                ::value="fieldLabel"
+                                :label="trans('Admin::app.services.attribute-groups.edit.field-label')"
+                                placeholder="{{ trans('Admin::app.services.attribute-groups.edit.field-label') }} ({{ $currentLocale->name }})"
                             />
+
+                            <x-admin::form.control-group.error control-name="label" />
                         </x-admin::form.control-group>
 
-                        <div class="grid gap-4 md:grid-cols-2">
-                            <div
-                                v-for="locale in locales"
-                                :key="`modal-${locale.code}`"
-                            >
-                                <x-admin::form.control-group>
-                                    <x-admin::form.control-group.label class="required">
-                                        @lang('Admin::app.services.attribute-groups.edit.field-label') (@{{ locale.name }})
-                                    </x-admin::form.control-group.label>
-
-                                    <x-admin::form.control-group.control
-                                        type="text"
-                                        ::name="`labels[${locale.code}]`"
-                                        rules="required"
-                                        v-model="fieldData.labels[locale.code]"
-                                        ::placeholder="locale.name"
-                                        ::label="`${trans('Admin::app.services.attribute-groups.edit.field-label')} (${locale.name})`"
-                                    />
-
-                                    <x-admin::form.control-group.error ::control-name="`labels[${locale.code}]`" />
-                                </x-admin::form.control-group>
-                            </div>
-                        </div>
+                        <!-- Hidden field for current locale -->
+                        <x-admin::form.control-group.control
+                            type="hidden"
+                            name="locale"
+                            value="{{ $currentLocale->code }}"
+                        />
 
                         <x-admin::form.control-group v-if="canHaveDefaultValue">
                             <x-admin::form.control-group.label>
@@ -89,7 +88,7 @@
                             <x-admin::form.control-group.control
                                 type="select"
                                 name="default_value"
-                                v-model="fieldData.default_value"
+                                ::value="fieldData?.default_value"
                             >
                                 <option value="">
                                     @lang('Admin::app.common.select')
@@ -139,31 +138,35 @@
                                 <x-admin::form.control-group.error control-name="validation_rules" />
                             </x-admin::form.control-group>
 
-                            <x-admin::form.control-group v-if="fieldData.validation_option === 'regex'">
-                                <x-admin::form.control-group.label>
-                                    @lang('Admin::app.services.attribute-groups.attribute-group-fields.validation-regex')
-                                </x-admin::form.control-group.label>
+                            <template v-if="showRegexField">
+                                <x-admin::form.control-group>
+                                    <x-admin::form.control-group.label>
+                                        @lang('Admin::app.services.attribute-groups.attribute-group-fields.validation-regex')
+                                    </x-admin::form.control-group.label>
 
-                                <x-admin::form.control-group.control
-                                    type="text"
-                                    name="validation_regex"
-                                    v-model="fieldData.validation_regex"
-                                    :placeholder="trans('Admin::app.services.attribute-groups.attribute-group-fields.validation-regex-placeholder')"
-                                />
-                            </x-admin::form.control-group>
+                                    <x-admin::form.control-group.control
+                                        type="text"
+                                        name="validation_regex"
+                                        ::value="fieldData?.validation_regex"
+                                        :placeholder="trans('Admin::app.services.attribute-groups.attribute-group-fields.validation-regex-placeholder')"
+                                    />
+                                </x-admin::form.control-group>
+                            </template>
 
-                            <x-admin::form.control-group v-if="fieldData.validation_option === 'custom'">
-                                <x-admin::form.control-group.label>
-                                    @lang('Admin::app.services.attribute-groups.attribute-group-fields.validation-custom-rule')
-                                </x-admin::form.control-group.label>
+                            <template v-if="showCustomField">
+                                <x-admin::form.control-group>
+                                    <x-admin::form.control-group.label>
+                                        @lang('Admin::app.services.attribute-groups.attribute-group-fields.validation-custom-rule')
+                                    </x-admin::form.control-group.label>
 
-                                <x-admin::form.control-group.control
-                                    type="text"
-                                    name="validation_custom"
-                                    v-model="fieldData.validation_custom"
-                                    :placeholder="trans('Admin::app.services.attribute-groups.attribute-group-fields.validation-rules-placeholder')"
-                                />
-                            </x-admin::form.control-group>
+                                    <x-admin::form.control-group.control
+                                        type="text"
+                                        name="validation_custom"
+                                        ::value="fieldData?.validation_custom"
+                                        :placeholder="trans('Admin::app.services.attribute-groups.attribute-group-fields.validation-rules-placeholder')"
+                                    />
+                                </x-admin::form.control-group>
+                            </template>
 
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                                 @lang('Admin::app.services.attribute-groups.attribute-group-fields.validation-rules-help')
@@ -179,7 +182,7 @@
                                 type="switch"
                                 name="is_required"
                                 value="1"
-                                v-model="fieldData.is_required"
+                                ::checked="fieldData?.is_required"
                             />
 
                             <x-admin::form.control-group.error control-name="is_required" />
@@ -188,6 +191,56 @@
                                 @lang('Admin::app.services.attribute-groups.attribute-group-fields.is-required-help')
                             </p>
                         </x-admin::form.control-group>
+
+                        <template v-if="canShowFileControls || canShowImageControls">
+                            <x-admin::form.control-group>
+                                <x-admin::form.control-group.label>
+                                    @lang('Admin::app.services.attribute-groups.attribute-group-fields.allowed-extensions')
+                                </x-admin::form.control-group.label>
+
+                                <x-admin::form.control-group.control
+                                    type="multiselect"
+                                    name="allowed_extensions"
+                                    v-model="allowedExtensions"
+                                    :label="trans('Admin::app.services.attribute-groups.attribute-group-fields.allowed-extensions')"
+                                >
+                                    <option
+                                        v-for="ext in availableExtensions"
+                                        :key="ext.value"
+                                        :value="ext.value"
+                                    >
+                                        @{{ ext.label }}
+                                    </option>
+                                </x-admin::form.control-group.control>
+
+                                <x-admin::form.control-group.error control-name="allowed_extensions" />
+
+                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    @lang('Admin::app.services.attribute-groups.attribute-group-fields.allowed-extensions-help')
+                                </p>
+                            </x-admin::form.control-group>
+
+                            <x-admin::form.control-group>
+                                <x-admin::form.control-group.label>
+                                    @lang('Admin::app.services.attribute-groups.attribute-group-fields.max-file-size')
+                                </x-admin::form.control-group.label>
+
+                                <x-admin::form.control-group.control
+                                    type="number"
+                                    name="max_file_size"
+                                    v-model="maxFileSize"
+                                    :placeholder="trans('Admin::app.services.attribute-groups.attribute-group-fields.max-file-size-placeholder')"
+                                    min="1"
+                                    step="1"
+                                />
+
+                                <x-admin::form.control-group.error control-name="max_file_size" />
+
+                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    @lang('Admin::app.services.attribute-groups.attribute-group-fields.max-file-size-help')
+                                </p>
+                            </x-admin::form.control-group>
+                        </template>
                     </div>
                 </x-slot:content>
 
@@ -197,22 +250,22 @@
                             button-type="button"
                             button-class="secondary-button"
                             :title="trans('Admin::app.common.cancel')"
-                            ::disabled="isSaving"
+                            ::disabled="isLoading"
                             @click="$refs.editFieldModal.close()"
                         />
 
                         <x-admin::button
-                            button-type="button"
+                            button-type="submit"
                             button-class="primary-button"
                             :title="trans('Admin::app.services.attribute-groups.edit.update-field-btn')"
-                            ::disabled="isSaving"
-                            ::loading="isSaving"
-                            @click="updateField"
+                            ::loading="isLoading"
+                            ::disabled="isLoading"
                         />
                     </div>
                 </x-slot:footer>
             </x-admin::modal>
-        </div>
+            </form>
+        </x-admin::form>
     </script>
 
     <script type="module">
@@ -249,7 +302,16 @@
         };
 
         const parseValidationRule = (value, options = []) => {
-            const stringValue = typeof value === 'string' ? value : (value?.validation || value?.rules || '');
+            // Handle JSON format: {"validation": "mimes:pdf,doc,docx|max:2048"}
+            let stringValue = '';
+            if (typeof value === 'string') {
+                stringValue = value;
+            } else if (value && typeof value === 'object') {
+                // If it's an object, extract the validation string
+                stringValue = value.validation || value.rules || '';
+            } else {
+                stringValue = '';
+            }
             const normalizedOptions = Array.isArray(options) ? options : [];
 
             if (!stringValue) {
@@ -258,37 +320,122 @@
                     option: '',
                     regex: '',
                     custom: '',
+                    allowed_extensions: [],
+                    max_file_size: '',
                 };
             }
 
+            // Parse Laravel validation rules format: mimes:pdf,doc,docx|max:2048
+            let allowedExtensions = [];
+            let maxFileSize = '';
+            let remainingRules = stringValue;
+
+            // Extract mimes rule
+            const mimesMatch = stringValue.match(/mimes:([^|]+)/);
+            if (mimesMatch) {
+                // Convert to array for v-model
+                allowedExtensions = mimesMatch[1].split(',').map(ext => ext.trim()).filter(ext => ext);
+                remainingRules = remainingRules.replace(/mimes:[^|]+(\||$)/g, '').trim();
+            }
+
+            // Extract max rule
+            const maxMatch = stringValue.match(/max:(\d+)/);
+            if (maxMatch) {
+                maxFileSize = maxMatch[1];
+                remainingRules = remainingRules.replace(/max:\d+(\||$)/g, '').trim();
+            }
+
+            // If we found file/image rules, return them
+            if (allowedExtensions.length > 0 || maxFileSize) {
+                // Reconstruct the validation string
+                const fileRules = [];
+                if (allowedExtensions.length > 0) {
+                    fileRules.push(`mimes:${allowedExtensions.join(',')}`);
+                }
+                if (maxFileSize) {
+                    fileRules.push(`max:${maxFileSize}`);
+                }
+                if (remainingRules) {
+                    fileRules.push(remainingRules);
+                }
+                return {
+                    value: fileRules.join('|'),
+                    option: '',
+                    regex: '',
+                    custom: '',
+                    allowed_extensions: allowedExtensions, // Already an array
+                    max_file_size: maxFileSize,
+                };
+            }
+
+            // Handle regex rules
             if (stringValue.startsWith('regex:')) {
                 return {
                     value: stringValue,
                     option: 'regex',
                     regex: stringValue.substring(6),
                     custom: '',
+                    allowed_extensions: [],
+                    max_file_size: '',
                 };
             }
 
+            // Handle standard validation options
             if (normalizedOptions.includes(stringValue)) {
                 return {
                     value: stringValue,
                     option: stringValue,
                     regex: '',
                     custom: '',
+                    allowed_extensions: [],
+                    max_file_size: '',
                 };
             }
 
+            // Handle custom rules
             return {
                 value: stringValue,
                 option: 'custom',
                 regex: '',
                 custom: stringValue,
+                allowed_extensions: [],
+                max_file_size: '',
             };
         };
 
         const formatValidationRuleValue = (field) => {
-            if (!field || !field.validation_option) {
+            if (!field) {
+                return '';
+            }
+
+            // Handle file/image specific rules - Laravel format
+            const fileRules = [];
+            if (field.allowed_extensions) {
+                // Handle both array and string formats
+                let extensions = [];
+                if (Array.isArray(field.allowed_extensions)) {
+                    extensions = field.allowed_extensions.filter(ext => ext && ext.trim());
+                } else if (typeof field.allowed_extensions === 'string') {
+                    extensions = field.allowed_extensions.split(',').map(ext => ext.trim()).filter(ext => ext);
+                }
+                if (extensions.length > 0) {
+                    fileRules.push(`mimes:${extensions.join(',')}`);
+                }
+            }
+            if (field.max_file_size) {
+                const maxSize = parseInt(field.max_file_size);
+                if (maxSize > 0) {
+                    fileRules.push(`max:${maxSize}`);
+                }
+            }
+
+            // If we have file/image rules, return them
+            if (fileRules.length > 0) {
+                return fileRules.join('|');
+            }
+
+            // Handle text validation rules
+            if (!field.validation_option) {
                 return '';
             }
             if (field.validation_option === 'regex') {
@@ -328,6 +475,10 @@
                     type: Object,
                     default: () => ({}),
                 },
+                fileExtensions: {
+                    type: Array,
+                    default: () => [],
+                },
                 locales: {
                     type: Array,
                     default: () => [],
@@ -337,15 +488,12 @@
             emits: ['field-updated'],
 
             data() {
-                const labels = {};
-                this.locales.forEach(locale => {
-                    labels[locale.code] = '';
-                });
-
                 return {
-                    isSaving: false,
+                    isLoading: false,
                     fieldData: null,
                     selectedAttributeType: null,
+                    allowedExtensions: [],
+                    maxFileSize: '',
                 };
             },
 
@@ -359,27 +507,15 @@
                     immediate: true,
                     deep: true,
                 },
-                'fieldData.validation_option'(value) {
-                    if (!this.fieldData) return;
-                    if (value !== 'regex') {
-                        this.fieldData.validation_regex = '';
-                    }
-                    if (value !== 'custom') {
-                        this.fieldData.validation_custom = '';
-                    }
-                    this.fieldData.validation_rules = formatValidationRuleValue(this.fieldData);
-                },
-                'fieldData.validation_regex'() {
-                    if (!this.fieldData) return;
-                    if (this.fieldData.validation_option === 'regex') {
-                        this.fieldData.validation_rules = formatValidationRuleValue(this.fieldData);
-                    }
-                },
-                'fieldData.validation_custom'() {
-                    if (!this.fieldData) return;
-                    if (this.fieldData.validation_option === 'custom') {
-                        this.fieldData.validation_rules = formatValidationRuleValue(this.fieldData);
-                    }
+                'fieldData.service_attribute_type_id': {
+                    handler(newTypeId) {
+                        if (newTypeId) {
+                            this.selectedAttributeType = this.getAttributeTypeInfo(newTypeId);
+                        } else {
+                            this.selectedAttributeType = null;
+                        }
+                    },
+                    immediate: true,
                 },
             },
 
@@ -388,12 +524,58 @@
                     return Array.isArray(this.attributeTypes) ? this.attributeTypes : [];
                 },
 
+                validationsList() {
+                    return Array.isArray(this.validations) ? this.validations : [];
+                },
+
+                availableExtensions() {
+                    return Array.isArray(this.fileExtensions) ? this.fileExtensions : [];
+                },
+
                 canShowValidationControls() {
-                    return this.supportsValidationForType(this.selectedAttributeType);
+                    if (!this.selectedAttributeType) {
+                        return false;
+                    }
+                    const supportedTypes = ['text', 'textarea', 'number', 'price', 'email', 'url'];
+                    return supportedTypes.includes(this.selectedAttributeType.type);
                 },
 
                 canHaveDefaultValue() {
                     return this.selectedAttributeType?.type === 'boolean';
+                },
+
+                showRegexField() {
+                    return this.fieldData?.validation_option === 'regex';
+                },
+
+                showCustomField() {
+                    return this.fieldData?.validation_option === 'custom';
+                },
+
+                canShowFileControls() {
+                    return this.selectedAttributeType?.type === 'file';
+                },
+
+                canShowImageControls() {
+                    return this.selectedAttributeType?.type === 'image';
+                },
+
+                fieldLabel() {
+                    if (!this.fieldData) return '';
+                    
+                    // Get current locale code from service locale
+                    const currentLocaleCode = '{{ $currentLocale->code }}';
+                    
+                    // Only return label if translation exists for current locale
+                    if (this.fieldData.labels && typeof this.fieldData.labels === 'object') {
+                        const label = this.fieldData.labels[currentLocaleCode];
+                        if (label && label.trim()) {
+                            return label;
+                        }
+                    }
+                    
+                    // Return empty if no translation for current locale
+                    return '';
                 },
             },
 
@@ -409,18 +591,20 @@
                         return;
                     }
 
-                    const labels = {};
-                    this.locales.forEach(locale => {
-                        if (field.labels && typeof field.labels === 'object') {
-                            labels[locale.code] = field.labels[locale.code] || '';
-                        } else if (field.label && locale.code === '{{ app()->getLocale() }}') {
-                            labels[locale.code] = field.label || '';
-                        } else {
-                            labels[locale.code] = '';
-                        }
-                    });
-
                     const parsedValidation = parseValidationRule(field.validation_rules, this.validations);
+
+                    // Extract labels object from field
+                    let labels = {};
+                    if (field.labels && typeof field.labels === 'object') {
+                        labels = field.labels;
+                    } else if (field.translations && Array.isArray(field.translations)) {
+                        // Convert translations array to labels object
+                        field.translations.forEach(trans => {
+                            if (trans.locale && trans.label) {
+                                labels[trans.locale] = trans.label;
+                            }
+                        });
+                    }
 
                     this.fieldData = {
                         id: field.id,
@@ -436,16 +620,15 @@
                         validation_rules: parsedValidation.value || '',
                     };
 
+                    // Set file/image specific fields
+                    this.allowedExtensions = Array.isArray(parsedValidation.allowed_extensions) 
+                        ? parsedValidation.allowed_extensions 
+                        : (parsedValidation.allowed_extensions ? [parsedValidation.allowed_extensions] : []);
+                    this.maxFileSize = parsedValidation.max_file_size || '';
+
                     this.selectedAttributeType = this.getAttributeTypeInfo(this.fieldData.service_attribute_type_id);
                 },
 
-                supportsValidationForType(attributeType) {
-                    if (!attributeType) {
-                        return false;
-                    }
-                    const supportedTypes = ['text', 'textarea', 'number', 'price', 'email', 'url'];
-                    return supportedTypes.includes(attributeType.type);
-                },
 
                 translateValidationOption(option) {
                     if (!option) {
@@ -467,7 +650,7 @@
                     if (!attributeType) return '';
                     if (attributeType.name) return attributeType.name;
                     if (!attributeType.translations || !Array.isArray(attributeType.translations)) return attributeType.code || '';
-                    const currentLocale = '{{ app()->getLocale() }}';
+                    const currentLocale = '{{ $currentLocale->code }}';
                     const translation = attributeType.translations.find(t => t.locale === currentLocale);
                     if (translation && translation.name) {
                         return translation.name;
@@ -478,12 +661,11 @@
                     return attributeType.code || '';
                 },
 
-                async updateField() {
+                async update(params, { setErrors }) {
                     if (!this.fieldData || !this.fieldData.id) {
                         return;
                     }
 
-                    // Validate pivotId
                     if (!this.pivotId) {
                         this.$emitter.emit('add-flash', {
                             type: 'error',
@@ -492,40 +674,31 @@
                         return;
                     }
 
-                    // Validate
-                    let hasLabel = false;
-                    for (const locale of this.locales) {
-                        if (this.fieldData.labels[locale.code] && this.fieldData.labels[locale.code].trim()) {
-                            hasLabel = true;
-                            break;
-                        }
-                    }
-
-                    if (!hasLabel) {
-                        this.$emitter.emit('add-flash', {
-                            type: 'warning',
-                            message: "@lang('Admin::app.services.services.attribute-groups.field-label-required')",
-                        });
-                        return;
-                    }
-
-                    this.isSaving = true;
+                    this.isLoading = true;
 
                     try {
-                        const validationRule = formatValidationRuleValue(this.fieldData);
-                        this.fieldData.validation_rules = validationRule;
-
+                        // Merge params with file/image specific fields
+                        const paramsWithFileData = {
+                            ...params,
+                            allowed_extensions: this.allowedExtensions,
+                            max_file_size: this.maxFileSize,
+                        };
+                        const validationRule = formatValidationRuleValue(paramsWithFileData);
                         const fieldPayload = {
                             service_attribute_type_id: this.fieldData.service_attribute_type_id,
-                            label: this.fieldData.labels,
+                            label: params.label,
+                            locale: params.locale || '{{ $currentLocale->code }}',
                             code: this.fieldData.code,
-                            sort_order: this.fieldData.sort_order || 0,
-                            is_required: normalizeBoolean(this.fieldData.is_required),
+                            sort_order: params.sort_order || this.fieldData.sort_order || 0,
+                            is_required: normalizeBoolean(params.is_required),
                             validation_rules: validationRule,
-                            default_value: normalizeDefaultValue(this.fieldData.default_value),
+                            default_value: normalizeDefaultValue(params.default_value),
                         };
 
-                        const url = `{{ url('admin/services') }}/${this.serviceId}/groups/${this.pivotId}/fields/${this.fieldData.id}`;
+                        const url = `{{ route('admin.services.groups.fields.update', ['serviceId' => ':serviceId', 'pivotId' => ':pivotId', 'fieldId' => ':fieldId']) }}`
+                            .replace(':serviceId', this.serviceId)
+                            .replace(':pivotId', this.pivotId)
+                            .replace(':fieldId', this.fieldData.id);
                         const response = await this.$axios.put(url, fieldPayload);
 
                         this.$emitter.emit('add-flash', {
@@ -537,6 +710,10 @@
 
                         this.$refs.editFieldModal.close();
                     } catch (error) {
+                        if (error.response?.data?.errors) {
+                            setErrors(error.response.data.errors);
+                        }
+
                         const message = error.response?.data?.message || 
                             error.message || 
                             "@lang('Admin::app.services.services.groups.fields.error-saving')";
@@ -546,7 +723,7 @@
                             message: message,
                         });
                     } finally {
-                        this.isSaving = false;
+                        this.isLoading = false;
                     }
                 },
 
