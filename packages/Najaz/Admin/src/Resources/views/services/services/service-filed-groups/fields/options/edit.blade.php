@@ -1,84 +1,94 @@
+@php
+    $currentLocale = core()->getRequestedLocale();
+@endphp
+
 @pushOnce('scripts')
     <script
         type="text/x-template"
         id="v-service-data-group-field-option-edit-template"
     >
-        <div>
-            <x-admin::modal
-                ref="editOptionModal"
-                @toggle="handleModalToggle"
-            >
-                <x-slot:header>
-                    <p class="text-lg font-bold text-gray-800 dark:text-white">
-                        @lang('Admin::app.services.services.groups.fields.options.edit-option')
-                    </p>
-                </x-slot:header>
+        <x-admin::form
+            v-slot="{ meta, errors, handleSubmit }"
+            as="div"
+        >
+            <form @submit="handleSubmit($event, update)">
+                <x-admin::modal
+                    ref="editOptionModal"
+                    @toggle="handleModalToggle"
+                >
+                    <x-slot:header>
+                        <p class="text-lg font-bold text-gray-800 dark:text-white">
+                            @lang('Admin::app.services.services.groups.fields.options.edit-option')
+                        </p>
+                    </x-slot:header>
 
-                <x-slot:content>
-                    <x-admin::form.control-group>
-                        <x-admin::form.control-group.label class="required">
-                            @lang('Admin::app.services.services.groups.fields.options.admin-name')
-                        </x-admin::form.control-group.label>
-
-                        <x-admin::form.control-group.control
-                            type="text"
-                            name="option_admin_name"
-                            rules="required"
-                            v-model="optionData.admin_name"
-                            :label="trans('Admin::app.services.services.groups.fields.options.admin-name')"
-                            ::placeholder="trans('Admin::app.services.services.groups.fields.options.admin-name-placeholder')"
-                        />
-
-                        <x-admin::form.control-group.error control-name="option_admin_name" />
-                    </x-admin::form.control-group>
-
-                    <div class="grid gap-4 md:grid-cols-2">
-                        <div
-                            v-for="locale in locales"
-                            :key="`option-label-${locale.code}`"
-                        >
+                    <x-slot:content>
+                        <div v-if="optionData">
                             <x-admin::form.control-group>
                                 <x-admin::form.control-group.label class="required">
-                                    @lang('Admin::app.services.services.groups.fields.options.label') (@{{ locale.name }})
+                                    @lang('Admin::app.services.services.groups.fields.options.admin-name')
                                 </x-admin::form.control-group.label>
 
                                 <x-admin::form.control-group.control
                                     type="text"
-                                    ::name="`option_labels[${locale.code}]`"
+                                    name="admin_name"
                                     rules="required"
-                                    v-model="optionData.labels[locale.code]"
-                                    ::label="locale.name"
-                                    ::placeholder="locale.name"
+                                    ::value="optionData?.admin_name"
+                                    :label="trans('Admin::app.services.services.groups.fields.options.admin-name')"
+                                    :placeholder="trans('Admin::app.services.services.groups.fields.options.admin-name-placeholder')"
                                 />
 
-                                <x-admin::form.control-group.error ::control-name="`option_labels[${locale.code}]`" />
+                                <x-admin::form.control-group.error control-name="admin_name" />
                             </x-admin::form.control-group>
+
+                            <x-admin::form.control-group>
+                                <x-admin::form.control-group.label class="required">
+                                    @lang('Admin::app.services.services.groups.fields.options.label') ({{ $currentLocale->name }})
+                                </x-admin::form.control-group.label>
+
+                                <x-admin::form.control-group.control
+                                    type="text"
+                                    name="label"
+                                    rules="required"
+                                    ::value="optionLabel"
+                                    :label="trans('Admin::app.services.services.groups.fields.options.label')"
+                                    placeholder="{{ trans('Admin::app.services.services.groups.fields.options.label') }} ({{ $currentLocale->name }})"
+                                />
+
+                                <x-admin::form.control-group.error control-name="label" />
+                            </x-admin::form.control-group>
+
+                            <!-- Hidden field for current locale -->
+                            <x-admin::form.control-group.control
+                                type="hidden"
+                                name="locale"
+                                value="{{ $currentLocale->code }}"
+                            />
                         </div>
-                    </div>
-                </x-slot:content>
+                    </x-slot:content>
 
-                <x-slot:footer>
-                    <div class="flex items-center justify-end gap-2">
-                        <button
-                            type="button"
-                            class="secondary-button"
-                            @click="closeModal"
-                        >
-                            @lang('Admin::app.common.cancel')
-                        </button>
+                    <x-slot:footer>
+                        <div class="flex flex-wrap items-center justify-end gap-2">
+                            <x-admin::button
+                                button-type="button"
+                                button-class="secondary-button"
+                                :title="trans('Admin::app.common.cancel')"
+                                ::disabled="isLoading"
+                                @click="$refs.editOptionModal.close()"
+                            />
 
-                        <button
-                            type="button"
-                            class="primary-button"
-                            @click="updateOption"
-                            :disabled="isSaving"
-                        >
-                            @lang('Admin::app.services.services.groups.fields.options.update-option')
-                        </button>
-                    </div>
-                </x-slot:footer>
-            </x-admin::modal>
-        </div>
+                            <x-admin::button
+                                button-type="submit"
+                                button-class="primary-button"
+                                :title="trans('Admin::app.services.services.groups.fields.options.update-option')"
+                                ::loading="isLoading"
+                                ::disabled="isLoading"
+                            />
+                        </div>
+                    </x-slot:footer>
+                </x-admin::modal>
+            </form>
+        </x-admin::form>
     </script>
 
     <script type="module">
@@ -108,69 +118,35 @@
 
             data() {
                 return {
+                    isLoading: false,
                     field: null,
-                    optionData: {
-                        id: null,
-                        admin_name: '',
-                        labels: {},
-                        sort_order: 0,
-                        service_attribute_type_option_id: null,
-                    },
-                    isSaving: false,
+                    optionData: null,
                 };
             },
 
+            computed: {
+                optionLabel() {
+                    if (!this.optionData || !this.optionData.labels) {
+                        return '';
+                    }
+                    const currentLocaleCode = '{{ $currentLocale->code }}';
+                    return this.optionData.labels[currentLocaleCode] || '';
+                },
+            },
+
             methods: {
-                openModal(data) {
-                    this.field = data.field;
-                    const option = data.option || {};
-                    
-                    // Load option data
-                    this.optionData = {
-                        id: option.id || null,
-                        admin_name: option.admin_name || '',
-                        labels: {},
-                        sort_order: option.sort_order || 0,
-                        service_attribute_type_option_id: option.service_attribute_type_option_id || null,
-                    };
-
-                    // Initialize labels for all locales from option
-                    const localesArray = Array.isArray(this.locales) ? this.locales : [];
-                    localesArray.forEach(locale => {
-                        this.optionData.labels[locale.code] = option.labels?.[locale.code] || '';
-                    });
-
-                    this.$refs.editOptionModal.open();
-                },
-
-                closeModal() {
-                    this.$refs.editOptionModal.close();
-                },
-
                 handleModalToggle(isOpen) {
                     if (!isOpen) {
-                        this.resetForm();
+                        // Keep data loaded for re-opening
                     }
                 },
 
-                resetForm() {
-                    this.field = null;
-                    this.optionData = {
-                        id: null,
-                        admin_name: '',
-                        labels: {},
-                        sort_order: 0,
-                        service_attribute_type_option_id: null,
-                    };
-                    const localesArray = Array.isArray(this.locales) ? this.locales : [];
-                    localesArray.forEach(locale => {
-                        this.optionData.labels[locale.code] = '';
-                    });
-                    this.isSaving = false;
-                },
-
-                async updateOption() {
-                    if (!this.$refs.editOptionModal.validate()) {
+                async update(params, { setErrors }) {
+                    if (!this.optionData || !this.optionData.id) {
+                        this.$emitter.emit('add-flash', {
+                            type: 'error',
+                            message: "@lang('Admin::app.services.services.groups.fields.options.option-id-required')",
+                        });
                         return;
                     }
 
@@ -182,22 +158,15 @@
                         return;
                     }
 
-                    if (!this.optionData.id) {
-                        this.$emitter.emit('add-flash', {
-                            type: 'error',
-                            message: "@lang('Admin::app.services.services.groups.fields.options.option-id-required')",
-                        });
-                        return;
-                    }
-
-                    this.isSaving = true;
+                    this.isLoading = true;
 
                     try {
                         const payload = {
-                            admin_name: this.optionData.admin_name,
-                            label: this.optionData.labels,
-                            sort_order: this.optionData.sort_order,
-                            service_attribute_type_option_id: this.optionData.service_attribute_type_option_id,
+                            admin_name: params.admin_name,
+                            label: params.label,
+                            locale: params.locale || '{{ $currentLocale->code }}',
+                            sort_order: this.optionData.sort_order || 0,
+                            service_attribute_type_option_id: this.optionData.service_attribute_type_option_id || null,
                         };
 
                         const url = `{{ url('admin/services') }}/${this.serviceId}/groups/${this.pivotId}/fields/${this.field.id}/options/${this.optionData.id}`;
@@ -208,9 +177,13 @@
                             message: response.data?.message || "@lang('Admin::app.services.services.groups.fields.options.update-success')",
                         });
 
-                        this.$emit('option-updated', response.data?.data || response.data);
-                        this.closeModal();
+                        this.$emit('option-updated', response.data?.data || this.optionData);
+                        this.$refs.editOptionModal.close();
                     } catch (error) {
+                        if (error.response?.data?.errors) {
+                            setErrors(error.response.data.errors);
+                        }
+
                         const message = error.response?.data?.message ||
                             error.response?.data?.error ||
                             error.message ||
@@ -221,8 +194,24 @@
                             message: message,
                         });
                     } finally {
-                        this.isSaving = false;
+                        this.isLoading = false;
                     }
+                },
+
+                openModal(data) {
+                    this.field = data.field;
+                    const option = data.option || {};
+                    
+                    // Load option data
+                    this.optionData = {
+                        id: option.id || null,
+                        admin_name: option.admin_name || '',
+                        labels: option.labels || {},
+                        sort_order: option.sort_order || 0,
+                        service_attribute_type_option_id: option.service_attribute_type_option_id || null,
+                    };
+
+                    this.$refs.editOptionModal.open();
                 },
             },
         });

@@ -39,8 +39,8 @@ class ServiceGroupFieldOptionController extends Controller
 
         $this->validate(request(), [
             'admin_name' => 'required|string|max:255',
-            'label' => 'required|array',
-            'label.*' => 'required|string|max:255',
+            'label' => 'required|string|max:255',
+            'locale' => 'required|string',
             'service_attribute_type_option_id' => 'nullable|exists:service_attribute_type_options,id',
             'sort_order' => 'nullable|integer',
         ]);
@@ -48,21 +48,44 @@ class ServiceGroupFieldOptionController extends Controller
         DB::beginTransaction();
 
         try {
+            $locale = request()->input('locale');
+            $label = request()->input('label');
+
             $optionData = [
                 'admin_name' => request()->input('admin_name'),
                 'sort_order' => request()->input('sort_order', 0),
                 'service_attribute_type_option_id' => request()->input('service_attribute_type_option_id'),
                 'is_custom' => !request()->has('service_attribute_type_option_id'),
-                'label' => request()->input('label', []),
+                'label' => $label,
+                'locale' => $locale,
             ];
 
             $option = $this->fieldOptionRepository->persistOption($field, $optionData);
 
             DB::commit();
 
+            // Format option data with labels for all locales
+            $allLocales = core()->getAllLocales();
+            $optionLabels = [];
+            foreach ($allLocales as $locale) {
+                $translation = $option->fresh()->translate($locale->code);
+                $optionLabels[$locale->code] = $translation?->label ?? $option->admin_name ?? '';
+            }
+
+            $formattedOption = [
+                'id' => $option->id,
+                'uid' => "option_{$option->id}",
+                'service_attribute_type_option_id' => $option->service_attribute_type_option_id,
+                'admin_name' => $option->admin_name,
+                'code' => $option->admin_name,
+                'labels' => $optionLabels,
+                'sort_order' => $option->sort_order ?? 0,
+                'is_custom' => $option->is_custom ?? false,
+            ];
+
             return new JsonResponse([
                 'message' => trans('Admin::app.services.services.groups.fields.options.create-success'),
-                'data' => $option->load('translations'),
+                'data' => $formattedOption,
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -99,8 +122,8 @@ class ServiceGroupFieldOptionController extends Controller
 
         $this->validate(request(), [
             'admin_name' => 'required|string|max:255',
-            'label' => 'required|array',
-            'label.*' => 'required|string|max:255',
+            'label' => 'required|string|max:255',
+            'locale' => 'required|string',
             'sort_order' => 'nullable|integer',
         ]);
 
@@ -112,18 +135,38 @@ class ServiceGroupFieldOptionController extends Controller
                 'sort_order' => request()->input('sort_order', $option->sort_order),
             ], $optionId);
 
-            // Sync translations
-            foreach (core()->getAllLocales() as $locale) {
-                $option->translateOrNew($locale->code)->fill([
-                    'label' => request()->input("label.{$locale->code}", ''),
-                ])->save();
-            }
+            // Update translation for current locale only
+            $locale = request()->input('locale');
+            $label = request()->input('label');
+            
+            $option->translateOrNew($locale)->fill([
+                'label' => $label,
+            ])->save();
 
             DB::commit();
 
+            // Format option data with labels for all locales
+            $allLocales = core()->getAllLocales();
+            $optionLabels = [];
+            foreach ($allLocales as $locale) {
+                $translation = $option->fresh()->translate($locale->code);
+                $optionLabels[$locale->code] = $translation?->label ?? $option->admin_name ?? '';
+            }
+
+            $formattedOption = [
+                'id' => $option->id,
+                'uid' => "option_{$option->id}",
+                'service_attribute_type_option_id' => $option->service_attribute_type_option_id,
+                'admin_name' => $option->admin_name,
+                'code' => $option->admin_name,
+                'labels' => $optionLabels,
+                'sort_order' => $option->sort_order ?? 0,
+                'is_custom' => $option->is_custom ?? false,
+            ];
+
             return new JsonResponse([
                 'message' => trans('Admin::app.services.services.groups.fields.options.update-success'),
-                'data' => $option->fresh(['translations']),
+                'data' => $formattedOption,
             ]);
         } catch (\Exception $e) {
             DB::rollBack();

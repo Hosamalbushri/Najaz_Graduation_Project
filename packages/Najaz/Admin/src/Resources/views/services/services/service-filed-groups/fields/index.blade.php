@@ -22,73 +22,97 @@
                             @end="onFieldDragChange"
                     >
                         <template #item="{ element: field, index: fieldIndex }">
-                            <!-- Field with options: use accordion -->
-                            <x-admin::accordion
-                                    v-if="fieldRequiresOptions(field) && pivotId && field.id"
-                                    :isActive="false"
-                                    class="mb-2.5"
+                            <!-- Unified field design for all fields (with/without options) -->
+                            <div
+                                    class="mb-3 rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 transition-all hover:shadow-md hover:border-gray-300 dark:hover:border-gray-700 overflow-hidden"
                             >
-                                <x-slot:header>
-                                    <div class="flex items-center justify-between gap-4 w-full" @click.stop>
-                                        <div class="flex items-center gap-3 flex-1 min-w-0">
-                                            <i class="icon-drag cursor-grab text-xl text-gray-500 transition-all hover:text-gray-700 dark:text-gray-300 flex-shrink-0"
-                                               @click.stop></i>
+                                <!-- Field Header Section -->
+                                <div class="flex items-center justify-between gap-4 p-4">
+                                    <div class="flex items-center gap-3 flex-1 min-w-0">
+                                        <i class="icon-drag cursor-grab text-lg text-gray-400 transition-all hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 flex-shrink-0 hover:scale-110"></i>
 
-                                            <div class="flex flex-col gap-1 min-w-0 flex-1">
+                                        <div class="flex items-center gap-2.5 flex-shrink-0">
+                                            <div 
+                                                :class="fieldRequiresOptions(field) && pivotId && field.id
+                                                    ? 'bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-100 dark:border-purple-800/50'
+                                                    : 'bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border-blue-100 dark:border-blue-800/50'"
+                                                class="flex items-center justify-center w-9 h-9 rounded-lg border"
+                                            >
+                                                <i 
+                                                    :class="fieldRequiresOptions(field) && pivotId && field.id
+                                                        ? 'icon-list text-purple-600 dark:text-purple-400'
+                                                        : 'icon-attribute text-blue-600 dark:text-blue-400'"
+                                                    class="text-base"
+                                                ></i>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex flex-col gap-1.5 min-w-0 flex-1">
+                                            <div class="flex items-center gap-2 flex-wrap">
                                                 <p
                                                     v-if="getFieldDisplayName(field)"
-                                                    class="text-base font-semibold text-gray-800 dark:text-white mb-1 break-words"
+                                                    class="text-base font-semibold text-gray-800 dark:text-white break-words"
                                                 >
                                                     @{{ getFieldDisplayName(field) }}
                                                 </p>
 
-                                                <div class="flex items-center gap-2 flex-wrap">
-                                                    <span
-                                                        v-if="!hasFieldTranslationForCurrentLocale(field) && getFirstAvailableFieldTranslation(field)"
-                                                        class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800 dark:bg-gray-800 dark:text-gray-200"
-                                                    >
-                                                        @{{ getFirstAvailableFieldTranslation(field) }}
-                                                    </span>
+                                                <i
+                                                    v-if="normalizeBoolean(field.is_required)"
+                                                    class="icon-star text-red-600 dark:text-red-400 text-sm flex-shrink-0"
+                                                    title="@lang('Admin::app.services.attribute-groups.attribute-group-fields.is-required')"
+                                                ></i>
+                                            </div>
 
-                                                    <span
-                                                        v-if="normalizeBoolean(field.is_required)"
-                                                        class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/60 dark:text-red-200"
-                                                    >
-                                                        @lang('Admin::app.services.attribute-groups.attribute-group-fields.is-required')
-                                                    </span>
-                                                </div>
+                                            <div class="flex items-center gap-2 flex-wrap">
+                                                <span
+                                                    v-if="!hasFieldTranslationForCurrentLocale(field) && getFirstAvailableFieldTranslation(field)"
+                                                    class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800 dark:bg-gray-800 dark:text-gray-200"
+                                                >
+                                                    @{{ getFirstAvailableFieldTranslation(field) }}
+                                                </span>
+
+                                                <span
+                                                    v-if="field.options && field.options.length && !fieldRequiresOptions(field)"
+                                                    class="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-purple-100 dark:bg-purple-900/40 text-xs font-medium text-purple-700 dark:text-purple-300"
+                                                >
+                                                    @{{ field.options.length }}
+                                                </span>
                                             </div>
                                         </div>
-
-                                        <div class="flex items-center gap-2 flex-shrink-0">
-                                            <span
-                                                    v-if="pivotId && field.id"
-                                                    class="cursor-pointer text-blue-600 dark:text-blue-400 transition-all hover:text-blue-700 dark:hover:text-blue-300 hover:underline text-base font-semibold whitespace-nowrap"
-                                                    @click.stop="openEditFieldModal(field)"
-                                            >
-                                                @lang('Admin::app.services.attribute-groups.edit.edit-field-btn')
-                                            </span>
-
-                                            <span
-                                                    v-if="fieldRequiresOptions(field) && pivotId && field.id"
-                                                    class="cursor-pointer text-green-600 dark:text-green-400 transition-all hover:text-green-700 dark:hover:text-green-300 hover:underline text-base font-semibold whitespace-nowrap"
-                                                    @click.stop="openAddOptionModalForField(field)"
-                                            >
-                                                @lang('Admin::app.services.services.groups.fields.options.add-option')
-                                            </span>
-
-                                            <span
-                                                    v-if="pivotId && field.id"
-                                                    class="cursor-pointer text-red-600 dark:text-red-400 transition-all hover:text-red-700 dark:hover:text-red-300 hover:underline text-base font-semibold whitespace-nowrap"
-                                                    @click.stop="deleteField(field)"
-                                            >
-                                                @lang('Admin::app.services.attribute-groups.edit.delete-field-btn')
-                                            </span>
-                                        </div>
                                     </div>
-                                </x-slot:header>
 
-                                <x-slot:content>
+                                    <div class="flex items-center gap-2 flex-shrink-0">
+                                        <span
+                                                v-if="fieldRequiresOptions(field) && pivotId && field.id"
+                                                class="inline-flex items-center gap-1 cursor-pointer text-green-600 dark:text-green-400 transition-all hover:text-green-700 dark:hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 px-2.5 py-1.5 rounded-md text-sm font-medium whitespace-nowrap"
+                                            @click="openAddOptionModalForField(field)"
+                                        >
+                                            @lang('Admin::app.services.services.groups.fields.options.add-option')
+                                        </span>
+
+                                        <span
+                                                v-if="pivotId && field.id"
+                                                class="inline-flex items-center gap-1 cursor-pointer text-blue-600 dark:text-blue-400 transition-all hover:text-blue-700 dark:hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 px-2.5 py-1.5 rounded-md text-sm font-medium whitespace-nowrap"
+                                            @click="openEditFieldModal(field)"
+                                        >
+                                            @lang('Admin::app.services.attribute-groups.edit.edit-field-btn')
+                                        </span>
+
+                                        <span
+                                                v-if="pivotId && field.id"
+                                                class="inline-flex items-center gap-1 cursor-pointer text-red-600 dark:text-red-400 transition-all hover:text-red-700 dark:hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 px-2.5 py-1.5 rounded-md text-sm font-medium whitespace-nowrap"
+                                            @click="deleteField(field)"
+                                        >
+                                            @lang('Admin::app.services.attribute-groups.edit.delete-field-btn')
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Options Section (only for fields with options) -->
+                                <div
+                                        v-if="fieldRequiresOptions(field) && pivotId && field.id"
+                                        class="border-t border-gray-200 dark:border-gray-700 bg-gradient-to-br from-gray-50/80 to-purple-50/30 dark:from-gray-800/50 dark:to-purple-900/10"
+                                >
                                     <div class="p-4">
                                         <!-- Options Display Component -->
                                         <v-service-data-group-field-options-display
@@ -103,61 +127,6 @@
                                                 @option-reordered="() => onOptionReordered()"
                                                 :ref="`optionsDisplay${fieldIndex}`"
                                         ></v-service-data-group-field-options-display>
-                                    </div>
-                                </x-slot:content>
-                            </x-admin::accordion>
-
-                            <!-- Field without options: regular div -->
-                            <div
-                                    v-else
-                                    class="mb-2.5 rounded border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"
-                            >
-                                <div class="flex items-center justify-between gap-4 p-4">
-                                    <div class="flex items-center gap-3 flex-1 min-w-0">
-                                        <i class="icon-drag cursor-grab text-xl text-gray-500 transition-all hover:text-gray-700 dark:text-gray-300 flex-shrink-0"></i>
-
-                                        <div class="flex flex-col gap-1 min-w-0 flex-1">
-                                            <p
-                                                v-if="getFieldDisplayName(field)"
-                                                class="text-base font-semibold text-gray-800 dark:text-white mb-1 break-words"
-                                            >
-                                                @{{ getFieldDisplayName(field) }}
-                                            </p>
-
-                                            <div class="flex items-center gap-2 flex-wrap">
-                                                <span
-                                                    v-if="!hasFieldTranslationForCurrentLocale(field) && getFirstAvailableFieldTranslation(field)"
-                                                    class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800 dark:bg-gray-800 dark:text-gray-200"
-                                                >
-                                                    @{{ getFirstAvailableFieldTranslation(field) }}
-                                                </span>
-
-                                                <span
-                                                    v-if="normalizeBoolean(field.is_required)"
-                                                    class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/60 dark:text-red-200"
-                                                >
-                                                    @lang('Admin::app.services.attribute-groups.attribute-group-fields.is-required')
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="flex items-center gap-2 flex-shrink-0">
-                                        <span
-                                                v-if="pivotId && field.id"
-                                                class="cursor-pointer text-blue-600 dark:text-blue-400 transition-all hover:text-blue-700 dark:hover:text-blue-300 hover:underline text-base font-semibold whitespace-nowrap"
-                                                @click="openEditFieldModal(field)"
-                                        >
-                                            @lang('Admin::app.services.attribute-groups.edit.edit-field-btn')
-                                        </span>
-
-                                        <span
-                                                v-if="pivotId && field.id"
-                                                class="cursor-pointer text-red-600 dark:text-red-400 transition-all hover:text-red-700 dark:hover:text-red-300 hover:underline text-base font-semibold whitespace-nowrap"
-                                                @click="deleteField(field)"
-                                        >
-                                            @lang('Admin::app.services.attribute-groups.edit.delete-field-btn')
-                                        </span>
                                     </div>
                                 </div>
                             </div>

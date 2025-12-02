@@ -62,7 +62,15 @@ class ServiceAttributeGroupServiceFieldOptionRepository extends Repository
             $option = $this->create($payload);
         }
 
-        $this->syncTranslations($option, $optionData['label'] ?? $optionData['labels'] ?? []);
+        $label = $optionData['label'] ?? $optionData['labels'] ?? '';
+        $locale = $optionData['locale'] ?? null;
+        
+        // Handle both old format (array) and new format (string with locale)
+        if (is_array($label)) {
+            $this->syncTranslations($option, $label);
+        } else {
+            $this->syncTranslations($option, $label, $locale);
+        }
 
         return $option;
     }
@@ -70,11 +78,20 @@ class ServiceAttributeGroupServiceFieldOptionRepository extends Repository
     /**
      * Sync translations for an option.
      */
-    protected function syncTranslations($option, array $labels): void
+    protected function syncTranslations($option, $label, $locale = null): void
     {
-        foreach (core()->getAllLocales() as $locale) {
-            $translation = $option->translateOrNew($locale->code);
-            $translation->label = $labels[$locale->code] ?? '';
+        // If label is an array (old format), handle it
+        if (is_array($label)) {
+            foreach (core()->getAllLocales() as $localeObj) {
+                $translation = $option->translateOrNew($localeObj->code);
+                $translation->label = $label[$localeObj->code] ?? '';
+                $translation->save();
+            }
+        } else {
+            // New format: single label with locale
+            $localeCode = $locale ?? app()->getLocale();
+            $translation = $option->translateOrNew($localeCode);
+            $translation->label = $label;
             $translation->save();
         }
     }

@@ -653,16 +653,31 @@
                             <x-slot:header>
                                 <div class="flex items-center justify-between gap-4 w-full">
                                     <div class="flex items-center gap-3 flex-1 min-w-0">
-                                        <i class="icon-drag cursor-grab text-xl text-gray-500 transition-all hover:text-gray-700 dark:text-gray-300 flex-shrink-0"></i>
+                                        <i class="icon-drag cursor-grab text-xl text-gray-400 transition-all hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 flex-shrink-0 hover:scale-110"></i>
 
-                                        <div class="flex flex-col gap-1 min-w-0">
-                                            <p class="text-base font-semibold text-gray-800 dark:text-white mb-1 break-words">
-                                                @{{ getGroupDisplayName(group) }}
-                                            </p>
+                                        <div class="flex items-center gap-2.5 flex-shrink-0">
+                                            <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-100 dark:border-blue-800/50">
+                                                <i class="icon-attribute-block text-blue-600 dark:text-blue-400 text-lg"></i>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex flex-col gap-1.5 min-w-0 flex-1">
+                                            <div class="flex items-center gap-2 flex-wrap">
+                                                <p class="text-base font-semibold text-gray-800 dark:text-white break-words">
+                                                    @{{ getGroupDisplayName(group) }}
+                                                </p>
+                                                
+                                                <span
+                                                    v-if="group.fields && group.fields.length"
+                                                    class="inline-flex items-center justify-center min-w-[24px] h-6 px-2 rounded-full bg-gray-100 dark:bg-gray-800 text-xs font-medium text-gray-700 dark:text-gray-300"
+                                                >
+                                                    @{{ group.fields.length }}
+                                                </span>
+                                            </div>
 
                                             <p
                                                 v-if="!hasGroupTranslationForCurrentLocale(group) && getFirstAvailableTranslation(group)"
-                                                class="text-sm text-gray-600 dark:text-gray-400 break-words italic"
+                                                class="text-sm text-gray-500 dark:text-gray-400 break-words italic"
                                             >
                                                 @{{ getFirstAvailableTranslation(group) }}
                                             </p>
@@ -672,9 +687,10 @@
                                     <div class="flex items-center gap-2 flex-shrink-0">
                                         <span
                                             v-if="group.service_attribute_group_id"
-                                            class="cursor-pointer text-blue-600 dark:text-blue-400 transition-all hover:text-blue-700 dark:hover:text-blue-300 hover:underline text-base font-semibold whitespace-nowrap"
+                                            class="inline-flex items-center gap-1.5 cursor-pointer text-blue-600 dark:text-blue-400 transition-all hover:text-blue-700 dark:hover:text-blue-500 hover:underline text-sm font-medium whitespace-nowrap px-2 py-1 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20"
                                             @click.stop="openCreateFieldModal(index)"
                                         >
+                                            <i class="icon-plus text-base"></i>
                                             @lang('Admin::app.services.services.attribute-groups.add-field-btn')
                                         </span>
                                     </div>
@@ -682,12 +698,15 @@
                             </x-slot:header>
 
                             <x-slot:content>
-                                <div class="space-y-2">
+                                <div class="space-y-3 pt-1">
                                     <div
                                         v-if="groupSupportsNotification(group) && normalizeBoolean(group.is_notifiable)"
-                                        class="rounded border border-green-300 bg-green-100 px-3 py-2 text-xs font-semibold text-green-700 dark:border-green-800 dark:bg-green-900/60 dark:text-green-200 text-center"
+                                        class="flex items-center gap-2 rounded-lg border border-green-200 dark:border-green-800 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 px-4 py-2.5 shadow-sm"
                                     >
-                                        @lang('Admin::app.services.services.attribute-groups.notify-label')
+                                        <i class="icon-bell text-green-600 dark:text-green-400 text-base"></i>
+                                        <p class="text-sm font-semibold text-green-700 dark:text-green-300">
+                                            @lang('Admin::app.services.services.attribute-groups.notify-label')
+                                        </p>
                                     </div>
 
                                     <!-- Fields Display Component -->
@@ -709,20 +728,24 @@
                                         :ref="`fieldsDisplay${index}`"
                                     ></v-service-data-group-fields-display>
 
-                                    <div class="mt-4 flex flex-wrap items-center justify-end gap-2">
+                                    <div class="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700 flex flex-wrap items-center justify-end gap-2">
                                         <x-admin::button
                                             button-type="button"
-                                            button-class="link-button text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                                            button-class="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-all hover:bg-blue-50 dark:hover:bg-blue-900/20 px-3 py-1.5 rounded-md"
                                             :title="trans('Admin::app.services.services.attribute-groups.edit-group-btn')"
                                             @click="openEditGroupModal(index)"
-                                        />
+                                        >
+                                            <i class="icon-edit text-base"></i>
+                                        </x-admin::button>
 
                                         <x-admin::button
                                             button-type="button"
-                                            button-class="link-button text-red-600 hover:text-red-700 dark:text-red-400"
+                                            button-class="inline-flex items-center gap-1.5 text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-all hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-1.5 rounded-md"
                                             :title="trans('Admin::app.services.services.attribute-groups.remove-group-btn')"
                                             @click="deleteGroup(index)"
-                                        />
+                                        >
+                                            <i class="icon-delete text-base"></i>
+                                        </x-admin::button>
                                     </div>
                                 </div>
                             </x-slot:content>

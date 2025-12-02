@@ -1,84 +1,90 @@
+@php
+    $currentLocale = core()->getRequestedLocale();
+@endphp
+
 @pushOnce('scripts')
     <script
         type="text/x-template"
         id="v-service-data-group-field-option-create-template"
     >
-        <div>
-            <x-admin::modal
-                ref="createOptionModal"
-                @toggle="handleModalToggle"
-            >
-                <x-slot:header>
-                    <p class="text-lg font-bold text-gray-800 dark:text-white">
-                        @lang('Admin::app.services.services.groups.fields.options.add-option')
-                    </p>
-                </x-slot:header>
-
-                <x-slot:content>
-                    <x-admin::form.control-group>
-                        <x-admin::form.control-group.label class="required">
-                            @lang('Admin::app.services.services.groups.fields.options.admin-name')
-                        </x-admin::form.control-group.label>
-
-                        <x-admin::form.control-group.control
-                            type="text"
-                            name="option_admin_name"
-                            rules="required"
-                            v-model="optionData.admin_name"
-                            :label="trans('Admin::app.services.services.groups.fields.options.admin-name')"
-                            :placeholder="trans('Admin::app.services.services.groups.fields.options.admin-name-placeholder')"
-                        />
-
-                        <x-admin::form.control-group.error control-name="option_admin_name" />
-                    </x-admin::form.control-group>
-
-                    <div class="grid gap-4 md:grid-cols-2">
-                        <div
-                            v-for="locale in locales"
-                            :key="`option-label-${locale.code}`"
-                        >
-                            <x-admin::form.control-group>
-                                <x-admin::form.control-group.label class="required">
-                                    @lang('Admin::app.services.services.groups.fields.options.label') (@{{ locale.name }})
-                                </x-admin::form.control-group.label>
-
-                                <x-admin::form.control-group.control
-                                    type="text"
-                                    ::name="`option_labels[${locale.code}]`"
-                                    rules="required"
-                                    v-model="optionData.labels[locale.code]"
-                                    ::label="locale.name"
-                                    ::placeholder="locale.name"
-                                />
-
-                                <x-admin::form.control-group.error ::control-name="`option_labels[${locale.code}]`" />
-                            </x-admin::form.control-group>
-                        </div>
-                    </div>
-                </x-slot:content>
-
-                <x-slot:footer>
-                    <div class="flex items-center justify-end gap-2">
-                        <button
-                            type="button"
-                            class="secondary-button"
-                            @click="closeModal"
-                        >
-                            @lang('Admin::app.common.cancel')
-                        </button>
-
-                        <button
-                            type="button"
-                            class="primary-button"
-                            @click="createOption"
-                            :disabled="isSaving"
-                        >
+        <x-admin::form
+            v-slot="{ meta, errors, handleSubmit }"
+            as="div"
+        >
+            <form @submit="handleSubmit($event, create)">
+                <x-admin::modal
+                    ref="createOptionModal"
+                    @toggle="handleModalToggle"
+                >
+                    <x-slot:header>
+                        <p class="text-lg font-bold text-gray-800 dark:text-white">
                             @lang('Admin::app.services.services.groups.fields.options.add-option')
-                        </button>
-                    </div>
-                </x-slot:footer>
-            </x-admin::modal>
-        </div>
+                        </p>
+                    </x-slot:header>
+
+                    <x-slot:content>
+                        <x-admin::form.control-group>
+                            <x-admin::form.control-group.label class="required">
+                                @lang('Admin::app.services.services.groups.fields.options.admin-name')
+                            </x-admin::form.control-group.label>
+
+                            <x-admin::form.control-group.control
+                                type="text"
+                                name="admin_name"
+                                rules="required"
+                                :label="trans('Admin::app.services.services.groups.fields.options.admin-name')"
+                                :placeholder="trans('Admin::app.services.services.groups.fields.options.admin-name-placeholder')"
+                            />
+
+                            <x-admin::form.control-group.error control-name="admin_name" />
+                        </x-admin::form.control-group>
+
+                        <x-admin::form.control-group>
+                            <x-admin::form.control-group.label class="required">
+                                @lang('Admin::app.services.services.groups.fields.options.label') ({{ $currentLocale->name }})
+                            </x-admin::form.control-group.label>
+
+                            <x-admin::form.control-group.control
+                                type="text"
+                                name="label"
+                                rules="required"
+                                :label="trans('Admin::app.services.services.groups.fields.options.label')"
+                                placeholder="{{ trans('Admin::app.services.services.groups.fields.options.label') }} ({{ $currentLocale->name }})"
+                            />
+
+                            <x-admin::form.control-group.error control-name="label" />
+                        </x-admin::form.control-group>
+
+                        <!-- Hidden field for current locale -->
+                        <x-admin::form.control-group.control
+                            type="hidden"
+                            name="locale"
+                            value="{{ $currentLocale->code }}"
+                        />
+                    </x-slot:content>
+
+                    <x-slot:footer>
+                        <div class="flex flex-wrap items-center justify-end gap-2">
+                            <x-admin::button
+                                button-type="button"
+                                button-class="secondary-button"
+                                :title="trans('Admin::app.common.cancel')"
+                                ::disabled="isLoading"
+                                @click="$refs.createOptionModal.close()"
+                            />
+
+                            <x-admin::button
+                                button-type="submit"
+                                button-class="primary-button"
+                                :title="trans('Admin::app.services.services.groups.fields.options.add-option')"
+                                ::loading="isLoading"
+                                ::disabled="isLoading"
+                            />
+                        </div>
+                    </x-slot:footer>
+                </x-admin::modal>
+            </form>
+        </x-admin::form>
     </script>
 
     <script type="module">
@@ -108,72 +114,19 @@
 
             data() {
                 return {
+                    isLoading: false,
                     field: null,
-                    optionData: {
-                        admin_name: '',
-                        labels: {},
-                        sort_order: 0,
-                        service_attribute_type_option_id: null,
-                    },
-                    isSaving: false,
                 };
             },
 
             methods: {
-                openModal(data) {
-                    this.field = data.field;
-                    
-                    // Initialize option data
-                    this.optionData = {
-                        admin_name: '',
-                        labels: {},
-                        sort_order: 0,
-                        service_attribute_type_option_id: null,
-                    };
-
-                    // Initialize labels for all locales
-                    const localesArray = Array.isArray(this.locales) ? this.locales : [];
-                    localesArray.forEach(locale => {
-                        this.optionData.labels[locale.code] = '';
-                    });
-
-                    // Set sort order to last
-                    const optionsArray = Array.isArray(this.field.options) ? this.field.options : [];
-                    this.optionData.sort_order = optionsArray.length;
-
-                    this.$refs.createOptionModal.open();
-                },
-
-                closeModal() {
-                    this.$refs.createOptionModal.close();
-                },
-
                 handleModalToggle(isOpen) {
                     if (!isOpen) {
-                        this.resetForm();
+                        this.field = null;
                     }
                 },
 
-                resetForm() {
-                    this.field = null;
-                    this.optionData = {
-                        admin_name: '',
-                        labels: {},
-                        sort_order: 0,
-                        service_attribute_type_option_id: null,
-                    };
-                    const localesArray = Array.isArray(this.locales) ? this.locales : [];
-                    localesArray.forEach(locale => {
-                        this.optionData.labels[locale.code] = '';
-                    });
-                    this.isSaving = false;
-                },
-
-                async createOption() {
-                    if (!this.$refs.createOptionModal.validate()) {
-                        return;
-                    }
-
+                async create(params, { resetForm, setErrors }) {
                     if (!this.field || !this.field.id) {
                         this.$emitter.emit('add-flash', {
                             type: 'error',
@@ -182,14 +135,19 @@
                         return;
                     }
 
-                    this.isSaving = true;
+                    this.isLoading = true;
 
                     try {
+                        // Set sort order to last
+                        const optionsArray = Array.isArray(this.field.options) ? this.field.options : [];
+                        const sortOrder = optionsArray.length;
+
                         const payload = {
-                            admin_name: this.optionData.admin_name,
-                            label: this.optionData.labels,
-                            sort_order: this.optionData.sort_order,
-                            service_attribute_type_option_id: this.optionData.service_attribute_type_option_id,
+                            admin_name: params.admin_name,
+                            label: params.label,
+                            locale: params.locale || '{{ $currentLocale->code }}',
+                            sort_order: sortOrder,
+                            service_attribute_type_option_id: null,
                         };
 
                         const url = `{{ url('admin/services') }}/${this.serviceId}/groups/${this.pivotId}/fields/${this.field.id}/options`;
@@ -201,8 +159,13 @@
                         });
 
                         this.$emit('option-created', response.data?.data || response.data);
-                        this.closeModal();
+                        resetForm();
+                        this.$refs.createOptionModal.close();
                     } catch (error) {
+                        if (error.response?.data?.errors) {
+                            setErrors(error.response.data.errors);
+                        }
+
                         const message = error.response?.data?.message ||
                             error.response?.data?.error ||
                             error.message ||
@@ -213,8 +176,13 @@
                             message: message,
                         });
                     } finally {
-                        this.isSaving = false;
+                        this.isLoading = false;
                     }
+                },
+
+                openModal(data) {
+                    this.field = data.field;
+                    this.$refs.createOptionModal.open();
                 },
             },
         });
