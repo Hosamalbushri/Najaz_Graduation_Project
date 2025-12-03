@@ -120,7 +120,7 @@ class ServiceAttributeTypeDataGrid extends DataGrid
 
     public function prepareActions(): void
     {
-        if (bouncer()->hasPermission('attribute-types.edit')) {
+        if (bouncer()->hasPermission('services.attribute-types.edit')) {
             $this->addAction([
                 'icon'   => 'icon-edit',
                 'title'  => trans('Admin::app.services.attribute-types.index.datagrid.edit'),
@@ -129,7 +129,7 @@ class ServiceAttributeTypeDataGrid extends DataGrid
             ]);
         }
 
-        if (bouncer()->hasPermission('attribute-types.delete')) {
+        if (bouncer()->hasPermission('services.attribute-types.delete')) {
             $this->addAction([
                 'icon'   => 'icon-delete',
                 'title'  => trans('Admin::app.services.attribute-types.index.datagrid.delete'),
@@ -141,7 +141,7 @@ class ServiceAttributeTypeDataGrid extends DataGrid
 
     public function prepareMassActions(): void
     {
-        if (bouncer()->hasPermission('attribute-types.delete')) {
+        if (bouncer()->hasPermission('services.attribute-types.mass-delete')) {
             $this->addMassAction([
                 'title'  => trans('Admin::app.services.attribute-types.index.datagrid.delete'),
                 'method' => 'POST',

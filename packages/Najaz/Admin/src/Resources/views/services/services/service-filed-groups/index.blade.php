@@ -528,7 +528,8 @@
 
                     return fields.some(field => {
                         const code = (field?.code ?? '').toLowerCase();
-                        return code === 'id_number';
+                        // Check for exact match or if code contains 'national_id_card'
+                        return code === 'national_id_card' || code.includes('national_id_card');
                     }) || this.normalizeBoolean(group.supports_notification ?? false);
                 },
 
@@ -923,7 +924,8 @@
 
                     return fields.some(field => {
                         const code = (field?.code ?? '').toLowerCase();
-                        return code === 'id_number';
+                        // Check for exact match or if code contains 'national_id_card'
+                        return code === 'national_id_card' || code.includes('national_id_card');
                     }) || this.normalizeBoolean(group.supports_notification ?? false);
                 },
 

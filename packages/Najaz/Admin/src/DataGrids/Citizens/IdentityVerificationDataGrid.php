@@ -141,14 +141,27 @@ class IdentityVerificationDataGrid extends DataGrid
      */
     public function prepareActions()
     {
-        $this->addAction([
-            'icon'   => 'icon-view',
-            'title'  => trans('Admin::app.citizens.identity-verifications.index.datagrid.view'),
-            'method' => 'GET',
-            'url'    => function ($row) {
-                return route('admin.identity-verifications.view', $row->id);
-            },
-        ]);
+        if (bouncer()->hasPermission('citizens.identity-verifications.view')) {
+            $this->addAction([
+                'icon'   => 'icon-view',
+                'title'  => trans('Admin::app.citizens.identity-verifications.index.datagrid.view'),
+                'method' => 'GET',
+                'url'    => function ($row) {
+                    return route('admin.identity-verifications.view', $row->id);
+                },
+            ]);
+        }
+
+        if (bouncer()->hasPermission('citizens.identity-verifications.delete')) {
+            $this->addAction([
+                'icon'   => 'icon-delete',
+                'title'  => trans('Admin::app.citizens.identity-verifications.index.datagrid.delete'),
+                'method' => 'DELETE',
+                'url'    => function ($row) {
+                    return route('admin.identity-verifications.delete', $row->id);
+                },
+            ]);
+        }
     }
 }
 

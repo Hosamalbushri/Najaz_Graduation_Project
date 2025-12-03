@@ -127,8 +127,16 @@ class ServiceCategoryDataGrid extends DataGrid
                 },
             ]);
         }
+    }
 
-        if (bouncer()->hasPermission('services.categories.delete')) {
+    /**
+     * Prepare mass actions.
+     *
+     * @return void
+     */
+    public function prepareMassActions()
+    {
+        if (bouncer()->hasPermission('services.categories.mass-delete')) {
             $this->addMassAction([
                 'title'  => trans('Admin::app.services.categories.index.datagrid.delete'),
                 'method' => 'POST',
@@ -136,7 +144,7 @@ class ServiceCategoryDataGrid extends DataGrid
             ]);
         }
 
-        if (bouncer()->hasPermission('services.categories.edit')) {
+        if (bouncer()->hasPermission('services.categories.mass-update')) {
             $this->addMassAction([
                 'title'   => trans('Admin::app.services.categories.index.datagrid.update-status'),
                 'method'  => 'POST',

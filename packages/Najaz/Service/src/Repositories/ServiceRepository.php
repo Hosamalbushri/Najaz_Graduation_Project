@@ -138,7 +138,7 @@ class ServiceRepository extends Repository
                 $groupSortOrder = isset($groupData['sort_order'])
                     ? (int) $groupData['sort_order']
                     : $index;
-                $isNotifiable = $this->toBoolean($groupData['is_notifiable'] ?? false);
+                
                 $customCode = $groupData['custom_code'] ?? $groupData['code'] ?? null;
                 $customName = $groupData['custom_name'] ?? $groupData['name'] ?? null;
 
@@ -151,6 +151,13 @@ class ServiceRepository extends Repository
                 if (! ServiceAttributeGroupProxy::modelClass()::whereKey($groupId)->exists()) {
                     continue;
                 }
+
+                // Check if group supports notification before setting is_notifiable
+                $templateGroup = ServiceAttributeGroupProxy::modelClass()::find($groupId);
+                $supportsNotification = $this->groupSupportsNotification($templateGroup);
+                $isNotifiable = $supportsNotification 
+                    ? $this->toBoolean($groupData['is_notifiable'] ?? false)
+                    : false;
 
                 $pivotUid = $groupData['pivot_uid'] ?? null;
 
@@ -808,5 +815,30 @@ class ServiceRepository extends Repository
                 ];
             })->values()->toArray(),
         ];
+    }
+
+    /**
+     * Check if group supports notification.
+     */
+    protected function groupSupportsNotification($group): bool
+    {
+        if (! $group) {
+            return false;
+        }
+
+        $type = (strtolower($group->group_type ?? 'general'));
+
+        if ($type !== 'citizen') {
+            return false;
+        }
+
+        $fields = $group->fields ?? collect();
+
+        return $fields->some(function ($field) {
+            $code = strtolower($field->code ?? '');
+
+            // Check for exact match or if code contains 'national_id_card'
+            return $code === 'national_id_card' || str_contains($code, 'national_id_card');
+        });
     }
 }

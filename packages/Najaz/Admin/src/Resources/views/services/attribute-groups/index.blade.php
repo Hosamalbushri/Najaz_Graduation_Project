@@ -13,7 +13,7 @@
         ></v-service-attribute-group-create>
 
         <div class="flex items-center gap-x-2.5">
-            @if (bouncer()->hasPermission('services.create'))
+            @if (bouncer()->hasPermission('services.attribute-groups.create'))
                 <button
                         class="primary-button"
                         @click="$refs.createAttributeGroupComponent.openModal()"

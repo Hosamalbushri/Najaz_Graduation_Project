@@ -15,7 +15,7 @@
             >
                 @lang('Admin::app.services.document-templates.index.title')
             </a>
-            @if (bouncer()->hasPermission('services.create'))
+            @if (bouncer()->hasPermission('services.services.create'))
                 <a
                     href="{{ route('admin.services.create') }}"
                     class="primary-button"

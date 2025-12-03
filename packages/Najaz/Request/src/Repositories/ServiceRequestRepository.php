@@ -410,6 +410,12 @@ class ServiceRequestRepository extends Repository
             return;
         }
 
+        \Log::info('linkBeneficiaries - Starting', [
+            'request_id' => $request->id,
+            'service_id' => $service->id,
+            'form_data_keys' => array_keys($formData),
+        ]);
+
         // Load attribute groups with translations
         $service->load('attributeGroups.translations');
 
@@ -429,8 +435,19 @@ class ServiceRequestRepository extends Repository
             return isset($group->pivot) && (bool) $group->pivot->is_notifiable;
         });
 
+        \Log::info('linkBeneficiaries - Notifiable Groups', [
+            'count' => $notifiableGroups->count(),
+            'groups' => $notifiableGroups->map(fn($g) => [
+                'id' => $g->id,
+                'code' => $g->code,
+                'custom_code' => $g->pivot->custom_code ?? null,
+                'is_notifiable' => $g->pivot->is_notifiable,
+            ])->toArray(),
+        ]);
+
         // If no notifiable groups, nothing to do
         if ($notifiableGroups->isEmpty()) {
+            \Log::info('linkBeneficiaries - No notifiable groups found');
             return;
         }
 
@@ -453,24 +470,78 @@ class ServiceRequestRepository extends Repository
             }
 
             // Find national_id or citizen_id field in this group
+            // Support both exact match and partial match (e.g., "group_code_national_id_card")
             $idField = $groupFields->first(function ($field) {
-                $fieldCode = strtolower($field->code);
+                $fieldCode = strtolower($field->code ?? '');
 
-                return in_array($fieldCode, [
+                // Check for exact match
+                $exactMatch = in_array($fieldCode, [
                     'national_id',
                     'citizen_id',
                     'nationalid',
                     'citizenid',
+                    'national_id_card',
                     'id_number',
                     'idnumber',
                     'national_number',
                     'identity_number',
                 ]);
+
+                if ($exactMatch) {
+                    return true;
+                }
+
+                // Check if field code contains any of these patterns
+                $patterns = [
+                    'national_id_card',
+                    'national_id',
+                    'citizen_id',
+                    'id_number',
+                    'nationalid',
+                    'citizenid',
+                ];
+
+                foreach ($patterns as $pattern) {
+                    if (str_contains($fieldCode, $pattern)) {
+                        return true;
+                    }
+                }
+
+                return false;
             });
 
+            \Log::info('linkBeneficiaries - Processing Group', [
+                'group_code' => $groupCode,
+                'original_group_code' => $originalGroupCode,
+                'fields_count' => $groupFields->count(),
+                'field_codes' => $groupFields->pluck('code')->toArray(),
+            ]);
+
             if (! $idField) {
+                \Log::info('linkBeneficiaries - No ID field found in group', [
+                    'group_code' => $groupCode,
+                ]);
                 continue;
             }
+
+            $idFieldCode = strtolower($idField->code ?? '');
+            $matchType = in_array($idFieldCode, [
+                'national_id',
+                'citizen_id',
+                'nationalid',
+                'citizenid',
+                'national_id_card',
+                'id_number',
+                'idnumber',
+                'national_number',
+                'identity_number',
+            ]) ? 'exact' : 'partial';
+
+            \Log::info('linkBeneficiaries - Found ID field', [
+                'group_code' => $groupCode,
+                'id_field_code' => $idField->code,
+                'match_type' => $matchType,
+            ]);
 
             // Try to find the value in form_data
             $nationalId = $this->getFieldValue($formData, $groupCode, $idField->code, $originalGroupCode);
@@ -479,6 +550,7 @@ class ServiceRequestRepository extends Repository
             if (! $nationalId) {
                 $nationalId = $formData['national_id']
                     ?? $formData['citizen_id']
+                    ?? $formData['national_id_card']
                     ?? $formData['id_number']
                     ?? $formData['nationalId']
                     ?? $formData['citizenId']
@@ -492,9 +564,22 @@ class ServiceRequestRepository extends Repository
                 $nationalId = preg_replace('/[\s\-_]/', '', $nationalId);
             }
 
+            \Log::info('linkBeneficiaries - National ID extracted', [
+                'group_code' => $groupCode,
+                'national_id' => $nationalId,
+                'id_field_code' => $idField->code,
+            ]);
+
             if ($nationalId && ! empty($nationalId)) {
                 // Find citizen by national_id
                 $beneficiary = CitizenProxy::modelClass()::where('national_id', $nationalId)->first();
+
+                \Log::info('linkBeneficiaries - Citizen lookup', [
+                    'group_code' => $groupCode,
+                    'national_id' => $nationalId,
+                    'found' => $beneficiary ? true : false,
+                    'citizen_id' => $beneficiary ? $beneficiary->id : null,
+                ]);
 
                 if ($beneficiary) {
                     if (! isset($beneficiaries[$beneficiary->id])) {
@@ -504,8 +589,17 @@ class ServiceRequestRepository extends Repository
                         ];
                     }
                 }
+            } else {
+                \Log::info('linkBeneficiaries - No national ID found', [
+                    'group_code' => $groupCode,
+                ]);
             }
         }
+
+        \Log::info('linkBeneficiaries - Final beneficiaries list', [
+            'count' => count($beneficiaries),
+            'beneficiaries' => array_values($beneficiaries),
+        ]);
 
         // Attach beneficiaries to the request
         if (! empty($beneficiaries)) {
@@ -515,7 +609,14 @@ class ServiceRequestRepository extends Repository
                         'group_code' => $data['group_code'],
                     ],
                 ]);
+                \Log::info('linkBeneficiaries - Beneficiary attached', [
+                    'request_id' => $request->id,
+                    'citizen_id' => $data['citizen_id'],
+                    'group_code' => $data['group_code'],
+                ]);
             }
+        } else {
+            \Log::info('linkBeneficiaries - No beneficiaries to attach');
         }
     }
 

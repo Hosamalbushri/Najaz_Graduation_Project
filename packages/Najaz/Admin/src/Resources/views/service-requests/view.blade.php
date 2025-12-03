@@ -153,9 +153,8 @@
                                                 <div class="mt-4 grid gap-4" style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));">
                                                     @foreach ($formData->fields_data as $fieldCode => $fieldValue)
                                                         @php
-                                                            $fieldCodeLower = strtolower($fieldCode);
-                                                            $isNationalIdField = in_array($fieldCodeLower, ['national_id', 'citizen_id', 'nationalid', 'citizenid', 'id_number', 'idnumber', 'national_number', 'identity_number']);
-                                                            $nationalId = $isNationalIdField && !empty($fieldValue) ? preg_replace('/[^0-9]/', '', (string) $fieldValue) : null;
+                                                            $isFieldNationalId = $isNationalIdField($fieldCode);
+                                                            $nationalId = $isFieldNationalId && !empty($fieldValue) ? preg_replace('/[^0-9]/', '', (string) $fieldValue) : null;
                                                             $citizenId = $nationalId && isset($nationalIdToCitizenMap[$nationalId]) ? $nationalIdToCitizenMap[$nationalId] : null;
                                                         @endphp
                                                         <div class="flex items-start gap-2 pl-4 min-w-0 w-full">
@@ -355,9 +354,8 @@
                                             <div class="mt-4 grid gap-4" style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));">
                                                 @foreach ($formData->fields_data as $fieldCode => $fieldValue)
                                                     @php
-                                                        $fieldCodeLower = strtolower($fieldCode);
-                                                        $isNationalIdField = in_array($fieldCodeLower, ['national_id', 'citizen_id', 'nationalid', 'citizenid', 'id_number', 'idnumber', 'national_number', 'identity_number']);
-                                                        $nationalId = $isNationalIdField && !empty($fieldValue) ? preg_replace('/[^0-9]/', '', (string) $fieldValue) : null;
+                                                        $isFieldNationalId = $isNationalIdField($fieldCode);
+                                                        $nationalId = $isFieldNationalId && !empty($fieldValue) ? preg_replace('/[^0-9]/', '', (string) $fieldValue) : null;
                                                         $citizenId = $nationalId && isset($nationalIdToCitizenMap[$nationalId]) ? $nationalIdToCitizenMap[$nationalId] : null;
                                                     @endphp
                                                     <div class="flex items-start gap-2 pl-4 min-w-0 w-full">
@@ -651,12 +649,6 @@
                                     <p class="text-gray-600 dark:text-gray-300">
                                         @lang('Admin::app.service-requests.view.national-id'): {{ $beneficiary->national_id }}
                                     </p>
-
-                                    @if ($beneficiary->pivot->group_code)
-                                        <p class="text-gray-600 dark:text-gray-300">
-                                            @lang('Admin::app.service-requests.view.group'): {{ $beneficiary->pivot->group_code }}
-                                        </p>
-                                    @endif
 
                                     <a
                                         href="{{ route('admin.citizens.view', $beneficiary->id) }}"

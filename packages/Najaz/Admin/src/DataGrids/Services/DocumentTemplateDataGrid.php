@@ -96,23 +96,27 @@ class DocumentTemplateDataGrid extends DataGrid
      */
     public function prepareActions()
     {
-        $this->addAction([
-            'icon'   => 'icon-edit',
-            'title'  => trans('Admin::app.services.document-templates.index.datagrid.edit'),
-            'method' => 'GET',
-            'url'    => function ($row) {
-                return route('admin.services.document-templates.edit', $row->template_id);
-            },
-        ]);
+        if (bouncer()->hasPermission('services.document-templates.edit')) {
+            $this->addAction([
+                'icon'   => 'icon-edit',
+                'title'  => trans('Admin::app.services.document-templates.index.datagrid.edit'),
+                'method' => 'GET',
+                'url'    => function ($row) {
+                    return route('admin.services.document-templates.edit', $row->template_id);
+                },
+            ]);
+        }
 
-        $this->addAction([
-            'icon'   => 'icon-delete',
-            'title'  => trans('Admin::app.services.document-templates.index.datagrid.delete'),
-            'method' => 'DELETE',
-            'url'    => function ($row) {
-                return route('admin.services.document-templates.delete', $row->template_id);
-            },
-        ]);
+        if (bouncer()->hasPermission('services.document-templates.delete')) {
+            $this->addAction([
+                'icon'   => 'icon-delete',
+                'title'  => trans('Admin::app.services.document-templates.index.datagrid.delete'),
+                'method' => 'DELETE',
+                'url'    => function ($row) {
+                    return route('admin.services.document-templates.delete', $row->template_id);
+                },
+            ]);
+        }
     }
 }
 

@@ -95,9 +95,11 @@ class ServiceAttributeGroup extends TranslatableModel implements ServiceAttribut
 
         $translation = $this->translate($locale);
         $supportsNotification = $this->group_type === 'citizen'
-            && $fieldsToUse->contains(
-                fn ($field) => strtolower($field->code ?? '') === 'id_number'
-            );
+            && $fieldsToUse->contains(function ($field) {
+                $code = strtolower($field->code ?? '');
+                // Check for exact match or if code contains 'national_id_card'
+                return $code === 'national_id_card' || str_contains($code, 'national_id_card');
+            });
 
         // Get all translations
         $translations = [];

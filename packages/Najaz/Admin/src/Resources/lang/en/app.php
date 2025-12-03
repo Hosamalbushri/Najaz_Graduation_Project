@@ -1047,5 +1047,63 @@ return [
             ],
         ],
     ],
+
+    'acl' => [
+        // Main Modules
+        'dashboard'                  => 'Dashboard',
+        'citizens'                   => 'Citizens',
+        'services'                   => 'Services',
+        'service-requests'           => 'Service Requests',
+        'notifications'              => 'Notifications',
+        
+        // Common Actions
+        'view'                       => 'View',
+        'view-details'               => 'View Details',
+        'view-statistics'            => 'View Statistics',
+        'view-tree'                  => 'View Tree',
+        'create'                     => 'Create',
+        'edit'                       => 'Edit',
+        'update'                     => 'Update',
+        'update-status'              => 'Update Status',
+        'delete'                     => 'Delete',
+        'mass-delete'                => 'Mass Delete',
+        'mass-update'                => 'Mass Update',
+        'search'                     => 'Search',
+        'reorder'                    => 'Reorder',
+        'cancel'                     => 'Cancel',
+        'print'                      => 'Print',
+        'show'                       => 'Show',
+        'get'                        => 'Get',
+        'get-data'                   => 'Get Data',
+        'sync'                       => 'Sync',
+        
+        // Citizens Module
+        'identity-verifications'     => 'Identity Verifications',
+        'citizen-types'              => 'Citizen Types',
+        'add-note'                   => 'Add Note',
+        
+        // Services Module
+        'service-categories'         => 'Service Categories',
+        'attribute-groups'           => 'Attribute Groups',
+        'attribute-group-fields'     => 'Attribute Group Fields',
+        'attribute-types'            => 'Attribute Types',
+        'document-templates'         => 'Document Templates',
+        'services-without-templates' => 'Services Without Templates',
+        'service-groups'             => 'Service Groups',
+        'service-group-fields'       => 'Service Group Fields',
+        'field-options'              => 'Field Options',
+        'customizable-options'       => 'Customizable Options',
+        'store-document-template'    => 'Store Document Template',
+        
+        // Service Requests Module
+        'add-notes'                  => 'Add Notes',
+        'download-word'              => 'Download Word Document',
+        'upload-pdf'                 => 'Upload PDF',
+        
+        // Notifications Module
+        'mark-viewed'                => 'Mark as Viewed',
+        'mark-read'                  => 'Mark as Read',
+        'read-all'                   => 'Read All',
+    ],
 ];
 

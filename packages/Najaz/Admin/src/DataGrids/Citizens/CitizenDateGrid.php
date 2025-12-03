@@ -210,7 +210,7 @@ class CitizenDateGrid extends DataGrid
      */
     public function prepareMassActions()
     {
-        if (bouncer()->hasPermission('citizens.citizens.delete')) {
+        if (bouncer()->hasPermission('citizens.citizens.mass-delete')) {
             $this->addMassAction([
                 'title'  => trans('Admin::app.citizens.citizens.index.datagrid.delete'),
                 'method' => 'POST',
@@ -218,7 +218,7 @@ class CitizenDateGrid extends DataGrid
             ]);
         }
 
-        if (bouncer()->hasPermission('citizens.citizens.edit')) {
+        if (bouncer()->hasPermission('citizens.citizens.mass-update')) {
             $this->addMassAction([
                 'title'   => trans('Admin::app.citizens.citizens.index.datagrid.update-status'),
                 'method'  => 'POST',

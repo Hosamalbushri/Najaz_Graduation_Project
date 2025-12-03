@@ -4928,7 +4928,7 @@ return [
         'communications'           => 'الاتصالات',
         'configure'                => 'تكوين',
         'copy'                     => 'نسخ',
-        'create'                   => 'يخلق',
+        'create'                   => 'إنشاء',
         'currencies'               => 'العملات',
         'customers'                => 'العملاء',
         'dashboard'                => 'لوحة التحكم',

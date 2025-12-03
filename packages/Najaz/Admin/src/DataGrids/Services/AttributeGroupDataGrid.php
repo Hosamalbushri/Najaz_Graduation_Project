@@ -107,7 +107,7 @@ class AttributeGroupDataGrid extends DataGrid
      */
     public function prepareActions(): void
     {
-        if (bouncer()->hasPermission('services.edit')) {
+        if (bouncer()->hasPermission('services.attribute-groups.edit')) {
             $this->addAction([
                 'icon'   => 'icon-edit',
                 'title'  => trans('Admin::app.services.attribute-groups.index.datagrid.edit'),
@@ -116,7 +116,7 @@ class AttributeGroupDataGrid extends DataGrid
             ]);
         }
 
-        if (bouncer()->hasPermission('services.delete')) {
+        if (bouncer()->hasPermission('services.attribute-groups.delete')) {
             $this->addAction([
                 'icon'   => 'icon-delete',
                 'title'  => trans('Admin::app.services.attribute-groups.index.datagrid.delete'),
@@ -131,7 +131,7 @@ class AttributeGroupDataGrid extends DataGrid
      */
     public function prepareMassActions(): void
     {
-        if (bouncer()->hasPermission('services.delete')) {
+        if (bouncer()->hasPermission('services.attribute-groups.delete')) {
             $this->addMassAction([
                 'title'  => trans('Admin::app.services.attribute-groups.index.datagrid.delete'),
                 'method' => 'POST',

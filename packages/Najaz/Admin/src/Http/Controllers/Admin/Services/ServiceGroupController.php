@@ -305,7 +305,8 @@ class ServiceGroupController extends Controller
         return $fields->some(function ($field) {
             $code = strtolower($field->code ?? '');
 
-            return $code === 'id_number';
+            // Check for exact match or if code contains 'national_id_card'
+            return $code === 'national_id_card' || str_contains($code, 'national_id_card');
         });
     }
 

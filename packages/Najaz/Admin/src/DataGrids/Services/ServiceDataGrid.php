@@ -146,7 +146,7 @@ class ServiceDataGrid extends DataGrid
      */
     public function prepareActions()
     {
-        if (bouncer()->hasPermission('services.edit')) {
+        if (bouncer()->hasPermission('services.services.edit')) {
             $this->addAction([
                 'icon'   => 'icon-edit',
                 'title'  => trans('Admin::app.services.services.index.datagrid.edit'),
@@ -157,7 +157,7 @@ class ServiceDataGrid extends DataGrid
             ]);
         }
 
-        if (bouncer()->hasPermission('services.delete')) {
+        if (bouncer()->hasPermission('services.services.delete')) {
             $this->addAction([
                 'icon'   => 'icon-delete',
                 'title'  => trans('Admin::app.services.services.index.datagrid.delete'),
@@ -176,7 +176,7 @@ class ServiceDataGrid extends DataGrid
      */
     public function prepareMassActions()
     {
-        if (bouncer()->hasPermission('services.delete')) {
+        if (bouncer()->hasPermission('services.services.mass-delete')) {
             $this->addMassAction([
                 'title'  => trans('Admin::app.services.services.index.datagrid.delete'),
                 'method' => 'POST',
@@ -184,7 +184,7 @@ class ServiceDataGrid extends DataGrid
             ]);
         }
 
-        if (bouncer()->hasPermission('services.edit')) {
+        if (bouncer()->hasPermission('services.services.mass-update')) {
             $this->addMassAction([
                 'title'   => trans('Admin::app.services.services.index.datagrid.update-status'),
                 'method'  => 'POST',

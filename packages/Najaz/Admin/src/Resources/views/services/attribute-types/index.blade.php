@@ -9,7 +9,7 @@
         </p>
 
         <div class="flex items-center gap-x-2.5">
-            @if (bouncer()->hasPermission('attribute-types.create'))
+            @if (bouncer()->hasPermission('services.attribute-types.create'))
                 <a
                     href="{{ route('admin.attribute-types.create') }}"
                     class="primary-button"

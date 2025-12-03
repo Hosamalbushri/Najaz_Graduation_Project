@@ -291,7 +291,9 @@ class ServiceAttributeGroupService extends Pivot implements ServiceAttributeGrou
         }
 
         return $this->fields->contains(function ($field) {
-            return strtolower($field->code ?? '') === 'id_number';
+            $code = strtolower($field->code ?? '');
+            // Check for exact match or if code contains 'national_id_card'
+            return $code === 'national_id_card' || str_contains($code, 'national_id_card');
         });
     }
 }

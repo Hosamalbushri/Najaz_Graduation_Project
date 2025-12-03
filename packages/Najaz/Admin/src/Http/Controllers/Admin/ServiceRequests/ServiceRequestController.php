@@ -106,15 +106,33 @@ class ServiceRequestController extends Controller
 
         // Build national ID to citizen ID map
         $nationalIdToCitizenMap = [];
-        $nationalIdFieldCodes = ['national_id', 'citizen_id', 'nationalid', 'citizenid', 'id_number', 'idnumber', 'national_number', 'identity_number'];
+        $nationalIdFieldCodes = ['national_id', 'citizen_id', 'nationalid', 'citizenid', 'national_id_card', 'id_number', 'idnumber', 'national_number', 'identity_number'];
+
+        // Helper function to check if field is national ID field
+        $isNationalIdField = function ($fieldCode) use ($nationalIdFieldCodes) {
+            $fieldCodeLower = strtolower($fieldCode);
+            
+            // Check exact match
+            if (in_array($fieldCodeLower, $nationalIdFieldCodes)) {
+                return true;
+            }
+            
+            // Check partial match (e.g., "group_code_national_id_card")
+            foreach ($nationalIdFieldCodes as $pattern) {
+                if (str_contains($fieldCodeLower, $pattern)) {
+                    return true;
+                }
+            }
+            
+            return false;
+        };
 
         // Collect all national IDs from form data
         $nationalIds = [];
         foreach ($request->formData as $formData) {
             if ($formData->fields_data && is_array($formData->fields_data)) {
                 foreach ($formData->fields_data as $fieldCode => $fieldValue) {
-                    $fieldCodeLower = strtolower($fieldCode);
-                    if (in_array($fieldCodeLower, $nationalIdFieldCodes) && ! empty($fieldValue)) {
+                    if ($isNationalIdField($fieldCode) && ! empty($fieldValue)) {
                         $nationalId = preg_replace('/[^0-9]/', '', (string) $fieldValue);
                         if (! empty($nationalId)) {
                             $nationalIds[] = $nationalId;
@@ -144,7 +162,7 @@ class ServiceRequestController extends Controller
             }
         }
 
-        return view('admin::service-requests.view', compact('request', 'documentContent', 'template', 'fieldLabelsMap', 'nationalIdToCitizenMap', 'localeName'));
+        return view('admin::service-requests.view', compact('request', 'documentContent', 'template', 'fieldLabelsMap', 'nationalIdToCitizenMap', 'localeName', 'isNationalIdField'));
     }
 
     /**

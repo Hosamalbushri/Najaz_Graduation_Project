@@ -12,7 +12,7 @@
             {!! view_render_event('najaz.admin.services.categories.index.create-button.before') !!}
 
             <!-- Services Link -->
-            @if (bouncer()->hasPermission('services.edit'))
+            @if (bouncer()->hasPermission('services.services'))
                 <a
                     href="{{ route('admin.services.index') }}"
                     class="transparent-button hover:bg-gray-200 dark:text-white dark:hover:bg-gray-800"

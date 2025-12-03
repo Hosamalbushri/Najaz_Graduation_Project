@@ -69,10 +69,16 @@
                                 </x-admin::form.control-group.label>
 
                                 <x-admin::form.control-group.control
-                                    type="text"
+                                    type="hidden"
                                     name="is_notifiable"
-                                    ::value="group.is_notifiable"
-{{--                                    ::checked="group.is_notifiable"--}}
+                                    value="0"
+                                />
+
+                                <x-admin::form.control-group.control
+                                    type="switch"
+                                    name="is_notifiable"
+                                    value="1"
+                                    ::checked="group.is_notifiable"
                                     :label="trans('Admin::app.services.services.edit.service-field-groups.edit.notify-label')"
                                 />
 
