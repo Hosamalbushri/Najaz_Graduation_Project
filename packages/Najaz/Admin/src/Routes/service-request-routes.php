@@ -19,6 +19,10 @@ Route::group(['middleware' => ['web', 'admin'], 'prefix' => 'admin/service-reque
         Route::get('search', 'search')->name('admin.service-requests.search');
 
         Route::get('print/{id}', 'printDocument')->name('admin.service-requests.print');
+
+        Route::get('download-word/{id}', 'downloadEditableWord')->name('admin.service-requests.download-word');
+
+        Route::post('upload-pdf/{id}', 'uploadFilledPDF')->name('admin.service-requests.upload-pdf');
     });
 });
 

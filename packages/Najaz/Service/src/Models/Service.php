@@ -3,6 +3,7 @@
 namespace Najaz\Service\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Najaz\Citizen\Models\CitizenTypeProxy;
@@ -43,6 +44,7 @@ class Service extends TranslatableModel implements ServiceContract
      * @var array
      */
     protected $fillable = [
+        'category_id',
         'status',
         'image',
         'sort_order',
@@ -63,7 +65,15 @@ class Service extends TranslatableModel implements ServiceContract
      *
      * @var array
      */
-    protected $with = ['translations'];
+    protected $with = ['translations', 'category'];
+
+    /**
+     * Get the category that the service belongs to.
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(ServiceCategoryProxy::modelClass(), 'category_id');
+    }
 
     /**
      * Get the attribute groups assigned to the service.

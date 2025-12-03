@@ -41,6 +41,10 @@ class ServiceRequest extends Model implements ServiceRequestContract
         'citizen_type_name',
         'locale',
         'completed_at',
+        'editable_word_path',
+        'final_pdf_path',
+        'filled_by_admin_id',
+        'filled_at',
     ];
 
     /**
@@ -50,6 +54,7 @@ class ServiceRequest extends Model implements ServiceRequestContract
      */
     protected $casts = [
         'completed_at' => 'datetime',
+        'filled_at' => 'datetime',
     ];
 
     /**
@@ -96,6 +101,14 @@ class ServiceRequest extends Model implements ServiceRequestContract
     public function adminNotes(): HasMany
     {
         return $this->hasMany(ServiceRequestAdminNote::class, 'service_request_id');
+    }
+
+    /**
+     * Get the admin who filled the document.
+     */
+    public function filledByAdmin(): BelongsTo
+    {
+        return $this->belongsTo(Admin::class, 'filled_by_admin_id');
     }
 }
 

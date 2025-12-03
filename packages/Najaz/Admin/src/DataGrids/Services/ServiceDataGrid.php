@@ -26,6 +26,11 @@ class ServiceDataGrid extends DataGrid
                 $join->on('services.id', '=', 'service_translations.service_id')
                     ->where('service_translations.locale', '=', app()->getLocale());
             })
+            ->leftJoin('service_categories', 'services.category_id', '=', 'service_categories.id')
+            ->leftJoin('service_category_translations', function ($join) {
+                $join->on('service_categories.id', '=', 'service_category_translations.service_category_id')
+                    ->where('service_category_translations.locale', '=', app()->getLocale());
+            })
             ->select(
                 'services.id as service_id',
                 'service_translations.name',
@@ -34,7 +39,8 @@ class ServiceDataGrid extends DataGrid
                 'services.image',
                 'services.sort_order',
                 'services.created_at',
-                'services.updated_at'
+                'services.updated_at',
+                'service_category_translations.name as category_name'
             )
             ->groupBy('services.id');
 
@@ -42,6 +48,7 @@ class ServiceDataGrid extends DataGrid
         $this->addFilter('name', 'service_translations.name');
         $this->addFilter('price', 'services.price');
         $this->addFilter('status', 'services.status');
+        $this->addFilter('category_name', 'service_category_translations.name');
 
         return $queryBuilder;
     }
@@ -64,6 +71,15 @@ class ServiceDataGrid extends DataGrid
         $this->addColumn([
             'index'      => 'name',
             'label'      => trans('Admin::app.services.services.index.datagrid.name'),
+            'type'       => 'string',
+            'searchable' => true,
+            'filterable' => true,
+            'sortable'   => true,
+        ]);
+
+        $this->addColumn([
+            'index'      => 'category_name',
+            'label'      => trans('Admin::app.services.services.index.datagrid.category'),
             'type'       => 'string',
             'searchable' => true,
             'filterable' => true,

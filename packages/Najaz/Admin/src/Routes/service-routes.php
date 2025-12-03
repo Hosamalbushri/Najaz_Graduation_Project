@@ -9,8 +9,25 @@ use Najaz\Admin\Http\Controllers\Admin\Services\DocumentTemplateController;
 use Najaz\Admin\Http\Controllers\Admin\Services\ServiceGroupFieldController;
 use Najaz\Admin\Http\Controllers\Admin\Services\ServiceGroupFieldOptionController;
 use Najaz\Admin\Http\Controllers\Admin\Services\ServiceGroupController;
+use Najaz\Admin\Http\Controllers\Admin\Services\ServiceCategoryController;
 
 Route::group(['middleware' => ['web', 'admin'], 'prefix' => 'admin/services'], function () {
+    // Service Categories Routes
+    Route::controller(ServiceCategoryController::class)
+        ->prefix('categories')
+        ->group(function () {
+            Route::get('', 'index')->name('admin.services.categories.index');
+            Route::get('create', 'create')->name('admin.services.categories.create');
+            Route::post('create', 'store')->name('admin.services.categories.store');
+            Route::get('edit/{id}', 'edit')->name('admin.services.categories.edit');
+            Route::put('edit/{id}', 'update')->name('admin.services.categories.update');
+            Route::delete('edit/{id}', 'destroy')->name('admin.services.categories.delete');
+            Route::post('mass-delete', 'massDestroy')->name('admin.services.categories.mass_delete');
+            Route::post('mass-update', 'massUpdate')->name('admin.services.categories.mass_update');
+            Route::get('search', 'search')->name('admin.services.categories.search');
+            Route::get('tree', 'tree')->name('admin.services.categories.tree');
+        });
+
     Route::controller(ServiceController::class)->group(function () {
         Route::get('', 'index')->name('admin.services.index');
         Route::get('create', 'create')->name('admin.services.create');

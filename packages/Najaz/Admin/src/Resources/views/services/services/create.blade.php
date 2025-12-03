@@ -7,6 +7,7 @@
         $currentLocale = core()->getRequestedLocale();
         $initialCitizenTypeIds = array_map('strval', old('citizen_type_ids', []));
         $citizenTypeTree = \Najaz\Service\Repositories\ServiceRepository::getCitizenTypeTree();
+        $categories = app(\Najaz\Service\Repositories\ServiceCategoryRepository::class)->getCategoryTree();
     @endphp
 
     {!! view_render_event('bagisto.admin.services.create.before') !!}
@@ -88,18 +89,14 @@
         <div class="mt-3.5 flex gap-2.5 max-xl:flex-wrap">
             <!-- Left Section -->
             <div class="flex flex-1 flex-col gap-2 max-xl:flex-auto">
-                <!-- General -->
+                
+                {!! view_render_event('najaz.admin.services.create.card.general.before') !!}
+
+                <!-- General Information -->
                 <div class="box-shadow rounded bg-white p-4 dark:bg-gray-900">
                     <p class="mb-4 text-base font-semibold text-gray-800 dark:text-white">
                         @lang('Admin::app.services.services.create.general')
                     </p>
-
-                    <!-- Locale hidden field -->
-                    <x-admin::form.control-group.control
-                        type="hidden"
-                        name="locale"
-                        value="{{ $currentLocale->code }}"
-                    />
 
                     <!-- Name -->
                     <x-admin::form.control-group>
@@ -129,47 +126,6 @@
                         <x-admin::form.control-group.error control-name="{{ $currentLocale->code }}[name]" />
                     </x-admin::form.control-group>
 
-                    <!-- Status -->
-                    <x-admin::form.control-group>
-                        <x-admin::form.control-group.label>
-                            @lang('Admin::app.services.services.create.status')
-                        </x-admin::form.control-group.label>
-
-                        <x-admin::form.control-group.control
-                            type="switch"
-                            name="status"
-                            value="1"
-                            :checked="old('status', true)"
-                            :label="trans('Admin::app.services.services.create.status')"
-                        />
-
-                        <x-admin::form.control-group.error control-name="status" />
-                    </x-admin::form.control-group>
-
-                    <!-- Sort Order -->
-                    <x-admin::form.control-group class="!mb-0">
-                        <x-admin::form.control-group.label>
-                            @lang('Admin::app.services.services.create.sort-order')
-                        </x-admin::form.control-group.label>
-
-                        <x-admin::form.control-group.control
-                            type="number"
-                            name="sort_order"
-                            value="{{ old('sort_order', 0) }}"
-                            min="0"
-                            :label="trans('Admin::app.services.services.create.sort-order')"
-                        />
-
-                        <x-admin::form.control-group.error control-name="sort_order" />
-                    </x-admin::form.control-group>
-                </div>
-
-                <!-- Content -->
-                <div class="box-shadow rounded bg-white p-4 dark:bg-gray-900">
-                    <p class="mb-4 text-base font-semibold text-gray-800 dark:text-white">
-                        @lang('Admin::app.services.services.create.content')
-                    </p>
-
                     <!-- Description -->
                     <x-admin::form.control-group class="!mb-0">
                         <x-admin::form.control-group.label>
@@ -189,18 +145,110 @@
                         <x-admin::form.control-group.error :control-name="$currentLocale->code . '[description]'" />
                     </x-admin::form.control-group>
                 </div>
+
+                {!! view_render_event('najaz.admin.services.create.card.general.after') !!}
+
             </div>
 
             <!-- Right Section -->
             <div class="flex w-[360px] max-w-full flex-col gap-2 max-xl:flex-auto max-xl:w-full">
-                <!-- Associations -->
-                <div class="box-shadow rounded bg-white p-4 dark:bg-gray-900">
-                    <p class="mb-4 text-base font-semibold text-gray-800 dark:text-white">
+                
+                {!! view_render_event('najaz.admin.services.create.card.settings.before') !!}
+
+                <!-- Settings -->
+                <x-admin::accordion>
+                    <x-slot:header>
+                        <p class="p-2.5 text-base font-semibold text-gray-800 dark:text-white">
+                            @lang('Admin::app.services.services.create.settings')
+                        </p>
+                    </x-slot:header>
+
+                    <x-slot:content>
+                        <!-- Status -->
+                        <x-admin::form.control-group>
+                            <x-admin::form.control-group.label class="font-medium text-gray-800 dark:text-white">
+                                @lang('Admin::app.services.services.create.status')
+                            </x-admin::form.control-group.label>
+
+                            <x-admin::form.control-group.control
+                                type="switch"
+                                name="status"
+                                value="1"
+                                :checked="old('status', true)"
+                                :label="trans('Admin::app.services.services.create.status')"
+                            />
+
+                            <x-admin::form.control-group.error control-name="status" />
+                        </x-admin::form.control-group>
+
+                        <!-- Sort Order -->
+                        <x-admin::form.control-group class="!mb-0">
+                            <x-admin::form.control-group.label class="text-gray-800 dark:text-white">
+                                @lang('Admin::app.services.services.create.sort-order')
+                            </x-admin::form.control-group.label>
+
+                            <x-admin::form.control-group.control
+                                type="number"
+                                name="sort_order"
+                                value="{{ old('sort_order', 0) }}"
+                                min="0"
+                                :label="trans('Admin::app.services.services.create.sort-order')"
+                                :placeholder="trans('Admin::app.services.services.create.sort-order')"
+                            />
+
+                            <x-admin::form.control-group.error control-name="sort_order" />
+                        </x-admin::form.control-group>
+                    </x-slot:content>
+                </x-admin::accordion>
+
+                {!! view_render_event('najaz.admin.services.create.card.settings.after') !!}
+
+                {!! view_render_event('najaz.admin.services.create.card.category.before') !!}
+
+                <!-- Service Category -->
+                <x-admin::accordion>
+                    <x-slot:header>
+                        <p class="p-2.5 text-base font-semibold text-gray-800 dark:text-white">
+                            @lang('Admin::app.services.services.create.category')
+                        </p>
+                    </x-slot:header>
+
+                    <x-slot:content>
+                        <x-admin::form.control-group class="!mb-0">
+                            <x-admin::form.control-group.label class="text-gray-800 dark:text-white">
+                                @lang('Admin::app.services.services.create.select-category')
+                            </x-admin::form.control-group.label>
+
+                            <x-admin::tree.view
+                                input-type="radio"
+                                id-field="id"
+                                name-field="category_id"
+                                value-field="id"
+                                :items="json_encode($categories)"
+                                :value="json_encode(old('category_id'))"
+                                :fallback-locale="config('app.fallback_locale')"
+                            />
+
+                            <x-admin::form.control-group.error control-name="category_id" />
+                        </x-admin::form.control-group>
+                    </x-slot:content>
+                </x-admin::accordion>
+
+                {!! view_render_event('najaz.admin.services.create.card.category.after') !!}
+
+                {!! view_render_event('najaz.admin.services.create.card.associations.before') !!}
+
+                <!-- Citizen Types -->
+                <x-admin::accordion>
+                    <x-slot:header>
+                        <p class="p-2.5 text-base font-semibold text-gray-800 dark:text-white">
                         @lang('Admin::app.services.services.create.associations')
                     </p>
+                    </x-slot:header>
 
+                    <x-slot:content>
                     <x-admin::form.control-group class="!mb-0">
-                        <x-admin::form.control-group.label>
+                            <x-admin::form.control-group.label class="text-gray-800 dark:text-white">
                             @lang('Admin::app.services.services.create.citizen-types')
                         </x-admin::form.control-group.label>
 
@@ -215,22 +263,30 @@
                             :fallback-locale="config('app.fallback_locale')"
                         />
 
-                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
                             @lang('Admin::app.services.services.create.citizen-types-help')
                         </p>
 
                         <x-admin::form.control-group.error control-name="citizen_type_ids" />
                     </x-admin::form.control-group>
-                </div>
+                    </x-slot:content>
+                </x-admin::accordion>
+
+                {!! view_render_event('najaz.admin.services.create.card.associations.after') !!}
+
+                {!! view_render_event('najaz.admin.services.create.card.media.before') !!}
 
                 <!-- Media -->
-                <div class="box-shadow rounded bg-white p-4 dark:bg-gray-900">
-                    <p class="mb-4 text-base font-semibold text-gray-800 dark:text-white">
+                <x-admin::accordion>
+                    <x-slot:header>
+                        <p class="p-2.5 text-base font-semibold text-gray-800 dark:text-white">
                         @lang('Admin::app.services.services.create.media')
                     </p>
+                    </x-slot:header>
 
+                    <x-slot:content>
                     <x-admin::form.control-group class="!mb-0">
-                        <x-admin::form.control-group.label>
+                            <x-admin::form.control-group.label class="text-gray-800 dark:text-white">
                             @lang('Admin::app.services.services.create.image')
                         </x-admin::form.control-group.label>
 
@@ -242,13 +298,17 @@
                             :label="trans('Admin::app.services.services.create.image')"
                         />
 
-                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
                             @lang('Admin::app.services.services.create.image-help')
                         </p>
 
                         <x-admin::form.control-group.error control-name="image" />
                     </x-admin::form.control-group>
-                </div>
+                    </x-slot:content>
+                </x-admin::accordion>
+
+                {!! view_render_event('najaz.admin.services.create.card.media.after') !!}
+
             </div>
         </div>
 

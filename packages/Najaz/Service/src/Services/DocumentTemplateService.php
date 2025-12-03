@@ -485,5 +485,111 @@ class DocumentTemplateService
 </html>
 HTML;
     }
+
+    /**
+     * Check if service has file or image fields.
+     *
+     * @param  ServiceRequest  $serviceRequest
+     * @return bool
+     */
+    public function hasFileOrImageFields(ServiceRequest $serviceRequest): bool
+    {
+        $service = $serviceRequest->service;
+
+        if (! $service) {
+            return false;
+        }
+
+        $pivotRelations = ServiceAttributeGroupService::with([
+            'fields.attributeType',
+        ])
+        ->where('service_id', $service->id)
+        ->get();
+
+        foreach ($pivotRelations as $pivot) {
+            foreach ($pivot->fields as $field) {
+                if ($field->attributeType && in_array($field->attributeType->code, ['file', 'image'])) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Generate Word document for service request.
+     *
+     * @param  ServiceRequest  $serviceRequest
+     * @return string|null Path to generated Word file
+     */
+    public function generateWordDocument(ServiceRequest $serviceRequest): ?string
+    {
+        if (! $serviceRequest->service) {
+            \Log::warning('DocumentTemplateService: Service not found for request', [
+                'service_request_id' => $serviceRequest->id,
+            ]);
+
+            return null;
+        }
+
+        $wordService = new WordDocumentService();
+
+        return $wordService->generateEditableWordFromTemplate($serviceRequest);
+    }
+
+    /**
+     * Generate and download Word document (same approach as PDF - using view).
+     *
+     * @param  ServiceRequest  $serviceRequest
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
+    public function generateAndDownloadWord(ServiceRequest $serviceRequest)
+    {
+        try {
+            $service = $serviceRequest->service;
+            $template = $service->documentTemplate;
+
+            if (! $template || ! $template->is_active) {
+                throw new \Exception('Template not found or inactive');
+            }
+
+            // Get field values and replace placeholders (same as PDF)
+            $fieldValues = $this->getFieldValues($serviceRequest);
+            $content = $this->replacePlaceholders($template->template_content, $fieldValues);
+
+            // Generate HTML using view (same as PDF)
+            $html = view('admin::service-requests.word', compact('serviceRequest', 'template', 'content'))->render();
+            
+            // Generate temp file
+            $fileName = 'document-' . $serviceRequest->increment_id . '-' . now()->format('Y-m-d') . '.doc';
+            $tempPath = sys_get_temp_dir() . '/' . uniqid('word_') . '_' . $fileName;
+            
+            // Save HTML as .doc (Word can open HTML files)
+            file_put_contents($tempPath, $html);
+            
+            // Verify file was created
+            if (!file_exists($tempPath) || filesize($tempPath) === 0) {
+                throw new \Exception('Word file was not generated properly');
+            }
+            
+            \Log::info('Word document generated successfully', [
+                'service_request_id' => $serviceRequest->id,
+                'file_size' => filesize($tempPath),
+            ]);
+            
+            // Return as download and delete after sending
+            return response()->download($tempPath, $fileName)->deleteFileAfterSend(true);
+            
+        } catch (\Exception $e) {
+            \Log::error('DocumentTemplateService: Failed to generate and download Word', [
+                'service_request_id' => $serviceRequest->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
+            throw $e;
+        }
+    }
 }
 

@@ -283,6 +283,13 @@ class ServiceRequestController extends Controller
             $serviceRequest = ServiceRequestProxy::modelClass()::with(['service.documentTemplate'])
                 ->findOrFail($id);
 
+            // Check if there's a final PDF uploaded by admin
+            if ($serviceRequest->final_pdf_path && \Storage::exists($serviceRequest->final_pdf_path)) {
+                $fileName = 'document-'.$serviceRequest->increment_id.'-'.now()->format('d-m-Y').'.pdf';
+                
+                return \Storage::download($serviceRequest->final_pdf_path, $fileName);
+            }
+
             $template = $serviceRequest->service->documentTemplate;
 
             if (! $template || ! $template->is_active) {
@@ -304,6 +311,114 @@ class ServiceRequestController extends Controller
             );
         } catch (\Exception $e) {
             session()->flash('error', $e->getMessage());
+
+            return redirect()->back();
+        }
+    }
+
+    /**
+     * Download editable Word document for the specified resource.
+     *
+     * @return \Symfony\Component\HttpFoundation\StreamedResponse|\Illuminate\Http\RedirectResponse
+     */
+    public function downloadEditableWord(int $id)
+    {
+        try {
+            $serviceRequest = ServiceRequestProxy::modelClass()::with(['service.documentTemplate'])
+                ->findOrFail($id);
+
+            $template = $serviceRequest->service->documentTemplate;
+
+            if (! $template || ! $template->is_active) {
+                session()->flash('error', trans('Admin::app.service-requests.word-document.template-not-found'));
+
+                return redirect()->back();
+            }
+
+            // Generate and download Word document directly (same as PDF)
+            $documentService = new DocumentTemplateService;
+            
+            return $documentService->generateAndDownloadWord($serviceRequest);
+        } catch (\Exception $e) {
+            \Log::error('Failed to download Word document', [
+                'service_request_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            session()->flash('error', trans('Admin::app.service-requests.word-document.download-failed'));
+
+            return redirect()->back();
+        }
+    }
+
+    /**
+     * Upload filled PDF document for the specified resource.
+     *
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
+     */
+    public function uploadFilledPDF(int $id)
+    {
+        try {
+            $this->validate(request(), [
+                'filled_pdf' => 'required|file|mimes:pdf|max:10240', // 10MB max
+            ]);
+
+            $serviceRequest = $this->serviceRequestRepository->findOrFail($id);
+
+            // Delete old PDF if exists
+            if ($serviceRequest->final_pdf_path && \Storage::exists($serviceRequest->final_pdf_path)) {
+                \Storage::delete($serviceRequest->final_pdf_path);
+            }
+
+            // Store the new PDF
+            $file = request()->file('filled_pdf');
+            $directory = 'service_requests/'.$serviceRequest->id;
+            $filename = 'final-'.$serviceRequest->increment_id.'.pdf';
+            $path = $file->storeAs($directory, $filename);
+
+            // Update service request
+            $serviceRequest->final_pdf_path = $path;
+            $serviceRequest->filled_by_admin_id = auth()->guard('admin')->id();
+            $serviceRequest->filled_at = now();
+            $serviceRequest->save();
+
+            if (request()->expectsJson()) {
+                return new JsonResponse([
+                    'message' => trans('Admin::app.service-requests.word-document.upload-success'),
+                    'data' => [
+                        'path' => $path,
+                        'filled_at' => $serviceRequest->filled_at->format('Y-m-d H:i:s'),
+                        'filled_by' => auth()->guard('admin')->user()->name ?? '',
+                    ],
+                ]);
+            }
+
+            session()->flash('success', trans('Admin::app.service-requests.word-document.upload-success'));
+
+            return redirect()->back();
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            if (request()->expectsJson()) {
+                return new JsonResponse([
+                    'message' => $e->getMessage(),
+                    'errors' => $e->errors(),
+                ], 422);
+            }
+
+            return redirect()->back()->withErrors($e->errors())->withInput();
+        } catch (\Exception $e) {
+            \Log::error('Failed to upload PDF document', [
+                'service_request_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
+            if (request()->expectsJson()) {
+                return new JsonResponse([
+                    'message' => trans('Admin::app.service-requests.word-document.upload-failed'),
+                ], 500);
+            }
+
+            session()->flash('error', trans('Admin::app.service-requests.word-document.upload-failed'));
 
             return redirect()->back();
         }

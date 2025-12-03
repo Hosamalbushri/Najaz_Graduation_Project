@@ -53,6 +53,7 @@ class ServiceController extends Controller
         $locale = core()->getRequestedLocaleCode();
 
         $data = $serviceForm->only([
+            'category_id',
             'status',
             'image',
             'sort_order',
@@ -111,6 +112,7 @@ class ServiceController extends Controller
         $locale = core()->getRequestedLocaleCode();
 
         $data = $serviceForm->only([
+            'category_id',
             'status',
             'image',
             'sort_order',
