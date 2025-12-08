@@ -73,17 +73,38 @@ class DocumentTemplateController extends Controller
      */
     public function edit(int $id): View
     {
-        $template = $this->documentTemplateRepository->with('service')->findOrFail($id);
+        $template = $this->documentTemplateRepository->with(['service', 'translations'])->findOrFail($id);
         $service = $template->service;
 
-        // Build available fields list
-        $currentLocale = app()->getLocale();
-        $availableFields = $this->documentTemplateRepository->buildAvailableFieldsForTemplate($service, $currentLocale);
+        // Load service with attribute groups and translations (same as ServiceController::edit)
+        $service = $this->serviceRepository
+            ->withAttributeGroupsForEdit()
+            ->with(['translations', 'citizenTypes'])
+            ->findOrFail($service->id);
+
+        // Load pivot relations with translations and fields (eager loading)
+        $pivotIds = $service->attributeGroups->pluck('pivot.id')->filter();
+        if ($pivotIds->isNotEmpty()) {
+            $pivotRelations = \Najaz\Service\Models\ServiceAttributeGroupService::with([
+                'translations',
+                'fields.translations',
+                'fields.attributeType.translations',
+                'fields.options.translations',
+            ])->whereIn('id', $pivotIds)->get()->keyBy('id');
+
+            // Attach loaded pivot relations to groups (same as ServiceRepository::findForEdit)
+            foreach ($service->attributeGroups as $group) {
+                $pivotId = $group->pivot->id ?? null;
+                if ($pivotId && isset($pivotRelations[$pivotId])) {
+                    // Replace pivot with loaded relation
+                    $group->setRelation('pivot', $pivotRelations[$pivotId]);
+                }
+            }
+        }
 
         return view('admin::services.document-templates.edit', [
-            'template'        => $template,
-            'service'         => $service,
-            'availableFields' => $availableFields,
+            'template' => $template,
+            'service'  => $service,
         ]);
     }
 
@@ -98,7 +119,11 @@ class DocumentTemplateController extends Controller
             'header_image'    => 'nullable',
             'footer_text'     => 'nullable|string',
             'is_active'       => 'nullable|boolean',
+            'locale'          => 'required|string',
         ]);
+
+        // Get current locale
+        $locale = request()->input('locale', app()->getLocale());
 
         // Get used_fields and ensure it's an array
         $usedFields = request()->input('used_fields', []);
@@ -108,19 +133,44 @@ class DocumentTemplateController extends Controller
         if (! is_array($usedFields)) {
             $usedFields = [];
         }
+        
         $data = request()->only([
             'template_content',
-            'used_fields'=>$usedFields,
+            'used_fields' => $usedFields,
             'header_image',
             'footer_text',
             'is_active',
         ]);
 
+        $data['locale'] = $locale;
+
         $template = $this->documentTemplateRepository->updateTemplateWithAvailableFields($id, $data);
 
         return new JsonResponse([
             'message' => trans('Admin::app.services.document-templates.update-success'),
-            'data'    => $template->fresh(),
+            'data'    => $template->fresh(['translations']),
+        ]);
+    }
+
+    /**
+     * Get available fields for template based on locale.
+     */
+    public function getAvailableFields(int $id): JsonResponse
+    {
+        $template = $this->documentTemplateRepository->with('service')->findOrFail($id);
+        $service = $template->service;
+
+        // Get locale from request or use default
+        $localeCode = request()->input('locale', app()->getLocale());
+        $locale = core()->getAllLocales()->firstWhere('code', $localeCode) 
+            ?? core()->getCurrentLocale();
+
+        // Build available fields list
+        $availableFields = $this->documentTemplateRepository->buildAvailableFieldsForTemplate($service, $locale->code);
+
+        return new JsonResponse([
+            'availableFields' => $availableFields,
+            'locale'          => $locale->code,
         ]);
     }
 

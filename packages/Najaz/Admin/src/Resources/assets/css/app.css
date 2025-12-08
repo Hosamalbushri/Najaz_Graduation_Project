@@ -947,7 +947,6 @@
 
 .login-form-container p.text-status-danger::before,
 .login-form-container p[class*="status-danger"]::before {
-    content: "⚠" !important;
     font-size: 0.875rem !important;
     margin-right: 0.25rem !important;
 }

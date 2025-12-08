@@ -5,9 +5,10 @@ namespace Najaz\Request\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Najaz\Request\Contracts\ServiceRequestFormData as ServiceRequestFormDataContract;
+use Najaz\Request\Contracts\ServiceRequestCustomTemplate as ServiceRequestCustomTemplateContract;
+use Webkul\User\Models\Admin;
 
-class ServiceRequestFormData extends Model implements ServiceRequestFormDataContract
+class ServiceRequestCustomTemplate extends Model implements ServiceRequestCustomTemplateContract
 {
     use HasFactory;
 
@@ -16,7 +17,7 @@ class ServiceRequestFormData extends Model implements ServiceRequestFormDataCont
      *
      * @var string
      */
-    protected $table = 'service_request_form_data';
+    protected $table = 'service_request_custom_templates';
 
     /**
      * The attributes that are mass assignable.
@@ -25,10 +26,12 @@ class ServiceRequestFormData extends Model implements ServiceRequestFormDataCont
      */
     protected $fillable = [
         'service_request_id',
-        'group_code',
-        'group_name',
-        'fields_data',
-        'sort_order',
+        'locale',
+        'template_content',
+        'additional_data',
+        'header_image',
+        'footer_text',
+        'created_by_admin_id',
     ];
 
     /**
@@ -37,15 +40,23 @@ class ServiceRequestFormData extends Model implements ServiceRequestFormDataCont
      * @var array
      */
     protected $casts = [
-        'fields_data' => 'array',
+        'additional_data' => 'array',
     ];
 
     /**
-     * Get the service request that owns this form data.
+     * Get the service request that owns this custom template.
      */
     public function serviceRequest(): BelongsTo
     {
         return $this->belongsTo(ServiceRequestProxy::modelClass(), 'service_request_id');
+    }
+
+    /**
+     * Get the admin who created this custom template.
+     */
+    public function createdByAdmin(): BelongsTo
+    {
+        return $this->belongsTo(Admin::class, 'created_by_admin_id');
     }
 }
 

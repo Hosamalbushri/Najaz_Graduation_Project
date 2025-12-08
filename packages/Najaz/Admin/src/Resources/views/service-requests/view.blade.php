@@ -326,6 +326,15 @@
                             @endif
                         @endif
 
+                        <!-- Custom Template Tab -->
+                        <x-admin::tabs.item
+                            :title="trans('Admin::app.service-requests.custom-template.tab-title')"
+                            class="!p-4"
+                            :isSelected="false"
+                        >
+                            @include('admin::service-requests.custom-template-edit')
+                        </x-admin::tabs.item>
+
                     </x-admin::tabs>
                 @else
                     <div class="flex gap-2 p-4 bg-white dark:bg-gray-900" style="justify-content: right;">

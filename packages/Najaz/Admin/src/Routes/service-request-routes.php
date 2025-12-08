@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Najaz\Admin\Http\Controllers\Admin\ServiceRequests\ServiceRequestController;
+use Najaz\Admin\Http\Controllers\Admin\ServiceRequests\CustomTemplateController;
 
 Route::group(['middleware' => ['web', 'admin'], 'prefix' => 'admin/service-requests'], function () {
     Route::controller(ServiceRequestController::class)->group(function () {
@@ -23,6 +24,21 @@ Route::group(['middleware' => ['web', 'admin'], 'prefix' => 'admin/service-reque
         Route::get('download-word/{id}', 'downloadEditableWord')->name('admin.service-requests.download-word');
 
         Route::post('upload-pdf/{id}', 'uploadFilledPDF')->name('admin.service-requests.upload-pdf');
+    });
+
+    // Custom Template Routes
+    Route::controller(CustomTemplateController::class)->group(function () {
+        Route::get('{id}/custom-template/copy-original', 'copyFromOriginal')
+            ->name('admin.service-requests.custom-template.copy');
+
+        Route::post('{id}/custom-template', 'store')
+            ->name('admin.service-requests.custom-template.store');
+
+        Route::get('{id}/custom-template/files', 'getUploadedFiles')
+            ->name('admin.service-requests.custom-template.files');
+
+        Route::get('{id}/custom-template/file/{fieldCode}', 'previewFile')
+            ->name('admin.service-requests.custom-template.preview-file');
     });
 });
 

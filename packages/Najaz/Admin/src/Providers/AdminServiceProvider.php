@@ -63,5 +63,9 @@ class AdminServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(
             dirname(__DIR__).'/Config/acl.php', 'acl'
         );
+
+        $this->mergeConfigFrom(
+            dirname(__DIR__).'/Config/system.php', 'core'
+        );
     }
 }

@@ -137,6 +137,13 @@ class WordDocumentService
         $values = [];
 
         // Citizen basic fields
+        // Applicant full name
+        $values['citizen_full_name'] = trim(
+            ($serviceRequest->citizen_first_name ?? '') . ' ' .
+            ($serviceRequest->citizen_middle_name ?? '') . ' ' .
+            ($serviceRequest->citizen_last_name ?? '')
+        );
+        // Keep old fields for backward compatibility
         $values['citizen_first_name'] = $serviceRequest->citizen_first_name ?? '';
         $values['citizen_middle_name'] = $serviceRequest->citizen_middle_name ?? '';
         $values['citizen_last_name'] = $serviceRequest->citizen_last_name ?? '';

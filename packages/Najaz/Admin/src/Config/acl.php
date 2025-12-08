@@ -339,6 +339,31 @@ return [
         'name'  => 'Admin::app.acl.upload-pdf',
         'route' => 'admin.service-requests.upload-pdf',
         'sort'  => 7,
+    ], [
+        'key'   => 'service-requests.custom-template',
+        'name'  => 'Admin::app.acl.custom-template',
+        'route' => 'admin.service-requests.custom-template.store',
+        'sort'  => 8,
+    ], [
+        'key'   => 'service-requests.custom-template.view',
+        'name'  => 'Admin::app.acl.view',
+        'route' => 'admin.service-requests.view',
+        'sort'  => 1,
+    ], [
+        'key'   => 'service-requests.custom-template.create',
+        'name'  => 'Admin::app.acl.create',
+        'route' => 'admin.service-requests.custom-template.store',
+        'sort'  => 2,
+    ], [
+        'key'   => 'service-requests.custom-template.edit',
+        'name'  => 'Admin::app.acl.edit',
+        'route' => 'admin.service-requests.custom-template.store',
+        'sort'  => 3,
+    ], [
+        'key'   => 'service-requests.custom-template.copy',
+        'name'  => 'Admin::app.acl.copy',
+        'route' => 'admin.service-requests.custom-template.copy',
+        'sort'  => 4,
     ],
 
     /*

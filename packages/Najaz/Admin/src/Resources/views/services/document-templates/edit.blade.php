@@ -3,11 +3,22 @@
         @lang('Admin::app.services.document-templates.edit.title', ['service' => $service->name])
     </x-slot>
 
+    @php
+        $currentLocale = core()->getRequestedLocale();
+        $locales = core()->getAllLocales();
+        
+        // Build available fields list based on current locale
+        $availableFields = app(\Najaz\Service\Repositories\DocumentTemplateRepository::class)
+            ->buildAvailableFieldsForTemplate($service, $currentLocale->code);
+    @endphp
+
     <v-document-template-editor
         :template-id="{{ $template->id ?? null }}"
         :service-id="{{ $service->id }}"
         :template-data="{{ json_encode($template) }}"
         :available-fields="{{ json_encode($availableFields) }}"
+        :current-locale='@json($currentLocale)'
+        :locales='@json($locales)'
     ></v-document-template-editor>
 
     @pushOnce('scripts')
@@ -48,6 +59,46 @@
                                     ::loading="isSaving"
                                     ::disabled="isSaving"
                                 />
+                            </div>
+                        </div>
+
+                        <!-- Locale Switcher -->
+                        <div class="mt-7 flex items-center justify-between gap-4 max-md:flex-wrap">
+                            <div class="flex items-center gap-x-1">
+                                <!-- Locale Switcher -->
+                                <x-admin::dropdown :class="$locales->count() <= 1 ? 'hidden' : ''">
+                                    <!-- Dropdown Toggler -->
+                                    <x-slot:toggle>
+                                        <button
+                                            type="button"
+                                            class="transparent-button px-1 py-1.5 hover:bg-gray-200 focus:bg-gray-200 dark:text-white dark:hover:bg-gray-800 dark:focus:bg-gray-800"
+                                        >
+                                            <span class="icon-language text-2xl"></span>
+
+                                            {{ $currentLocale->name }}
+
+                                            <input
+                                                type="hidden"
+                                                name="locale"
+                                                value="{{ $currentLocale->code }}"
+                                            />
+
+                                            <span class="icon-sort-down text-2xl"></span>
+                                        </button>
+                                    </x-slot>
+
+                                    <!-- Dropdown Content -->
+                                    <x-slot:content class="!p-0">
+                                        @foreach ($locales->sortBy('name') as $locale)
+                                            <a
+                                                href="?locale={{ $locale->code }}"
+                                                class="flex gap-2.5 px-5 py-2 text-base cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-950 dark:text-white {{ $locale->code == $currentLocale->code ? 'bg-gray-100 dark:bg-gray-950' : '' }}"
+                                            >
+                                                {{ $locale->name }}
+                                            </a>
+                                        @endforeach
+                                    </x-slot>
+                                </x-admin::dropdown>
                             </div>
                         </div>
 
@@ -134,33 +185,6 @@
                                                 <!-- Tabs Navigation -->
                                                 <div class="mb-4 border-b border-gray-200 dark:border-gray-700">
                                                     <nav class="-mb-px flex space-x-1 overflow-x-auto" aria-label="Tabs">
-                                                        <!-- Quick Access Tab -->
-                                                        <button
-                                                            @click="activeFieldTab = 'quick'"
-                                                            :class="[
-                                                                'group relative flex items-center gap-2 whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium transition-all duration-200',
-                                                                activeFieldTab === 'quick'
-                                                                    ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
-                                                                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:border-gray-600 dark:hover:text-gray-300'
-                                                            ]"
-                                                            type="button"
-                                                        >
-                                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                                                            </svg>
-                                                            <span>@lang('Admin::app.services.document-templates.edit.quick-access-tab')</span>
-                                                            <span
-                                                                :class="[
-                                                                    'ml-1 rounded-full px-2 py-0.5 text-xs font-medium',
-                                                                    activeFieldTab === 'quick'
-                                                                        ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
-                                                                        : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
-                                                                ]"
-                                                            >
-                                                                @{{ quickAccessFields.length }}
-                                                            </span>
-                                                        </button>
-                                                        
                                                         <!-- Group Tabs -->
                                                         <button
                                                             v-for="(fields, group) in filteredGroupedFields"
@@ -189,55 +213,7 @@
                                                                 @{{ fields.length }}
                                                             </span>
                                                         </button>
-                                                        
-                                                        <!-- Used Fields Tab -->
-                                                        <button
-                                                            @click="activeFieldTab = 'used'"
-                                                            :class="[
-                                                                'group relative flex items-center gap-2 whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium transition-all duration-200',
-                                                                activeFieldTab === 'used'
-                                                                    ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
-                                                                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:border-gray-600 dark:hover:text-gray-300'
-                                                            ]"
-                                                            type="button"
-                                                        >
-                                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                                            </svg>
-                                                            <span>@lang('Admin::app.services.document-templates.edit.used-fields-tab')</span>
-                                                            <span
-                                                                :class="[
-                                                                    'ml-1 rounded-full px-2 py-0.5 text-xs font-medium',
-                                                                    activeFieldTab === 'used'
-                                                                        ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
-                                                                        : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
-                                                                ]"
-                                                            >
-                                                                @{{ usedFieldsList.length }}
-                                                            </span>
-                                                        </button>
                                                     </nav>
-                                                </div>
-                                                
-                                                <!-- Tab Content: Quick Access -->
-                                                <div v-show="activeFieldTab === 'quick'" class="space-y-3">
-                                                    <div class="flex flex-wrap items-center gap-2">
-                                                    <span class="text-xs font-medium text-gray-600 dark:text-gray-400">
-                                                        @lang('Admin::app.services.document-templates.edit.quick-access')
-                                                    </span>
-                                                    <button
-                                                        v-for="quickField in quickAccessFields"
-                                                        :key="quickField.code"
-                                                        @click="insertField(quickField.code)"
-                                                        class="group inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:ring-offset-1"
-                                                        type="button"
-                                                    >
-                                                        <svg class="h-4 w-4 text-gray-500 dark:text-gray-400 transition-transform duration-200 group-hover:rotate-90 group-hover:text-blue-600 dark:group-hover:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                                        </svg>
-                                                        <span class="group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200">@{{ quickField.label }}</span>
-                                                    </button>
-                                                    </div>
                                                 </div>
                                                 
                                                 <!-- Tab Content: Group Fields -->
@@ -262,9 +238,92 @@
                                                         </button>
                                                     </div>
                                                 </div>
+                                            </div>
 
+                                            <!-- Quick Access and Used Fields Tabs -->
+                                            <div class="mb-6 rounded-xl border border-gray-200 bg-gradient-to-br from-green-50/50 via-white to-blue-50/50 p-5 shadow-sm transition-all duration-300 dark:border-gray-700 dark:from-gray-800/50 dark:via-gray-800/30 dark:to-gray-900/50">
+                                                <!-- Tabs Navigation -->
+                                                <div class="mb-4 border-b border-gray-200 dark:border-gray-700">
+                                                    <nav class="-mb-px flex space-x-1 overflow-x-auto" aria-label="Quick Tabs">
+                                                        <!-- Quick Access Tab -->
+                                                        <button
+                                                            @click="activeQuickTab = 'quick'"
+                                                            :class="[
+                                                                'group relative flex items-center gap-2 whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium transition-all duration-200',
+                                                                activeQuickTab === 'quick'
+                                                                    ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                                                                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:border-gray-600 dark:hover:text-gray-300'
+                                                            ]"
+                                                            type="button"
+                                                        >
+                                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                                            </svg>
+                                                            <span>@lang('Admin::app.services.document-templates.edit.quick-access-tab')</span>
+                                                            <span
+                                                                :class="[
+                                                                    'ml-1 rounded-full px-2 py-0.5 text-xs font-medium',
+                                                                    activeQuickTab === 'quick'
+                                                                        ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+                                                                        : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
+                                                                ]"
+                                                            >
+                                                                @{{ quickAccessFields.length }}
+                                                            </span>
+                                                        </button>
+                                                        
+                                                        <!-- Used Fields Tab -->
+                                                        <button
+                                                            @click="activeQuickTab = 'used'"
+                                                            :class="[
+                                                                'group relative flex items-center gap-2 whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium transition-all duration-200',
+                                                                activeQuickTab === 'used'
+                                                                    ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                                                                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:border-gray-600 dark:hover:text-gray-300'
+                                                            ]"
+                                                            type="button"
+                                                        >
+                                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                            </svg>
+                                                            <span>@lang('Admin::app.services.document-templates.edit.used-fields-tab')</span>
+                                                            <span
+                                                                :class="[
+                                                                    'ml-1 rounded-full px-2 py-0.5 text-xs font-medium',
+                                                                    activeQuickTab === 'used'
+                                                                        ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+                                                                        : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
+                                                                ]"
+                                                            >
+                                                                @{{ usedFieldsList.length }}
+                                                            </span>
+                                                        </button>
+                                                    </nav>
+                                                </div>
+                                                
+                                                <!-- Tab Content: Quick Access -->
+                                                <div v-show="activeQuickTab === 'quick'" class="space-y-3">
+                                                    <div class="flex flex-wrap items-center gap-2">
+                                                        <span class="text-xs font-medium text-gray-600 dark:text-gray-400">
+                                                            @lang('Admin::app.services.document-templates.edit.quick-access')
+                                                        </span>
+                                                        <button
+                                                            v-for="quickField in quickAccessFields"
+                                                            :key="quickField.code"
+                                                            @click="insertField(quickField.code)"
+                                                            class="group inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:ring-offset-1"
+                                                            type="button"
+                                                        >
+                                                            <svg class="h-4 w-4 text-gray-500 dark:text-gray-400 transition-transform duration-200 group-hover:rotate-90 group-hover:text-blue-600 dark:group-hover:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                                            </svg>
+                                                            <span class="group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200">@{{ quickField.label }}</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                
                                                 <!-- Tab Content: Used Fields -->
-                                                <div v-show="activeFieldTab === 'used'" class="space-y-3">
+                                                <div v-show="activeQuickTab === 'used'" class="space-y-3">
                                                     <div v-if="usedFieldsList.length === 0" class="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-8 text-center dark:border-gray-700 dark:bg-gray-800/50">
                                                         <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -443,15 +502,28 @@
                         type: Array,
                         default: () => [],
                     },
+                    currentLocale: {
+                        type: Object,
+                        default: () => ({ code: 'ar', name: 'العربية' }),
+                    },
+                    locales: {
+                        type: Array,
+                        default: () => [],
+                    },
                 },
 
                 data() {
+                    // Get translation for current locale
+                    const translations = this.templateData?.translations || [];
+                    const currentTranslation = translations.find(t => t.locale === this.currentLocale.code) || {};
+                    
                     return {
-                        templateContent: this.templateData?.template_content || '',
-                        footerText: this.templateData?.footer_text || '',
+                        templateContent: currentTranslation.template_content || '',
+                        footerText: currentTranslation.footer_text || '',
                         selectedField: '',
                         fieldSearchQuery: '',
-                        activeFieldTab: 'quick',
+                        activeFieldTab: null,
+                        activeQuickTab: 'quick',
                         isSaving: false,
                         isUpdatingContent: false,
                         clickToDeleteText: '@lang('Admin::app.services.document-templates.edit.click-to-delete')',
@@ -463,6 +535,13 @@
                         fieldAddedSuccessText: '@lang('Admin::app.services.document-templates.edit.field-added-success')',
                         saveErrorText: '@lang('Admin::app.services.document-templates.edit.save-error')',
                     };
+                },
+                
+                watch: {
+                    // Watch for locale changes in URL (page reload)
+                    '$route.query.locale'() {
+                        // Page will reload when locale changes, so this is mainly for future use
+                    }
                 },
                 
                 mounted() {
@@ -481,8 +560,8 @@
                     // Set default tab to first group if available
                     this.$nextTick(() => {
                         const groups = Object.keys(this.groupedFields);
-                        if (groups.length > 0 && this.activeFieldTab === 'quick') {
-                            // Keep 'quick' as default, user can switch to groups
+                        if (groups.length > 0 && !this.activeFieldTab) {
+                            this.activeFieldTab = groups[0];
                         }
                     });
                 },
@@ -532,8 +611,7 @@
                     // Quick access fields (commonly used)
                     quickAccessFields() {
                         const commonCodes = [
-                            'citizen_first_name',
-                            'citizen_last_name',
+                            'citizen_full_name',
                             'citizen_national_id',
                             'request_increment_id',
                             'request_date',
@@ -1362,6 +1440,7 @@
                         
                         formData.append('template_content', this.templateContent);
                         formData.append('footer_text', this.footerText);
+                        formData.append('locale', this.currentLocale.code);
 
                         const url = this.templateId 
                             ? `/admin/services/document-templates/${this.templateId}`

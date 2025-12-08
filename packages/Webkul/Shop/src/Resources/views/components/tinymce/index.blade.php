@@ -2,7 +2,7 @@
 
 @pushOnce('scripts')
     <script
-        src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.6.2/tinymce.min.js"
+        src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/7.4.1/tinymce.min.js"
         crossorigin="anonymous"
         referrerpolicy="no-referrer"
     ></script>

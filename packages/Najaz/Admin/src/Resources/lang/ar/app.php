@@ -521,14 +521,16 @@ return [
                 'save-success'                   => 'تم حفظ القالب بنجاح',
                 'save-error'                     => 'حدث خطأ أثناء حفظ القالب. يرجى المحاولة مرة أخرى.',
                 'fields'                         => [
-                    'citizen'              => 'بيانات المواطن',
+                    'applicant'            => 'بيانات مقدم الطلب',
+                    'citizen'              => 'بيانات المواطن', // للتوافق مع الكود القديم
                     'request'              => 'بيانات الطلب',
                     'system'               => 'الحقول النظامية',
-                    'citizen_first_name'   => 'الاسم الأول',
-                    'citizen_middle_name'  => 'الاسم الأوسط',
-                    'citizen_last_name'    => 'الاسم الأخير',
+                    'citizen_full_name'    => 'اسم مقدم الطلب',
+                    'citizen_first_name'   => 'الاسم الأول', // للتوافق مع الكود القديم
+                    'citizen_middle_name'  => 'الاسم الأوسط', // للتوافق مع الكود القديم
+                    'citizen_last_name'    => 'الاسم الأخير', // للتوافق مع الكود القديم
                     'citizen_national_id'  => 'رقم الهوية',
-                    'citizen_type_name'    => 'نوع المواطن',
+                    'citizen_type_name'    => 'نوع مقدم الطلب',
                     'request_increment_id' => 'رقم الطلب',
                     'request_date'         => 'تاريخ الطلب',
                     'current_date'         => 'التاريخ الحالي',
@@ -979,6 +981,43 @@ return [
             'upload'                   => 'رفع',
             'uploading'                => 'جاري الرفع...',
         ],
+
+        'custom-template' => [
+            'title'                  => 'القالب المخصص',
+            'tab-title'              => 'القالب المخصص',
+            'edit'                   => 'تحرير القالب المخصص',
+            'template-content'       => 'محتوى القالب الإضافي',
+            'template-content-help'  => 'أضف محتوى HTML إضافي لهذا الطلب. سيتم دمجه مع القالب الأصلي.',
+            'additional-data'        => 'بيانات إضافية',
+            'uploaded-files'         => 'الملفات المرفوعة',
+            'no-files'               => 'لا توجد ملفات مرفوعة لهذا الطلب',
+            'view-file'              => 'عرض الملف',
+            'download-file'          => 'تحميل الملف',
+            'file-type'              => 'نوع الملف',
+            'field-name'             => 'اسم الحقل',
+            'group-name'             => 'المجموعة',
+            'add-field'              => 'إضافة حقل',
+            'field-label'            => 'اسم الحقل',
+            'field-value'            => 'قيمة الحقل',
+            'remove-field'           => 'حذف الحقل',
+            'save'                   => 'حفظ القالب',
+            'saving'                 => 'جاري الحفظ...',
+            'reset'                  => 'إعادة تعيين',
+            'copy-from-original'     => 'نسخ من القالب الأصلي',
+            'copying'                => 'جاري النسخ...',
+            'success'                => 'تم حفظ القالب المخصص بنجاح',
+            'copy-success'           => 'تم نسخ القالب الأصلي بنجاح',
+            'error'                  => 'حدث خطأ أثناء حفظ القالب',
+            'footer-text'            => 'نص التذييل',
+            'footer-text-help'       => 'أضف نص تذييل مخصص للوثيقة',
+            'header-image'           => 'صورة الترويسة',
+            'header-image-help'      => 'ارفع صورة ترويسة مخصصة للوثيقة',
+            'loading-files'          => 'جاري تحميل الملفات...',
+            'file-viewer-title'      => 'عارض الملفات',
+            'close-viewer'           => 'إغلاق',
+            'no-template-yet'        => 'لم يتم إنشاء قالب مخصص بعد',
+            'create-template'        => 'إنشاء قالب مخصص',
+        ],
     ],
 
     'notifications' => [
@@ -1063,6 +1102,49 @@ return [
                 'completed'    => 'مكتمل',
                 'rejected'     => 'مرفوض',
                 'cancelled'    => 'ملغي',
+            ],
+        ],
+    ],
+
+    'configuration' => [
+        'index' => [
+            'title' => 'التكوين',
+            'save-btn' => 'حفظ الإعدادات',
+            'back-btn' => 'رجوع',
+            'search' => 'بحث',
+            'no-result-found' => 'لم يتم العثور على نتائج',
+
+            'documents' => [
+                'title' => 'الوثائق',
+                'info' => 'إعدادات الوثيقة الرسمية',
+
+                'official' => [
+                    'title' => 'الوثيقة الرسمية',
+                    'info' => 'تكوين إعدادات الوثيقة الرسمية',
+
+                    'header' => [
+                        'title' => 'رأس الوثيقة',
+                        'info' => 'تكوين إعدادات رأس الوثيقة الرسمية',
+                        'header-left' => 'الطرف الأيسر',
+                        'header-left-info' => 'النص أو المحتوى الذي سيظهر على الجانب الأيسر من رأس الوثيقة',
+                        'header-left-placeholder' => 'الطرف الأيسر',
+                        'header-center' => 'شعار الوثيقة',
+                        'header-center-info' => 'صورة الشعار التي ستظهر في منتصف رأس الوثيقة',
+                        'header-center-placeholder' => 'شعار الوثيقة',
+                        'header-right' => 'الطرف الأيمن',
+                        'header-right-info' => 'النص أو المحتوى الذي سيظهر على الجانب الأيمن من رأس الوثيقة',
+                        'header-right-placeholder' => 'الطرف الأيمن',
+                    ],
+
+                    'footer' => [
+                        'title' => 'تذييل الوثيقة',
+                        'info' => 'تكوين إعدادات تذييل الوثيقة الرسمية',
+                        'footer-text' => 'نص التذييل',
+                        'footer-text-info' => 'النص الذي سيظهر في تذييل الوثيقة',
+                        'stamp-image' => 'صورة الختم',
+                        'stamp-image-info' => 'صورة الختم التي ستظهر في تذييل الوثيقة',
+                    ],
+                ],
             ],
         ],
     ],

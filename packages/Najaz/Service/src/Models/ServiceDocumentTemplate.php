@@ -3,11 +3,12 @@
 namespace Najaz\Service\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Najaz\Service\Contracts\ServiceDocumentTemplate as ServiceDocumentTemplateContract;
+use Webkul\Core\Eloquent\TranslatableModel;
 
-class ServiceDocumentTemplate extends Model implements ServiceDocumentTemplateContract
+class ServiceDocumentTemplate extends TranslatableModel implements ServiceDocumentTemplateContract
 {
     use HasFactory;
 
@@ -19,17 +20,32 @@ class ServiceDocumentTemplate extends Model implements ServiceDocumentTemplateCo
     protected $table = 'service_document_templates';
 
     /**
+     * Translation model foreign key column.
+     *
+     * @var string
+     */
+    protected $translationForeignKey = 'service_document_template_id';
+
+    /**
+     * Translated attributes.
+     *
+     * @var array
+     */
+    public $translatedAttributes = [
+        'template_content',
+        'footer_text',
+    ];
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array
      */
     protected $fillable = [
         'service_id',
-        'template_content',
         'available_fields',
         'used_fields',
         'header_image',
-        'footer_text',
         'is_active',
     ];
 
@@ -50,6 +66,14 @@ class ServiceDocumentTemplate extends Model implements ServiceDocumentTemplateCo
     public function service(): BelongsTo
     {
         return $this->belongsTo(ServiceProxy::modelClass(), 'service_id');
+    }
+
+    /**
+     * Get the translations for this template.
+     */
+    public function translations(): HasMany
+    {
+        return $this->hasMany(ServiceDocumentTemplateTranslationProxy::modelClass(), 'service_document_template_id');
     }
 }
 

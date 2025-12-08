@@ -76,6 +76,7 @@ Route::group(['middleware' => ['web', 'admin'], 'prefix' => 'admin/services'], f
             Route::get('services-without-templates', 'getServicesWithoutTemplates')->name('admin.services.document-templates.services-without-templates');
             Route::post('', 'store')->name('admin.services.document-templates.store');
             Route::get('{id}/edit', 'edit')->name('admin.services.document-templates.edit');
+            Route::get('{id}/available-fields', 'getAvailableFields')->name('admin.services.document-templates.available-fields');
             Route::put('{id}', 'update')->name('admin.services.document-templates.update');
             Route::delete('{id}', 'destroy')->name('admin.services.document-templates.delete');
         });

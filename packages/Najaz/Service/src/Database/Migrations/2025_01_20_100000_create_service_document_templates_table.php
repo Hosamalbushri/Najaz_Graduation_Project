@@ -14,11 +14,8 @@ return new class extends Migration
         Schema::create('service_document_templates', function (Blueprint $table) {
             $table->increments('id');
             $table->unsignedInteger('service_id');
-            $table->text('template_content'); // محتوى القالب مع الحقول المتغيرة
-            $table->json('available_fields')->nullable(); // قائمة الحقول المتاحة للاستخدام
-            $table->json('used_fields')->nullable(); // الحقول المستخدمة في القالب
-            $table->string('header_image')->nullable(); // صورة الرأس (شعار المؤسسة)
-            $table->string('footer_text')->nullable(); // نص التذييل
+            $table->json('available_fields')->nullable();
+            $table->string('header_image')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
 

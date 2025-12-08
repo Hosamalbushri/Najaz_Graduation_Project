@@ -18,8 +18,8 @@
         @php
             $fontPath = [];
 
-            // Get the default locale code.
-            $getLocale = app()->getLocale();
+            // Get the locale code from request or fallback to app locale.
+            $getLocale = $requestLocale ?? app()->getLocale();
 
             if (in_array($getLocale, ['ar', 'he', 'fa', 'tr', 'ru', 'uk'])) {
                 $fontFamily = [
@@ -133,6 +133,60 @@
                 margin: 0 0 20px 0;
             }
 
+            .document-header-container {
+                position: absolute;
+                top: 20px;
+                left: 20px;
+                right: 20px;
+            }
+
+            .document-header-container.rtl {
+                left: 20px;
+                right: 20px;
+            }
+
+            .document-header-row {
+                display: table;
+                width: 100%;
+                table-layout: fixed;
+            }
+
+            .document-header-left,
+            .document-header-center,
+            .document-header-right {
+                display: table-cell;
+                vertical-align: top;
+                padding: 0 10px;
+            }
+
+            .document-header-left {
+                text-align: left;
+                width: 33.33%;
+            }
+
+            .document-header-center {
+                text-align: center;
+                width: 33.33%;
+            }
+
+            .document-header-right {
+                text-align: right;
+                width: 33.33%;
+            }
+
+            .document-header-logo {
+                max-width: 200px;
+                max-height: 100px;
+                margin: 0 auto;
+                display: block;
+            }
+
+            .document-header-placeholder {
+                color: #999;
+                font-style: italic;
+                font-size: 9pt;
+            }
+
             .logo-container {
                 position: absolute;
                 top: 20px;
@@ -189,23 +243,80 @@
         </style>
     </head>
 
-    <body dir="{{ core()->getCurrentLocale()->direction }}">
-        <div class="logo-container {{ core()->getCurrentLocale()->direction }}">
-            @if ($template->header_image)
-                @php
-                    $imagePath = storage_path('app/public/' . $template->header_image);
-                    if (file_exists($imagePath)) {
-                        $imageData = base64_encode(file_get_contents($imagePath));
-                        $mimeType = mime_content_type($imagePath);
-                    } else {
-                        $imageData = '';
-                        $mimeType = 'image/png';
-                    }
-                @endphp
-                @if ($imageData)
-                    <img src="data:{{ $mimeType }};base64,{{ $imageData }}"/>
-                @endif
-            @endif
+    <body dir="{{ $localeModel->direction ?? core()->getCurrentLocale()->direction }}">
+        @php
+            // Get request locale
+            $requestLocale = $requestLocale ?? app()->getLocale();
+            $channelCode = core()->getRequestedChannelCode();
+            
+            // Get header settings from system config (same way as invoice)
+            $headerLeft = core()->getConfigData('documents.official.header.header_left', $channelCode, $requestLocale) ?? '';
+            $headerCenter = core()->getConfigData('documents.official.header.header_center', $channelCode, $requestLocale) ?? '';
+            $headerRight = core()->getConfigData('documents.official.header.header_right', $channelCode, $requestLocale) ?? '';
+        @endphp
+
+        <!-- Document Header (Left, Center, Right) - Same structure as invoice logo -->
+        <div class="document-header-container {{ $localeModel->direction ?? core()->getCurrentLocale()->direction }}">
+            <div class="document-header-row">
+                <!-- Left Part -->
+                <div class="document-header-left">
+                    @if (!empty($headerLeft))
+                        {!! $headerLeft !!}
+                    @else
+                        <span class="document-header-placeholder">
+                            {{ trans('Admin::app.configuration.index.documents.official.header.header-left-placeholder', [], $requestLocale) }}
+                        </span>
+                    @endif
+                </div>
+                
+                <!-- Center Part (Logo) - Same way as invoice -->
+                <div class="document-header-center">
+                    @if (!empty($headerCenter))
+                        @php
+                            $logoPath = public_path('storage/' . $headerCenter);
+                            if (!file_exists($logoPath)) {
+                                $logoPath = storage_path('app/public/' . $headerCenter);
+                            }
+                        @endphp
+                        @if (file_exists($logoPath))
+                            <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logoPath)) }}" class="document-header-logo"/>
+                        @else
+                            <span class="document-header-placeholder">
+                                {{ trans('Admin::app.configuration.index.documents.official.header.header-center-placeholder', [], $requestLocale) }}
+                            </span>
+                        @endif
+                    @elseif ($template->header_image)
+                        @php
+                            $logoPath = public_path('storage/' . $template->header_image);
+                            if (!file_exists($logoPath)) {
+                                $logoPath = storage_path('app/public/' . $template->header_image);
+                            }
+                        @endphp
+                        @if (file_exists($logoPath))
+                            <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logoPath)) }}" class="document-header-logo"/>
+                        @else
+                            <span class="document-header-placeholder">
+                                {{ trans('Admin::app.configuration.index.documents.official.header.header-center-placeholder', [], $requestLocale) }}
+                            </span>
+                        @endif
+                    @else
+                        <span class="document-header-placeholder">
+                            {{ trans('Admin::app.configuration.index.documents.official.header.header-center-placeholder', [], $requestLocale) }}
+                        </span>
+                    @endif
+                </div>
+                
+                <!-- Right Part -->
+                <div class="document-header-right">
+                    @if (!empty($headerRight))
+                        {!! $headerRight !!}
+                    @else
+                        <span class="document-header-placeholder">
+                            {{ trans('Admin::app.configuration.index.documents.official.header.header-right-placeholder', [], $requestLocale) }}
+                        </span>
+                    @endif
+                </div>
+            </div>
         </div>
 
         <div class="page">
@@ -220,11 +331,21 @@
                     {!! $content !!}
                 </div>
 
-                <!-- Footer Content -->
-                @if ($template->footer_text)
+                <!-- Footer Content - Same way as invoice -->
+                @if (core()->getConfigData('documents.official.footer.footer_text', $channelCode, $requestLocale))
                     <div class="footer-text">
-                        {!! $template->footer_text !!}
+                        {{ core()->getConfigData('documents.official.footer.footer_text', $channelCode, $requestLocale) }}
                     </div>
+                @elseif (!empty($footerText ?? $template->footer_text))
+                    @php
+                        $templateTranslation = $template->translate($requestLocale);
+                        $templateFooterText = $footerText ?? ($templateTranslation?->footer_text ?? $template->footer_text);
+                    @endphp
+                    @if ($templateFooterText)
+                        <div class="footer-text">
+                            {!! $templateFooterText !!}
+                        </div>
+                    @endif
                 @endif
             </div>
         </div>

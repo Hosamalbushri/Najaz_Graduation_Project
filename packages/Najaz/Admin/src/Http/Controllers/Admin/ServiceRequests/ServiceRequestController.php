@@ -8,6 +8,7 @@ use Najaz\Admin\Http\Controllers\Controller;
 use Najaz\Citizen\Repositories\CitizenRepository;
 use Najaz\Request\Models\ServiceRequestProxy;
 use Najaz\Request\Repositories\ServiceRequestAdminNoteRepository;
+use Najaz\Request\Repositories\ServiceRequestCustomTemplateRepository;
 use Najaz\Request\Repositories\ServiceRequestRepository;
 use Najaz\Service\Services\DocumentTemplateService;
 use Webkul\Core\Traits\PDFHandler;
@@ -24,7 +25,8 @@ class ServiceRequestController extends Controller
     public function __construct(
         protected ServiceRequestRepository $serviceRequestRepository,
         protected CitizenRepository $citizenRepository,
-        protected ServiceRequestAdminNoteRepository $adminNoteRepository
+        protected ServiceRequestAdminNoteRepository $adminNoteRepository,
+        protected ServiceRequestCustomTemplateRepository $customTemplateRepository
     ) {}
 
     /**
@@ -51,6 +53,7 @@ class ServiceRequestController extends Controller
             'beneficiaries',
             'formData',
             'adminNotes.admin',
+            'customTemplate',
         ])->findOrFail($id);
 
         // Generate document content if template exists and is active
@@ -61,7 +64,13 @@ class ServiceRequestController extends Controller
             try {
                 $documentService = new DocumentTemplateService;
                 $fieldValues = $documentService->getFieldValues($request);
-                $documentContent = $documentService->replacePlaceholders($template->template_content, $fieldValues);
+                
+                // Get template content for request locale
+                $requestLocale = $request->locale ?? app()->getLocale();
+                $templateTranslation = $template->translate($requestLocale);
+                $templateContent = $templateTranslation?->template_content ?? $template->template_content;
+                
+                $documentContent = $documentService->replacePlaceholders($templateContent, $fieldValues);
             } catch (\Exception $e) {
                 \Log::error('Error generating document content in view: '.$e->getMessage());
             }
@@ -162,7 +171,13 @@ class ServiceRequestController extends Controller
             }
         }
 
-        return view('admin::service-requests.view', compact('request', 'documentContent', 'template', 'fieldLabelsMap', 'nationalIdToCitizenMap', 'localeName', 'isNationalIdField'));
+        // Get uploaded files for custom template
+        $uploadedFiles = [];
+        if ($request->service && $request->service->attributeGroups) {
+            $uploadedFiles = $this->customTemplateRepository->getUploadedFiles($request);
+        }
+
+        return view('admin::service-requests.view', compact('request', 'documentContent', 'template', 'fieldLabelsMap', 'nationalIdToCitizenMap', 'localeName', 'isNationalIdField', 'uploadedFiles'));
     }
 
     /**
@@ -318,13 +333,26 @@ class ServiceRequestController extends Controller
 
             // Generate document content using DocumentTemplateService
             $documentService = new DocumentTemplateService;
-
-            // Get field values and replace placeholders
+            
+            // Get request locale (fallback to app locale)
+            $requestLocale = $serviceRequest->locale ?? app()->getLocale();
+            
+            // Get template content for request locale
+            $templateTranslation = $template->translate($requestLocale);
+            $templateContent = $templateTranslation?->template_content ?? $template->template_content;
+            
+            // Get all field values
             $fieldValues = $documentService->getFieldValues($serviceRequest);
-            $content = $documentService->replacePlaceholders($template->template_content, $fieldValues);
+            
+            // Replace placeholders in template
+            $content = $documentService->replacePlaceholders($templateContent, $fieldValues);
+            
+            // Merge custom template content if available
+            $content = $documentService->mergeCustomContent($serviceRequest, $content);
 
+            // Use view to build PDF (like invoice)
             return $this->downloadPDF(
-                view('admin::service-requests.pdf', compact('serviceRequest', 'template', 'content'))->render(),
+                view('admin::service-requests.pdf', compact('serviceRequest', 'template', 'content', 'requestLocale'))->render(),
                 'document-'.$serviceRequest->increment_id.'-'.$serviceRequest->created_at->format('d-m-Y')
             );
         } catch (\Exception $e) {

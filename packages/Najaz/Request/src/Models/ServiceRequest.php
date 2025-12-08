@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Najaz\Citizen\Models\CitizenProxy;
 use Najaz\Request\Contracts\ServiceRequest as ServiceRequestContract;
 use Najaz\Service\Models\ServiceProxy;
@@ -109,6 +110,23 @@ class ServiceRequest extends Model implements ServiceRequestContract
     public function filledByAdmin(): BelongsTo
     {
         return $this->belongsTo(Admin::class, 'filled_by_admin_id');
+    }
+
+    /**
+     * Get all custom templates for this service request.
+     */
+    public function customTemplates(): HasMany
+    {
+        return $this->hasMany(ServiceRequestCustomTemplateProxy::modelClass(), 'service_request_id');
+    }
+
+    /**
+     * Get the custom template for the current locale.
+     */
+    public function customTemplate(): HasOne
+    {
+        return $this->hasOne(ServiceRequestCustomTemplateProxy::modelClass(), 'service_request_id')
+            ->where('locale', app()->getLocale());
     }
 }
 

@@ -14,5 +14,7 @@ class ModuleServiceProvider extends BaseModuleServiceProvider
     protected $models = [
         \Najaz\Request\Models\ServiceRequest::class,
         \Najaz\Request\Models\ServiceRequestAdminNote::class,
+        \Najaz\Request\Models\ServiceRequestFormData::class,
+        \Najaz\Request\Models\ServiceRequestCustomTemplate::class,
     ];
 }
