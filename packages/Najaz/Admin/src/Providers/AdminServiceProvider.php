@@ -39,6 +39,7 @@ class AdminServiceProvider extends ServiceProvider
         $this->loadRoutesFrom(__DIR__.'/../Routes/service-routes.php');
         $this->loadRoutesFrom(__DIR__.'/../Routes/service-request-routes.php');
         $this->loadRoutesFrom(__DIR__.'/../Routes/notification-routes.php');
+        $this->loadRoutesFrom(__DIR__.'/../Routes/reporting-routes.php');
 
         $this->loadTranslationsFrom(__DIR__.'/../Resources/lang', 'Admin');
 

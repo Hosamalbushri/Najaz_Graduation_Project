@@ -41,73 +41,18 @@
         }
         @endif
 
-        @page { margin-bottom: 150px; }
-
         body {
             margin: 0;
-            padding: 40px;
-            background: #fff;
-            font-family: "{{ $fontFamily['regular'] }}", "DejaVu Sans", sans-serif;
-        }
-
-        .page {
-            width: 800px;
-            margin: 0 auto;
-            padding: 40px;
-            background: #fff;
-        }
-
-        b, th {
-            font-family: "{{ $fontFamily['bold'] }}";
-        }
-
-        .page-header {
-            border-bottom: 2px solid #000;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-        }
-
-        .page-header table {
-            width: 100%;
-            table-layout: fixed;
-            border-collapse: collapse;
-        }
-
-        .page-header td {
-            width: 33.33%;
-            vertical-align: top;
-            padding: 0 8px;
-        }
-
-        .header-section {
-            font-size: 15px;
-            line-height: 1.8;
-            color: #000;
-        }
-
-        .header-section p,
-        .header-section div,
-        .header-section span {
-            margin: 0;
             padding: 0;
+            background:#fff;
+            font-family: "{{ $fontFamily['regular'] }}", "DejaVu Sans", sans-serif;
+            color:#000;
         }
 
-        .header-section-right { text-align: right; }
-        .header-section-center { text-align: center; }
-        .header-section-left { text-align: left; direction:ltr; }
-
-        .header-section img {
-            max-width: 100%;
-            max-height: 80px;
-            display: block;
-            margin: 0;
-        }
-
-        .page-content {
-            padding-top: 5px;
+        main.page-content {
             font-size: 14px;
-            color: #000;
             line-height: 1.9;
+            padding: 0;
         }
 
         .document-content {
@@ -119,148 +64,33 @@
             margin-top: 0 !important;
         }
 
-        .page-footer-fixed {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background:#fff;
-            border-top: 2px solid #000;
-            padding: 6px 0;
+        .document-content p {
+            page-break-inside: avoid;
+            page-break-after: avoid;
+            orphans: 2;
+            widows: 2;
         }
 
-        .footer-table {
-            width: 100%;
-            border-collapse: collapse;
-            table-layout: fixed;
-        }
-
-        .footer-table td {
-            vertical-align: middle;
-            padding: 0 8px;
-        }
-
-        .footer-text-merged {
-            font-size: 11px;
-            line-height: 1.5;
-            color:#000;
-            text-align: center;
-        }
-
-        .footer-stamp-col {
-            width: 25%;
-            text-align: center;
-        }
-
-        .stamp-label {
-            font-size: 11px;
-            margin-bottom: 4px;
-        }
-
-        .stamp-box {
-            width:80px;
-            height:80px;
-            border:2px solid #000;
-            margin:0 auto;
+        .document-content p:empty,
+        .document-content p.empty-paragraph {
+            page-break-after: avoid !important;
+            page-break-before: avoid !important;
+            line-height: 0.1 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            height: 0.1em !important;
+            min-height: 0 !important;
+            overflow: hidden;
         }
     </style>
 </head>
 
 <body dir="{{ core()->getCurrentLocale()->direction }}">
-
-@php
-    $footerText = core()->getConfigData('documents.official.footer.footer_text');
-@endphp
-
-<div class="page-footer-fixed">
-    <table class="footer-table">
-        <tr>
-            <td class="footer-text-merged" colspan="2">
-                @if ($footerText) {!! $footerText !!} @endif
-            </td>
-
-            <td class="footer-stamp-col">
-                <div class="stamp-label">مكان الختم</div>
-                @php
-                    $stampImage = core()->getConfigData('documents.official.footer.stamp_image');
-                    $stampFinal = null;
-                    if ($stampImage) {
-                        $path = storage_path('app/public/' . $stampImage);
-                        if (file_exists($path)) {
-                            $stampFinal = 'data:image/png;base64,' . base64_encode(file_get_contents($path));
-                        } else {
-                            $stampFinal = $stampImage;
-                        }
-                    }
-                @endphp
-
-                @if ($stampFinal)
-                    <img src="{{ $stampFinal }}" style="max-width:80px; max-height:80px;">
-                @else
-                    <div class="stamp-box"></div>
-                @endif
-            </td>
-        </tr>
-    </table>
-</div>
-
-<div class="page">
-    <div class="page-header">
-        <table>
-            <tr>
-                <td class="header-section-right">
-                    <div class="header-section">
-                        @php
-                            $headerRight = core()->getConfigData('documents.official.header.header_right');
-                        @endphp
-                        @if ($headerRight) {!! $headerRight !!} @endif
-                    </div>
-                </td>
-
-                <td class="header-section-center">
-                    <div class="header-section">
-                        @php
-                            $logoImage = null;
-                            if ($template->header_image) {
-                                $path = storage_path('app/public/' . $template->header_image);
-                                if (file_exists($path)) {
-                                    $logoImage = 'data:image/png;base64,' . base64_encode(file_get_contents($path));
-                                }
-                            }
-                            if (!$logoImage) {
-                                $configLogo = core()->getConfigData('documents.official.header.header_center');
-                                if ($configLogo) {
-                                    $path = storage_path('app/public/' . $configLogo);
-                                    if (file_exists($path)) {
-                                        $logoImage = 'data:image/png;base64,' . base64_encode(file_get_contents($path));
-                                    } else {
-                                        $logoImage = $configLogo;
-                                    }
-                                }
-                            }
-                        @endphp
-                        @if ($logoImage) <img src="{{ $logoImage }}"> @endif
-                    </div>
-                </td>
-
-                <td class="header-section-left">
-                    <div class="header-section">
-                        @php
-                            $headerLeft = core()->getConfigData('documents.official.header.header_left');
-                        @endphp
-                        @if ($headerLeft) {!! $headerLeft !!} @endif
-                    </div>
-                </td>
-            </tr>
-        </table>
+<main class="page-content">
+    <div class="document-content">
+        {!! $content !!}
     </div>
-
-    <div class="page-content">
-        <div class="document-content">
-            {!! $content !!}
-        </div>
-    </div>
-</div>
+</main>
 
 </body>
 </html>

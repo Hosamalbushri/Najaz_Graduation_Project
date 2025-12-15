@@ -3,11 +3,11 @@
 namespace Najaz\Service\Services;
 
 use Carbon\Carbon;
+use Najaz\Admin\Traits\PDFHandler;
 use Najaz\Request\Models\ServiceRequest;
 use Najaz\Request\Models\ServiceRequestFormData;
 use Najaz\Service\Models\ServiceAttributeGroupService;
 use Najaz\Service\Models\ServiceDocumentTemplate;
-use Webkul\Core\Traits\PDFHandler;
 
 class DocumentTemplateService
 {

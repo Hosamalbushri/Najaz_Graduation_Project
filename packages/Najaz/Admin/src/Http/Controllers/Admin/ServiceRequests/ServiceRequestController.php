@@ -5,13 +5,13 @@ namespace Najaz\Admin\Http\Controllers\Admin\ServiceRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
 use Najaz\Admin\Http\Controllers\Controller;
+use Najaz\Admin\Traits\PDFHandler;
 use Najaz\Citizen\Repositories\CitizenRepository;
 use Najaz\Request\Models\ServiceRequestProxy;
 use Najaz\Request\Repositories\ServiceRequestAdminNoteRepository;
 use Najaz\Request\Repositories\ServiceRequestCustomTemplateRepository;
 use Najaz\Request\Repositories\ServiceRequestRepository;
 use Najaz\Service\Services\DocumentTemplateService;
-use Webkul\Core\Traits\PDFHandler;
 
 class ServiceRequestController extends Controller
 {

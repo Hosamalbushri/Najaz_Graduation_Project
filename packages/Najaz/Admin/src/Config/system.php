@@ -14,6 +14,7 @@ return [
         'key'  => 'documents.official',
         'name' => 'Admin::app.configuration.index.documents.official.title',
         'info' => 'Admin::app.configuration.index.documents.official.info',
+        'icon' => 'settings/invoice.svg',
         'sort' => 1,
     ], [
         'key'    => 'documents.official.header',

@@ -93,4 +93,26 @@ return [
         'sort'  => 4,
         'icon'  => 'icon-sales',
     ],
+    [
+        'key'   => 'reporting',
+        'name'  => 'Admin::app.components.layouts.sidebar.reporting',
+        'route' => 'admin.reporting.citizens.index',
+        'sort'  => 5,
+        'icon'  => 'icon-report',
+        'icon-class' => 'report-icon',
+    ],
+    [
+        'key'   => 'reporting.citizens',
+        'name'  => 'Admin::app.components.layouts.sidebar.citizens',
+        'route' => 'admin.reporting.citizens.index',
+        'sort'  => 1,
+        'icon'  => '',
+    ],
+    [
+        'key'   => 'reporting.services',
+        'name'  => 'Admin::app.components.layouts.sidebar.services.title',
+        'route' => 'admin.reporting.services.index',
+        'sort'  => 2,
+        'icon'  => '',
+    ],
 ];

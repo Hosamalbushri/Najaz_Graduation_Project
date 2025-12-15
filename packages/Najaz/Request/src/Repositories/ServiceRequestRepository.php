@@ -685,9 +685,9 @@ class ServiceRequestRepository extends Repository
                         $validationResult = $this->validateSelectOptionIds(
                             $value,
                             $attributeType,
-                            $field, // Pass the field to use custom field options
                             $fieldCode,
-                            $fieldLabel
+                            $fieldLabel,
+                            $field // Pass the field to use custom field options
                         );
 
                         if ($validationResult !== true) {
@@ -761,9 +761,10 @@ class ServiceRequestRepository extends Repository
      * @param  mixed  $attributeType
      * @param  string  $fieldCode
      * @param  string  $fieldLabel
+     * @param  mixed  $field
      * @return bool|string
      */
-    protected function validateSelectOptionIds($value, $attributeType, $field = null, string $fieldCode, string $fieldLabel)
+    protected function validateSelectOptionIds($value, $attributeType, string $fieldCode, string $fieldLabel, $field = null)
     {
         $validOptionIds = [];
 
