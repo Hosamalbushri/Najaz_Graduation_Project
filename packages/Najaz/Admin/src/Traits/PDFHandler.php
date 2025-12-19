@@ -21,9 +21,6 @@ trait PDFHandler
             $fileName = Str::random(32);
         }
 
-        // معالجة الفقرات الفارغة لمنع إنشاء صفحات جديدة
-        $contentHtml = $this->markEmptyParagraphs($contentHtml);
-
         $direction = core()->getCurrentLocale()->direction;
 
         if ($direction === 'rtl') {
@@ -151,25 +148,6 @@ trait PDFHandler
 
         .document-content > *:first-child {
             margin-top: 0 !important;
-        }
-
-        .document-content p {
-            page-break-inside: avoid;
-            page-break-after: avoid;
-            orphans: 2;
-            widows: 2;
-        }
-
-        .document-content p:empty,
-        .document-content p.empty-paragraph {
-            page-break-after: avoid !important;
-            page-break-before: avoid !important;
-            line-height: 0.1 !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            height: 0.1em !important;
-            min-height: 0 !important;
-            overflow: hidden;
         }
 
         .page-footer-wrapper {
@@ -336,25 +314,6 @@ HTML;
             line-height: 1.9;
         }
 
-        .content p {
-            page-break-inside: avoid;
-            page-break-after: avoid;
-            orphans: 2;
-            widows: 2;
-        }
-
-        .content p:empty,
-        .content p.empty-paragraph {
-            page-break-after: avoid !important;
-            page-break-before: avoid !important;
-            line-height: 0.1 !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            height: 0.1em !important;
-            min-height: 0 !important;
-            overflow: hidden;
-        }
-
         .footer {
             margin-top: 30px;
             border-top: 1px solid #000;
@@ -465,55 +424,6 @@ HTML;
         } catch (\Exception $e) {
             return '<div class="stamp-box"></div>';
         }
-    }
-
-    /**
-     * Mark empty paragraphs with a class to prevent page breaks.
-     *
-     * @param  string  $html
-     * @return string
-     */
-    protected function markEmptyParagraphs(string $html): string
-    {
-        // Match paragraphs that contain only whitespace, &nbsp;, or <br> tags
-        // This pattern matches <p> tags that contain only whitespace, &nbsp; entities, or <br> tags
-        $pattern = '/<p([^>]*)>((?:\s|&nbsp;|&nbsp;\s*|&nbsp;(&nbsp;)*|\s*<br\s*\/?>\s*)*)<\/p>/i';
-        
-        $html = preg_replace_callback($pattern, function ($matches) {
-            $attributes = $matches[1];
-            $content = $matches[2];
-            $original = $matches[0];
-            
-            // Check if the content is truly empty (only whitespace, &nbsp;, or <br>)
-            $trimmedContent = trim(strip_tags($content));
-            $trimmedContent = preg_replace('/&nbsp;/i', '', $trimmedContent);
-            $trimmedContent = trim($trimmedContent);
-            
-            // Only mark as empty if content is truly empty
-            if (empty($trimmedContent)) {
-                // Check if class="empty-paragraph" already exists
-                if (preg_match('/class=["\']([^"\']*)["\']/', $attributes, $classMatch)) {
-                    $existingClass = $classMatch[1];
-                    // Add empty-paragraph class if not already present
-                    if (strpos($existingClass, 'empty-paragraph') === false) {
-                        $newClass = trim($existingClass . ' empty-paragraph');
-                        return preg_replace('/class=["\'][^"\']*["\']/', 'class="' . $newClass . '"', $original);
-                    }
-                    return $original;
-                } else {
-                    // Add class attribute
-                    if (empty(trim($attributes))) {
-                        return '<p class="empty-paragraph">' . $content . '</p>';
-                    } else {
-                        return preg_replace('/<p([^>]*)>/i', '<p$1 class="empty-paragraph">', $original);
-                    }
-                }
-            }
-            
-            return $original;
-        }, $html);
-
-        return $html;
     }
 
     /**
