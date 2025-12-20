@@ -12,8 +12,8 @@ use Webkul\Core\Repositories\CountryStateRepository;
 use Webkul\Core\Repositories\CurrencyRepository;
 use Webkul\Core\Repositories\ExchangeRateRepository;
 use Webkul\Core\Repositories\LocaleRepository;
-use Webkul\Customer\Repositories\CustomerGroupRepository;
-use Webkul\Tax\Repositories\TaxCategoryRepository;
+// use Webkul\Customer\Repositories\CustomerGroupRepository; // Disabled - Customer module disabled
+// use Webkul\Tax\Repositories\TaxCategoryRepository; // Disabled - Tax module disabled
 
 class Core
 {
@@ -64,7 +64,7 @@ class Core
     /**
      * Guest Customer Group
      *
-     * @var \Webkul\Customer\Models\CustomerGroup
+     * @var \Webkul\Customer\Models\CustomerGroup|null
      */
     protected $guestCustomerGroup;
 
@@ -101,8 +101,8 @@ class Core
         protected CountryRepository $countryRepository,
         protected CountryStateRepository $countryStateRepository,
         protected LocaleRepository $localeRepository,
-        protected CustomerGroupRepository $customerGroupRepository,
-        protected TaxCategoryRepository $taxCategoryRepository
+        // protected CustomerGroupRepository $customerGroupRepository, // Disabled - Customer module disabled
+        // protected TaxCategoryRepository $taxCategoryRepository // Disabled - Tax module disabled
     ) {}
 
     /**
@@ -733,15 +733,18 @@ class Core
     /**
      * Return guest customer group.
      *
-     * @return \Webkul\Customer\Contract\CustomerGroup
+     * @return \Webkul\Customer\Contract\CustomerGroup|null
      */
     public function getGuestCustomerGroup()
     {
-        if ($this->guestCustomerGroup) {
-            return $this->guestCustomerGroup;
-        }
-
-        return $this->guestCustomerGroup = $this->customerGroupRepository->findOneByField('code', 'guest');
+        // Customer module is disabled, return null
+        return null;
+        
+        // Original code (disabled):
+        // if ($this->guestCustomerGroup) {
+        //     return $this->guestCustomerGroup;
+        // }
+        // return $this->guestCustomerGroup = $this->customerGroupRepository->findOneByField('code', 'guest');
     }
 
     /**
@@ -855,15 +858,17 @@ class Core
      */
     public function getTaxCategoryById($id)
     {
-        if (empty($id)) {
-            return;
-        }
-
-        if (array_key_exists($id, $this->taxCategoriesById)) {
-            return $this->taxCategoriesById[$id];
-        }
-
-        return $this->taxCategoriesById[$id] = $this->taxCategoryRepository->find($id);
+        // Tax module is disabled, return null
+        return null;
+        
+        // Original code (disabled):
+        // if (empty($id)) {
+        //     return;
+        // }
+        // if (array_key_exists($id, $this->taxCategoriesById)) {
+        //     return $this->taxCategoriesById[$id];
+        // }
+        // return $this->taxCategoriesById[$id] = $this->taxCategoryRepository->find($id);
     }
 
     /**

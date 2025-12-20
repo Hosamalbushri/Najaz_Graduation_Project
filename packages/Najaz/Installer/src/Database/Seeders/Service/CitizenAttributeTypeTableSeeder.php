@@ -5,6 +5,7 @@ namespace Najaz\Installer\Database\Seeders\Service;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class CitizenAttributeTypeTableSeeder extends Seeder
 {
@@ -17,7 +18,7 @@ class CitizenAttributeTypeTableSeeder extends Seeder
     public function run($parameters = [])
     {
         // Check if tables exist
-        if (! DB::getSchemaBuilder()->hasTable('service_attribute_types')) {
+        if (! Schema::hasTable('service_attribute_types')) {
             return;
         }
 
@@ -132,18 +133,20 @@ class CitizenAttributeTypeTableSeeder extends Seeder
             ]);
 
             // Insert translations for each locale
-            foreach ($locales as $locale) {
-                $name = $locale === 'ar' ? $attrType['name_ar'] : $attrType['name_en'];
+            if (Schema::hasTable('service_attribute_type_translations')) {
+                foreach ($locales as $locale) {
+                    $name = $locale === 'ar' ? $attrType['name_ar'] : $attrType['name_en'];
 
-                DB::table('service_attribute_type_translations')->insert([
+                    DB::table('service_attribute_type_translations')->insert([
                     'locale' => $locale,
                     'name' => $name,
                     'service_attribute_type_id' => $attributeTypeId,
-                ]);
+                    ]);
+                }
             }
 
             // Insert options for select type (gender)
-            if (isset($attrType['options']) && $attrType['type'] === 'select') {
+            if (isset($attrType['options']) && $attrType['type'] === 'select' && Schema::hasTable('service_attribute_type_options')) {
                 foreach ($attrType['options'] as $optionData) {
                     // Get next available option ID
                     $lastOptionId = DB::table('service_attribute_type_options')->max('id') ?? 0;
@@ -160,14 +163,16 @@ class CitizenAttributeTypeTableSeeder extends Seeder
                     ]);
 
                     // Insert option translations
-                    foreach ($locales as $locale) {
-                        $label = $locale === 'ar' ? $optionData['label_ar'] : $optionData['label_en'];
+                    if (Schema::hasTable('service_attribute_type_option_translations')) {
+                        foreach ($locales as $locale) {
+                            $label = $locale === 'ar' ? $optionData['label_ar'] : $optionData['label_en'];
 
-                        DB::table('service_attribute_type_option_translations')->insert([
+                            DB::table('service_attribute_type_option_translations')->insert([
                             'locale' => $locale,
                             'label' => $label,
                             'service_attribute_type_option_id' => $optionId,
-                        ]);
+                            ]);
+                        }
                     }
                 }
             }

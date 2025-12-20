@@ -5,6 +5,7 @@ namespace Webkul\Installer\Database\Seeders\Category;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /*
  * Category table seeder.
@@ -21,6 +22,11 @@ class CategoryTableSeeder extends Seeder
      */
     public function run($parameters = [])
     {
+        // Category module is disabled, skip this seeder
+        if (! Schema::hasTable('categories')) {
+            return;
+        }
+
         DB::table('categories')->delete();
 
         DB::table('category_translations')->delete();

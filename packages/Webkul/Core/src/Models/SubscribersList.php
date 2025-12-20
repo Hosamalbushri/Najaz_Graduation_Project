@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Webkul\Core\Contracts\SubscribersList as SubscribersListContract;
 use Webkul\Core\Database\Factories\SubscriberListFactory;
-use Webkul\Customer\Models\CustomerProxy;
+// use Webkul\Customer\Models\CustomerProxy; // Disabled - Customer module disabled
 
 class SubscribersList extends Model implements SubscribersListContract
 {
@@ -46,7 +46,13 @@ class SubscribersList extends Model implements SubscribersListContract
      */
     public function customer(): BelongsTo
     {
-        return $this->belongsTo(CustomerProxy::modelClass());
+        // Customer module is disabled - return a dummy relationship
+        if (class_exists(\Webkul\Customer\Models\CustomerProxy::class)) {
+            return $this->belongsTo(\Webkul\Customer\Models\CustomerProxy::modelClass());
+        }
+        
+        // Return a dummy relationship if Customer module is not available
+        return $this->belongsTo(\Illuminate\Database\Eloquent\Model::class, 'customer_id');
     }
 
     /**

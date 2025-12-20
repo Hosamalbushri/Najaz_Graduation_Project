@@ -5,7 +5,7 @@ namespace Webkul\Core\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Webkul\Core\Contracts\Address as AddressContract;
-use Webkul\Customer\Models\Customer;
+// use Webkul\Customer\Models\Customer; // Disabled - Customer module disabled
 
 abstract class Address extends Model implements AddressContract
 {
@@ -50,6 +50,12 @@ abstract class Address extends Model implements AddressContract
      */
     public function customer(): BelongsTo
     {
-        return $this->belongsTo(Customer::class);
+        // Customer module is disabled - return a dummy relationship
+        if (class_exists(\Webkul\Customer\Models\Customer::class)) {
+            return $this->belongsTo(\Webkul\Customer\Models\Customer::class);
+        }
+        
+        // Return a dummy relationship if Customer module is not available
+        return $this->belongsTo(\Illuminate\Database\Eloquent\Model::class, 'customer_id');
     }
 }

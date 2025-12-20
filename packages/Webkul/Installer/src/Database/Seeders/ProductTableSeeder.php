@@ -7,6 +7,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Http\File;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Webkul\Installer\Database\Seeders\Category\CategoryTableSeeder;
 
@@ -44,6 +45,11 @@ class ProductTableSeeder extends Seeder
      */
     public function run($parameters = [])
     {
+        // Product module is disabled, skip this seeder
+        if (! Schema::hasTable('products')) {
+            return;
+        }
+
         DB::table('products')->delete();
 
         $defaultLocale = $parameters['default_locale'] ?? config('app.locale');

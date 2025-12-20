@@ -1,6 +1,6 @@
 <?php
 
-namespace Webkul\Installer\Console\Commands;
+namespace Najaz\Installer\Console\Commands;
 
 use DateTimeZone;
 use Illuminate\Console\Command;
@@ -8,9 +8,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
-use Webkul\Installer\Database\Seeders\DatabaseSeeder as BagistoDatabaseSeeder;
-use Webkul\Installer\Events\ComposerEvents;
-use Webkul\Installer\Helpers\DatabaseManager;
+use Najaz\Installer\Database\Seeders\DatabaseSeeder as BagistoDatabaseSeeder;
+use Najaz\Installer\Events\ComposerEvents;
+use Najaz\Installer\Helpers\DatabaseManager;
 
 use function Laravel\Prompts\multiselect;
 use function Laravel\Prompts\password;

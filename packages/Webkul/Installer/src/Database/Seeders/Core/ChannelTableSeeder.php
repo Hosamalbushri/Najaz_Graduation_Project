@@ -4,6 +4,7 @@ namespace Webkul\Installer\Database\Seeders\Core;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class ChannelTableSeeder extends Seeder
 {
@@ -23,7 +24,10 @@ class ChannelTableSeeder extends Seeder
 
         DB::table('channel_locales')->delete();
 
-        DB::table('channel_inventory_sources')->delete();
+        // Inventory module is disabled, skip channel_inventory_sources
+        if (Schema::hasTable('channel_inventory_sources')) {
+            DB::table('channel_inventory_sources')->delete();
+        }
 
         DB::table('channels')->insert([
             [
@@ -31,7 +35,7 @@ class ChannelTableSeeder extends Seeder
                 'code'              => 'default',
                 'theme'             => 'default',
                 'hostname'          => config('app.url'),
-                'root_category_id'  => 1,
+                'root_category_id'  => null, // Category module is disabled
                 'default_locale_id' => 1,
                 'base_currency_id'  => 1,
                 'created_at'        => now(),
@@ -80,9 +84,12 @@ class ChannelTableSeeder extends Seeder
             ]);
         }
 
-        DB::table('channel_inventory_sources')->insert([
-            'channel_id'          => 1,
-            'inventory_source_id' => 1,
-        ]);
+        // Inventory module is disabled, skip channel_inventory_sources
+        if (Schema::hasTable('channel_inventory_sources')) {
+            DB::table('channel_inventory_sources')->insert([
+                'channel_id'          => 1,
+                'inventory_source_id' => 1,
+            ]);
+        }
     }
 }

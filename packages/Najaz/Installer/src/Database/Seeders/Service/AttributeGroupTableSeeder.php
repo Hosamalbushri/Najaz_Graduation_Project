@@ -5,6 +5,7 @@ namespace Najaz\Installer\Database\Seeders\Service;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class AttributeGroupTableSeeder extends Seeder
 {
@@ -17,7 +18,7 @@ class AttributeGroupTableSeeder extends Seeder
     public function run($parameters = [])
     {
         // Check if tables exist
-        if (! DB::getSchemaBuilder()->hasTable('service_attribute_groups')) {
+        if (! Schema::hasTable('service_attribute_groups')) {
             return;
         }
 
@@ -82,22 +83,28 @@ class AttributeGroupTableSeeder extends Seeder
             ]);
 
             // Insert translations for each locale
-            foreach ($locales as $locale) {
-                $name = $locale === 'ar' ? $groupData['default_name'] : $groupData['default_name_en'];
+            if (Schema::hasTable('service_attribute_group_translations')) {
+                foreach ($locales as $locale) {
+                    $name = $locale === 'ar' ? $groupData['default_name'] : $groupData['default_name_en'];
 
-                DB::table('service_attribute_group_translations')->insert([
+                    DB::table('service_attribute_group_translations')->insert([
                     'locale' => $locale,
                     'name' => $name,
                     'description' => null,
                     'service_attribute_group_id' => $groupId,
-                ]);
+                    ]);
+                }
             }
 
             // Insert fields for this group
-            if (isset($groupData['fields']) && is_array($groupData['fields'])) {
+            if (isset($groupData['fields']) && is_array($groupData['fields']) && Schema::hasTable('service_attribute_fields')) {
                 $sortOrder = 1;
                 foreach ($groupData['fields'] as $fieldCode) {
                     // Get attribute type by code
+                    if (! Schema::hasTable('service_attribute_types')) {
+                        continue;
+                    }
+                    
                     $attributeType = DB::table('service_attribute_types')
                         ->where('code', $fieldCode)
                         ->first();
@@ -130,25 +137,33 @@ class AttributeGroupTableSeeder extends Seeder
                             ]);
 
                             // Get attribute type translation for field label
-                            $attributeTypeTranslation = DB::table('service_attribute_type_translations')
-                                ->where('service_attribute_type_id', $attributeType->id)
-                                ->where('locale', $defaultLocale)
-                                ->first();
+                            $attributeTypeTranslation = null;
+                            if (Schema::hasTable('service_attribute_type_translations')) {
+                                $attributeTypeTranslation = DB::table('service_attribute_type_translations')
+                                    ->where('service_attribute_type_id', $attributeType->id)
+                                    ->where('locale', $defaultLocale)
+                                    ->first();
+                            }
 
                             // Insert field translations
-                            foreach ($locales as $locale) {
-                                $labelTranslation = DB::table('service_attribute_type_translations')
-                                    ->where('service_attribute_type_id', $attributeType->id)
-                                    ->where('locale', $locale)
-                                    ->first();
+                            if (Schema::hasTable('service_attribute_field_translations')) {
+                                foreach ($locales as $locale) {
+                                    $labelTranslation = null;
+                                    if (Schema::hasTable('service_attribute_type_translations')) {
+                                        $labelTranslation = DB::table('service_attribute_type_translations')
+                                            ->where('service_attribute_type_id', $attributeType->id)
+                                            ->where('locale', $locale)
+                                            ->first();
+                                    }
 
-                                $label = $labelTranslation ? $labelTranslation->name : ($attributeTypeTranslation ? $attributeTypeTranslation->name : $fieldCode);
+                                    $label = $labelTranslation ? $labelTranslation->name : ($attributeTypeTranslation ? $attributeTypeTranslation->name : $fieldCode);
 
-                                DB::table('service_attribute_field_translations')->insert([
+                                    DB::table('service_attribute_field_translations')->insert([
                                     'locale' => $locale,
                                     'label' => $label,
                                     'service_attribute_field_id' => $fieldId,
-                                ]);
+                                    ]);
+                                }
                             }
 
                             $sortOrder++;

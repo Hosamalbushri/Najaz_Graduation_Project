@@ -5,6 +5,7 @@ namespace Webkul\Installer\Database\Seeders\CMS;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class CMSPagesTableSeeder extends Seeder
 {
@@ -16,6 +17,11 @@ class CMSPagesTableSeeder extends Seeder
      */
     public function run($parameters = [])
     {
+        // CMS module is disabled, skip this seeder
+        if (! Schema::hasTable('cms_pages')) {
+            return;
+        }
+
         DB::table('cms_pages')->delete();
 
         DB::table('cms_page_translations')->delete();

@@ -17,10 +17,11 @@ return new class extends Migration
             $table->increments('id');
             $table->string('type');
             $table->boolean('read')->default(0);
-            $table->integer('order_id')->unsigned();
+            $table->integer('order_id')->unsigned()->nullable();
             $table->timestamps();
 
-            $table->foreign('order_id')->references('id')->on('orders')->onDelete('cascade');
+            // Foreign key constraint disabled - Sales module is disabled
+            // $table->foreign('order_id')->references('id')->on('orders')->onDelete('cascade');
         });
     }
 

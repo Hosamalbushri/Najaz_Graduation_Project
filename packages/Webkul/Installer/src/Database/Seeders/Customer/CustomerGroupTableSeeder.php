@@ -4,6 +4,7 @@ namespace Webkul\Installer\Database\Seeders\Customer;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class CustomerGroupTableSeeder extends Seeder
 {
@@ -15,6 +16,11 @@ class CustomerGroupTableSeeder extends Seeder
      */
     public function run($parameters = [])
     {
+        // Customer module is disabled, skip this seeder
+        if (! Schema::hasTable('customer_groups')) {
+            return;
+        }
+
         DB::table('customer_groups')->delete();
 
         $defaultLocale = $parameters['default_locale'] ?? config('app.locale');

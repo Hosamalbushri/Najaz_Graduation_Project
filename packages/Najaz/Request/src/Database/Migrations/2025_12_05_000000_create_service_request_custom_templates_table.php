@@ -38,7 +38,7 @@ return new class extends Migration
             $table->index('locale');
             
             // Unique constraint - one custom template per request per locale
-            $table->unique(['service_request_id', 'locale']);
+            $table->unique(['service_request_id', 'locale'], 'srct_req_id_locale_unique');
         });
     }
 

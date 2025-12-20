@@ -4,6 +4,7 @@ namespace Webkul\Installer\Database\Seeders\Attribute;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class AttributeOptionTableSeeder extends Seeder
 {
@@ -15,6 +16,11 @@ class AttributeOptionTableSeeder extends Seeder
      */
     public function run($parameters = [])
     {
+        // Attribute module is disabled, skip this seeder
+        if (! Schema::hasTable('attribute_options')) {
+            return;
+        }
+
         DB::table('attribute_options')->delete();
 
         DB::table('attribute_option_translations')->delete();

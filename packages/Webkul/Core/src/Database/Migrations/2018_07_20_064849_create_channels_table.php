@@ -29,7 +29,8 @@ return new class extends Migration
             $table->integer('base_currency_id')->unsigned();
             $table->timestamps();
 
-            $table->foreign('root_category_id')->references('id')->on('categories')->onDelete('set null');
+            // Foreign key constraint disabled - Category module is disabled
+            // $table->foreign('root_category_id')->references('id')->on('categories')->onDelete('set null');
             $table->foreign('default_locale_id')->references('id')->on('locales');
             $table->foreign('base_currency_id')->references('id')->on('currencies');
         });

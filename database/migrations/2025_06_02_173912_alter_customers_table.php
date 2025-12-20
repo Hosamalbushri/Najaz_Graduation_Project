@@ -13,6 +13,11 @@ return new class extends Migration
      */
     public function up()
     {
+        // Customer module is disabled, skip this migration
+        if (! Schema::hasTable('customers')) {
+            return;
+        }
+
         Schema::table('customers', function (Blueprint $table) {
             $table->string('device_token')->nullable();
         });
@@ -25,6 +30,11 @@ return new class extends Migration
      */
     public function down()
     {
+        // Customer module is disabled, skip this migration
+        if (! Schema::hasTable('customers')) {
+            return;
+        }
+
         Schema::table('customers', function (Blueprint $table) {
             $table->dropColumn('device_token');
         });

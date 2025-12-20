@@ -19,7 +19,8 @@ return new class extends Migration
 
             $table->unique(['channel_id', 'inventory_source_id'], 'channel_inventory_source_unique');
             $table->foreign('channel_id')->references('id')->on('channels')->onDelete('cascade');
-            $table->foreign('inventory_source_id')->references('id')->on('inventory_sources')->onDelete('cascade');
+            // Foreign key constraint disabled - Inventory module is disabled
+            // $table->foreign('inventory_source_id')->references('id')->on('inventory_sources')->onDelete('cascade');
         });
     }
 

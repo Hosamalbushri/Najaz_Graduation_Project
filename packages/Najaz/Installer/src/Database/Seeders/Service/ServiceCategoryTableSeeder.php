@@ -5,6 +5,7 @@ namespace Najaz\Installer\Database\Seeders\Service;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Service Category table seeder.
@@ -21,9 +22,16 @@ class ServiceCategoryTableSeeder extends Seeder
      */
     public function run($parameters = [])
     {
+        // Check if tables exist
+        if (! Schema::hasTable('service_categories')) {
+            return;
+        }
+
         DB::table('service_categories')->delete();
 
-        DB::table('service_category_translations')->delete();
+        if (Schema::hasTable('service_category_translations')) {
+            DB::table('service_category_translations')->delete();
+        }
 
         $now = Carbon::now();
 
@@ -116,7 +124,9 @@ class ServiceCategoryTableSeeder extends Seeder
                 ],
             ];
 
-            DB::table('service_category_translations')->insert($translations);
+            if (Schema::hasTable('service_category_translations')) {
+                DB::table('service_category_translations')->insert($translations);
+            }
         }
     }
 }

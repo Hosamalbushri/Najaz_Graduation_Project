@@ -5,6 +5,7 @@ namespace Najaz\Installer\Database\Seeders\Citizen;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class CitizenTypeTableSeeder extends Seeder
 {
@@ -17,7 +18,7 @@ class CitizenTypeTableSeeder extends Seeder
     public function run($parameters = [])
     {
         // Check if table exists
-        if (! DB::getSchemaBuilder()->hasTable('citizen_types')) {
+        if (! Schema::hasTable('citizen_types')) {
             return;
         }
 

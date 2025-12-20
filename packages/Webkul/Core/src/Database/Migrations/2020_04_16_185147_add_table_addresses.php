@@ -36,9 +36,10 @@ return new class extends Migration
             $table->json('additional')->nullable();
             $table->timestamps();
 
-            $table->foreign(['customer_id'])->references('id')->on('customers')->onDelete('cascade');
-            $table->foreign(['cart_id'])->references('id')->on('cart')->onDelete('cascade');
-            $table->foreign(['order_id'])->references('id')->on('orders')->onDelete('cascade');
+            // Foreign key constraints disabled - Customer, Checkout, and Sales modules are disabled
+            // $table->foreign(['customer_id'])->references('id')->on('customers')->onDelete('cascade');
+            // $table->foreign(['cart_id'])->references('id')->on('cart')->onDelete('cascade');
+            // $table->foreign(['order_id'])->references('id')->on('orders')->onDelete('cascade');
         });
     }
 

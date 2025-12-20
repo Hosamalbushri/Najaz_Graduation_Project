@@ -22,7 +22,8 @@ return new class extends Migration
             $table->integer('channel_id')->unsigned();
             $table->timestamps();
 
-            $table->foreign('customer_id')->references('id')->on('customers')->onDelete('set null');
+            // Foreign key constraint disabled - Customer module is disabled
+            // $table->foreign('customer_id')->references('id')->on('customers')->onDelete('set null');
             $table->foreign('channel_id')->references('id')->on('channels')->onDelete('cascade');
         });
     }

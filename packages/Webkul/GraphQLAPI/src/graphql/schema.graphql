@@ -10,37 +10,4 @@ scalar Upload @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\Upload
 "A JSON object or value (string, number, boolean, array, or null)."
 scalar JSON @scalar(class: "Webkul\\GraphQLAPI\\Scalars\\JSON")
 
-#import /admin/sales/orders/*.graphql
-#import /admin/sales/invoices/*.graphql
-#import /admin/sales/shipments/*.graphql
-#import /admin/sales/refunds/*.graphql
-#import /admin/sales/transactions/*.graphql
-#import /admin/sales/reorder/*.graphql
-
-#import /admin/catalog/products/*.graphql
-#import /admin/catalog/categories/*.graphql
-#import /admin/catalog/attributes/*.graphql
-#import /admin/catalog/attribute-families/*.graphql
-
-#import /admin/customer/customers/*.graphql
-#import /admin/customer/groups/*.graphql
-#import /admin/customer/reviews/*.graphql
-#import /admin/customer/gdprRequests/*.graphql
-
-#import /admin/cms/*.graphql
-
-#import /admin/marketing/promotions/*.graphql
-#import /admin/marketing/communications/*.graphql
-#import /admin/marketing/seo/*.graphql
-
-#import /admin/setting/*.graphql
-#import /admin/configuration/*.graphql
-
-#import /shop/common/*.graphql
-#import /shop/cart/*.graphql
-#import /shop/checkout/*.graphql
-#import /shop/payment/*.graphql
-
-
 #import common.graphql
-#import /shop/customer/*.graphql

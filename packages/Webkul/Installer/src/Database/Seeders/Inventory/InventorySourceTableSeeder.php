@@ -4,6 +4,7 @@ namespace Webkul\Installer\Database\Seeders\Inventory;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class InventorySourceTableSeeder extends Seeder
 {
@@ -15,6 +16,11 @@ class InventorySourceTableSeeder extends Seeder
      */
     public function run($parameters = [])
     {
+        // Inventory module is disabled, skip this seeder
+        if (! Schema::hasTable('inventory_sources')) {
+            return;
+        }
+
         DB::table('inventory_sources')->delete();
 
         $defaultLocale = $parameters['default_locale'] ?? config('app.locale');
