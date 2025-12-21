@@ -958,6 +958,13 @@ return [
             'reject-msg'                    => 'Please enter the reason for rejection',
             'rejection-reason-required'     => 'Rejection reason is required',
             'in_progress'                   => 'In Progress',
+            'attachments'                   => 'Attachments',
+            'image'                          => 'Image',
+            'file'                           => 'File',
+            'view-file'                      => 'View File',
+            'download-file'                  => 'Download File',
+            'file-not-found'                 => 'File not found',
+            'no-file-uploaded'               => 'No file uploaded',
         ],
 
         'word-document' => [
@@ -1059,6 +1066,20 @@ return [
                 ],
                 'service-requests'          => 'Service Requests',
                 'reporting'                 => 'Reporting',
+            ],
+
+            'header' => [
+                'mega-search' => [
+                    'title'                        => 'Mega Search',
+                    'services'                     => 'Services',
+                    'service-requests'             => 'Service Requests',
+                    'service-categories'            => 'Service Categories',
+                    'citizens'                      => 'Citizens',
+                    'explore-all-services'          => 'Explore all services',
+                    'explore-all-service-requests'  => 'Explore all service requests',
+                    'explore-all-service-categories' => 'Explore all service categories',
+                    'explore-all-citizens'          => 'Explore all citizens',
+                ],
             ],
         ],
     ],

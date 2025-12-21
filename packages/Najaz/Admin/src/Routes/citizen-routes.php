@@ -17,6 +17,7 @@ Route::group(['middleware' => ['web', 'admin'], 'prefix' => 'admin/citizens'], f
         Route::delete('{id}', 'destroy')->name('admin.citizens.citizen.delete');
         Route::post('mass-delete', 'massDestroy')->name('admin.citizens.mass_delete');
         Route::post('mass-update', 'massUpdate')->name('admin.citizens.mass_update');
+        Route::get('search', 'search')->name('admin.citizens.search');
         Route::post('note/{id}', 'storeNotes')->name('admin.citizen.note.store');
     });
     /**

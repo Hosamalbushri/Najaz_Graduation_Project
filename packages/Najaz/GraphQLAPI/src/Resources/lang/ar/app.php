@@ -52,6 +52,10 @@ return [
             'create_error'           => 'فشل إنشاء طلب الخدمة: :message',
             'update_error'           => 'فشل تحديث طلب الخدمة: :message',
             'cancel_error'           => 'فشل إلغاء طلب الخدمة: :message',
+            'invalid_file_field'     => 'الحقل ":field" غير صالح أو ليس من نوع ملف/صورة.',
+            'file_validation_failed' => 'فشل التحقق من الملف في الحقل ":field": :errors',
+            'available_file_fields'  => 'الحقول المتاحة من نوع ملف/صورة هي: :fields',
+            'no_file_fields_available' => 'لا توجد حقول من نوع ملف/صورة في هذه الخدمة.',
         ],
     ],
 ];

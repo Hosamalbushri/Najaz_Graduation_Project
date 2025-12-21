@@ -37,6 +37,7 @@ Route::group(['middleware' => ['web', 'admin'], 'prefix' => 'admin/services'], f
         Route::delete('{id}', 'destroy')->name('admin.services.delete');
         Route::post('mass-delete', 'massDestroy')->name('admin.services.mass_delete');
         Route::post('mass-update', 'massUpdate')->name('admin.services.mass_update');
+        Route::get('search', 'search')->name('admin.services.search');
         Route::get('{id}/customizable-options', 'customizableOptions')->name('admin.services.customizable-options');
         Route::post('{id}/document-template', 'storeDocumentTemplate')->name('admin.services.document-template.store');
     });

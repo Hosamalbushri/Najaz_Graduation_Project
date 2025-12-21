@@ -5,13 +5,13 @@ namespace Najaz\Admin\Http\Controllers\Admin\ServiceRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
 use Najaz\Admin\Http\Controllers\Controller;
-use Najaz\Admin\Traits\PDFHandler;
 use Najaz\Citizen\Repositories\CitizenRepository;
 use Najaz\Request\Models\ServiceRequestProxy;
 use Najaz\Request\Repositories\ServiceRequestAdminNoteRepository;
 use Najaz\Request\Repositories\ServiceRequestCustomTemplateRepository;
 use Najaz\Request\Repositories\ServiceRequestRepository;
 use Najaz\Service\Services\DocumentTemplateService;
+use Webkul\Core\Traits\PDFHandler;
 
 class ServiceRequestController extends Controller
 {
@@ -48,7 +48,7 @@ class ServiceRequestController extends Controller
     {
         $request = $this->serviceRequestRepository->with([
             'service.documentTemplate',
-            'service.attributeGroups.fields',
+            'service.attributeGroups.fields.attributeType',
             'citizen',
             'beneficiaries',
             'formData',
@@ -177,7 +177,124 @@ class ServiceRequestController extends Controller
             $uploadedFiles = $this->customTemplateRepository->getUploadedFiles($request);
         }
 
-        return view('admin::service-requests.view', compact('request', 'documentContent', 'template', 'fieldLabelsMap', 'nationalIdToCitizenMap', 'localeName', 'isNationalIdField', 'uploadedFiles'));
+        // Build file/image fields map to identify them in view
+        $fileImageFieldsMap = [];
+        if ($request->service && $request->service->attributeGroups) {
+            // Get pivot IDs from the collection (pivot is available on belongsToMany)
+            $pivotIds = $request->service->attributeGroups->map(function ($group) {
+                return $group->pivot->id ?? null;
+            })->filter()->toArray();
+            
+            $pivotRelations = collect();
+            
+            if (!empty($pivotIds)) {
+                $pivotRelations = \Najaz\Service\Models\ServiceAttributeGroupService::with([
+                    'fields.translations',
+                    'fields.attributeType.translations',
+                ])->whereIn('id', $pivotIds)->get()->keyBy('id');
+            }
+
+            foreach ($request->service->attributeGroups as $group) {
+                // Access pivot data safely
+                $pivotId = isset($group->pivot) && isset($group->pivot->id) ? $group->pivot->id : null;
+                $pivotRelation = $pivotId ? ($pivotRelations->get($pivotId) ?? null) : null;
+                
+                $fieldsToUse = $pivotRelation && $pivotRelation->fields && $pivotRelation->fields->isNotEmpty()
+                    ? $pivotRelation->fields
+                    : ($group->fields ?? collect());
+
+                foreach ($fieldsToUse as $field) {
+                    // Get field type - prefer direct 'type' attribute, fallback to attributeType->code
+                    $fieldType = null;
+                    
+                    if (isset($field->type) && !empty($field->type)) {
+                        $fieldType = $field->type;
+                    } else {
+                        if (!$field->relationLoaded('attributeType')) {
+                            $field->load('attributeType');
+                        }
+                        
+                        if ($field->attributeType) {
+                            $fieldType = $field->attributeType->code;
+                        }
+                    }
+                    
+                    // Mark file/image fields
+                    if ($fieldType && in_array($fieldType, ['file', 'image'])) {
+                        $fileImageFieldsMap[$field->code] = [
+                            'type' => $fieldType,
+                            'label' => $field->translate($locale)?->label ?? $field->code,
+                        ];
+                    }
+                }
+            }
+        }
+
+        // Helper function to check if field is file/image
+        $isFileImageField = function ($fieldCode) use ($fileImageFieldsMap) {
+            return isset($fileImageFieldsMap[$fieldCode]);
+        };
+
+        // Collect all file/image fields from all form data for display
+        $allFileImageFields = [];
+        
+        // Debug: Log available file/image field codes
+        \Log::info('ServiceRequestController::view - Available file/image field codes', [
+            'file_image_fields_map_keys' => array_keys($fileImageFieldsMap),
+            'form_data_count' => $request->formData->count(),
+        ]);
+        
+        foreach ($request->formData as $formDataItem) {
+            if ($formDataItem->fields_data && is_array($formDataItem->fields_data)) {
+                // Debug each form data item
+                \Log::info('ServiceRequestController::view - Processing form data', [
+                    'group_code' => $formDataItem->group_code,
+                    'group_name' => $formDataItem->group_name,
+                    'fields_data_keys' => array_keys($formDataItem->fields_data),
+                ]);
+                
+                foreach ($formDataItem->fields_data as $fieldCode => $fieldValue) {
+                    // Check if field is file/image type (even if empty value)
+                    $isFileImage = $isFileImageField($fieldCode);
+                    
+                    \Log::info('ServiceRequestController::view - Checking field', [
+                        'field_code' => $fieldCode,
+                        'is_file_image' => $isFileImage,
+                        'field_value_type' => gettype($fieldValue),
+                        'field_value_empty' => empty($fieldValue),
+                    ]);
+                    
+                    if ($isFileImage) {
+                        $allFileImageFields[] = [
+                            'field_code' => $fieldCode,
+                            'field_label' => $fileImageFieldsMap[$fieldCode]['label'] ?? $fieldLabelsMap[$fieldCode] ?? $fieldCode,
+                            'field_type' => $fileImageFieldsMap[$fieldCode]['type'] ?? 'file',
+                            'file_path' => $fieldValue ?? null,
+                            'group_name' => $formDataItem->group_name,
+                            'group_code' => $formDataItem->group_code,
+                        ];
+                    }
+                }
+            }
+        }
+
+        // Log for debugging
+        \Log::info('ServiceRequestController::view - File/Image fields debugging', [
+            'request_id' => $request->id,
+            'service_id' => $request->service_id,
+            'file_image_fields_map_keys' => array_keys($fileImageFieldsMap),
+            'file_image_fields_map' => $fileImageFieldsMap,
+            'all_file_image_fields_count' => count($allFileImageFields),
+            'all_file_image_fields' => $allFileImageFields,
+            'form_data_fields' => $request->formData->map(function ($item) {
+                return [
+                    'group_code' => $item->group_code,
+                    'fields_data_keys' => is_array($item->fields_data) ? array_keys($item->fields_data) : [],
+                ];
+            })->toArray(),
+        ]);
+
+        return view('admin::service-requests.view', compact('request', 'documentContent', 'template', 'fieldLabelsMap', 'nationalIdToCitizenMap', 'localeName', 'isNationalIdField', 'uploadedFiles', 'fileImageFieldsMap', 'isFileImageField', 'allFileImageFields'));
     }
 
     /**
@@ -285,15 +402,13 @@ class ServiceRequestController extends Controller
      */
     public function search(): JsonResponse
     {
-        $query = request()->input('query');
-
-        $requests = $this->serviceRequestRepository->scopeQuery(function ($q) use ($query) {
-            return $q->where('increment_id', 'like', "%{$query}%")
-                ->orWhere('status', 'like', "%{$query}%")
-                ->orWhere('citizen_first_name', 'like', "%{$query}%")
-                ->orWhere('citizen_last_name', 'like', "%{$query}%")
-                ->orWhere('citizen_national_id', 'like', "%{$query}%")
-                ->orWhereRaw('CONCAT(citizen_first_name, " ", citizen_last_name) LIKE ?', ["%{$query}%"])
+        $requests = $this->serviceRequestRepository->scopeQuery(function ($query) {
+            return $query->where('increment_id', 'like', '%'.urldecode(request()->input('query')).'%')
+                ->orWhere('status', 'like', '%'.urldecode(request()->input('query')).'%')
+                ->orWhere('citizen_first_name', 'like', '%'.urldecode(request()->input('query')).'%')
+                ->orWhere('citizen_last_name', 'like', '%'.urldecode(request()->input('query')).'%')
+                ->orWhere('citizen_national_id', 'like', '%'.urldecode(request()->input('query')).'%')
+                ->orWhereRaw('CONCAT(citizen_first_name, " ", citizen_last_name) LIKE ?', ['%'.urldecode(request()->input('query')).'%'])
                 ->orderBy('created_at', 'desc');
         })->paginate(10);
 
@@ -334,25 +449,11 @@ class ServiceRequestController extends Controller
             // Generate document content using DocumentTemplateService
             $documentService = new DocumentTemplateService;
             
-            // Get request locale (fallback to app locale)
-            $requestLocale = $serviceRequest->locale ?? app()->getLocale();
-            
-            // Get template content for request locale
-            $templateTranslation = $template->translate($requestLocale);
-            $templateContent = $templateTranslation?->template_content ?? $template->template_content;
-            
-            // Get all field values
-            $fieldValues = $documentService->getFieldValues($serviceRequest);
-            
-            // Replace placeholders in template
-            $content = $documentService->replacePlaceholders($templateContent, $fieldValues);
-            
-            // Merge custom template content if available
-            $content = $documentService->mergeCustomContent($serviceRequest, $content);
+            // Generate document with request locale
+            $html = $documentService->generateDocument($serviceRequest);
 
-            // Use view to build PDF (like invoice)
             return $this->downloadPDF(
-                view('admin::service-requests.pdf', compact('serviceRequest', 'template', 'content', 'requestLocale'))->render(),
+                $html,
                 'document-'.$serviceRequest->increment_id.'-'.$serviceRequest->created_at->format('d-m-Y')
             );
         } catch (\Exception $e) {

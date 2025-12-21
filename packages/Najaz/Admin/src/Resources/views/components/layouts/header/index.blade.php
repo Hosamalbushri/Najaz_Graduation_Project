@@ -237,7 +237,7 @@
                 </div>
 
                 <!-- Searched Results -->
-                <template v-if="activeTab == 'products'">
+                <template v-if="activeTab == 'services'">
                     <template v-if="isLoading">
                         <x-admin::shimmer.header.mega-search.products />
                     </template>
@@ -245,72 +245,61 @@
                     <template v-else>
                         <div class="grid max-h-[300px] overflow-y-auto sm:max-h-[400px]">
                             <a
-{{--                                :href="'{{ route('admin.catalog.products.edit', ':id') }}'.replace(':id', product.id)"--}}
+                                :href="'{{ route('admin.services.edit', ':id') }}'.replace(':id', service.id)"
                                 class="flex cursor-pointer justify-between gap-2 border-b border-border-muted p-3 last:border-b-0 hover:bg-bg-mutedLight dark:border-border-default dark:hover:bg-surface-inverse sm:gap-2.5 sm:p-4"
-                                v-for="product in searchedResults.products.data"
+                                v-for="service in searchedResults.services.data"
                             >
                                 <!-- Left Information -->
                                 <div class="flex gap-2 sm:gap-2.5">
                                     <!-- Image -->
                                     <div
                                         class="relative h-10 max-h-10 w-full max-w-10 overflow-hidden rounded sm:h-[60px] sm:max-h-[60px] sm:max-w-[60px]"
-                                        :class="{'overflow-hidden rounded border border-dashed border-border-muted dark:border-border-default dark:mix-blend-exclusion dark:invert': ! product.images.length}"
+                                        :class="{'overflow-hidden rounded border border-dashed border-border-muted dark:border-border-default dark:mix-blend-exclusion dark:invert': ! service.image_url}"
                                     >
-                                        <template v-if="! product.images.length">
+                                        <template v-if="! service.image_url">
                                             <img src="{{ bagisto_asset('images/product-placeholders/front.svg') }}" class="h-full w-full object-cover">
-
-                                            <p class="absolute bottom-0.5 w-full text-center text-[4px] font-semibold text-text-light sm:bottom-1.5 sm:text-[6px]">
-                                                @lang('admin::app.catalog.products.edit.types.grouped.image-placeholder')
-                                            </p>
                                         </template>
 
                                         <template v-else>
-                                            <img :src="product.images[0].url" class="h-full w-full object-cover">
+                                            <img :src="service.image_url" class="h-full w-full object-cover">
                                         </template>
                                     </div>
 
                                     <!-- Details -->
                                     <div class="grid place-content-start gap-1 sm:gap-1.5">
                                         <p class="text-sm font-semibold text-text-secondary dark:text-text-secondary sm:text-base">
-                                            @{{ product.name }}
+                                            @{{ service.name }}
                                         </p>
 
                                         <p class="text-xs text-text-muted sm:text-sm">
-                                            @{{ "@lang('admin::app.components.layouts.header.mega-search.sku')".replace(':sku', product.sku) }}
+                                            @{{ service.status ? '@lang("Admin::app.services.services.status.active")' : '@lang("Admin::app.services.services.status.inactive")' }}
                                         </p>
                                     </div>
-                                </div>
-
-                                <!-- Right Information -->
-                                <div class="grid place-content-center gap-1 text-right">
-                                    <p class="text-sm font-semibold text-text-secondary dark:text-text-secondary sm:text-base">
-                                        @{{ product.formatted_price }}
-                                    </p>
                                 </div>
                             </a>
                         </div>
 
                         <div class="flex border-t p-2 dark:border-border-default sm:p-3">
                             <a
-{{--                                :href="'{{ route('admin.catalog.products.index') }}?search=:query'.replace(':query', searchTerm)"--}}
+                                :href="'{{ route('admin.services.index') }}?search=' + searchTerm"
                                 class="cursor-pointer text-xs font-semibold text-text-link transition-all hover:underline"
-                                v-if="searchedResults.products.data.length"
+                                v-if="searchedResults.services.data && searchedResults.services.data.length"
                             >
-                                @{{ "@lang('admin::app.components.layouts.header.mega-search.explore-all-matching-products')".replace(':query', searchTerm).replace(':count', searchedResults.products.meta.total) }}
+                                @lang('Admin::app.components.layouts.header.mega-search.explore-all-services')
                             </a>
 
                             <a
-{{--                                href="{{ route('admin.catalog.products.index') }}"--}}
+                                href="{{ route('admin.services.index') }}"
                                 class="cursor-pointer text-xs font-semibold text-text-link transition-all hover:underline"
                                 v-else
                             >
-                                @lang('admin::app.components.layouts.header.mega-search.explore-all-products')
+                                @lang('Admin::app.components.layouts.header.mega-search.explore-all-services')
                             </a>
                         </div>
                     </template>
                 </template>
 
-                <template v-if="activeTab == 'orders'">
+                <template v-if="activeTab == 'service_requests'">
                     <template v-if="isLoading">
                         <x-admin::shimmer.header.mega-search.orders />
                     </template>
@@ -318,41 +307,41 @@
                     <template v-else>
                         <div class="grid max-h-[300px] overflow-y-auto sm:max-h-[400px]">
                             <a
-{{--                                :href="'{{ route('admin.sales.orders.view', ':id') }}'.replace(':id', order.id)"--}}
+                                :href="'{{ route('admin.service-requests.view', ':id') }}'.replace(':id', request.id)"
                                 class="grid cursor-pointer place-content-start gap-1 border-b border-border-muted p-3 last:border-b-0 hover:bg-bg-mutedLight dark:border-border-default dark:hover:bg-surface-inverse sm:gap-1.5 sm:p-4"
-                                v-for="order in searchedResults.orders.data"
+                                v-for="request in searchedResults.service_requests.data"
                             >
                                 <p class="text-sm font-semibold text-text-secondary dark:text-text-secondary sm:text-base">
-                                    #@{{ order.increment_id }}
+                                    #@{{ request.increment_id }}
                                 </p>
 
                                 <p class="text-xs text-text-muted dark:text-text-secondary sm:text-sm">
-                                    @{{ order.formatted_created_at + ', ' + order.status_label + ', ' + order.customer_full_name }}
+                                    @{{ request.formatted_created_at + ', ' + request.status + ', ' + request.citizen_full_name }}
                                 </p>
                             </a>
                         </div>
 
                         <div class="flex border-t p-2 dark:border-border-default sm:p-3">
                             <a
-{{--                                :href="'{{ route('admin.sales.orders.index') }}?search=:query'.replace(':query', searchTerm)"--}}
+                                :href="'{{ route('admin.service-requests.index') }}?search=' + searchTerm"
                                 class="cursor-pointer text-xs font-semibold text-text-link transition-all hover:underline"
-                                v-if="searchedResults.orders.data.length"
+                                v-if="searchedResults.service_requests.data && searchedResults.service_requests.data.length"
                             >
-                                @{{ "@lang('admin::app.components.layouts.header.mega-search.explore-all-matching-orders')".replace(':query', searchTerm).replace(':count', searchedResults.orders.total) }}
+                                @lang('Admin::app.components.layouts.header.mega-search.explore-all-service-requests')
                             </a>
 
                             <a
-{{--                                href="{{ route('admin.sales.orders.index') }}"--}}
+                                href="{{ route('admin.service-requests.index') }}"
                                 class="cursor-pointer text-xs font-semibold text-text-link transition-all hover:underline"
                                 v-else
                             >
-                                @lang('admin::app.components.layouts.header.mega-search.explore-all-orders')
+                                @lang('Admin::app.components.layouts.header.mega-search.explore-all-service-requests')
                             </a>
                         </div>
                     </template>
                 </template>
 
-                <template v-if="activeTab == 'categories'">
+                <template v-if="activeTab == 'service_categories'">
                     <template v-if="isLoading">
                         <x-admin::shimmer.header.mega-search.categories />
                     </template>
@@ -360,9 +349,9 @@
                     <template v-else>
                         <div class="grid max-h-[300px] overflow-y-auto sm:max-h-[400px]">
                             <a
-{{--                                :href="'{{ route('admin.catalog.categories.edit', ':id') }}'.replace(':id', category.id)"--}}
+                                :href="'{{ route('admin.services.categories.edit', ':id') }}'.replace(':id', category.id)"
                                 class="cursor-pointer border-b p-3 text-xs font-semibold text-text-secondary last:border-b-0 hover:bg-bg-mutedLight dark:border-border-default dark:text-text-secondary dark:hover:bg-surface-inverse sm:p-4 sm:text-sm"
-                                v-for="category in searchedResults.categories.data"
+                                v-for="category in searchedResults.service_categories.data"
                             >
                                 @{{ category.name }}
                             </a>
@@ -370,25 +359,25 @@
 
                         <div class="flex border-t p-2 dark:border-border-default sm:p-3">
                             <a
-{{--                                :href="'{{ route('admin.catalog.categories.index') }}?search=:query'.replace(':query', searchTerm)"--}}
+                                :href="'{{ route('admin.services.categories.index') }}?search=:query'.replace(':query', searchTerm)"
                                 class="cursor-pointer text-xs font-semibold text-text-link transition-all hover:underline"
-                                v-if="searchedResults.categories.data.length"
+                                v-if="searchedResults.service_categories.data.length"
                             >
-                                @{{ "@lang('admin::app.components.layouts.header.mega-search.explore-all-matching-categories')".replace(':query', searchTerm).replace(':count', searchedResults.categories.total) }}
+                                @{{ "@lang('Admin::app.components.layouts.header.mega-search.explore-all-service-categories')".replace(':query', searchTerm).replace(':count', searchedResults.service_categories.total) }}
                             </a>
 
                             <a
-{{--                                href="{{ route('admin.catalog.categories.index') }}"--}}
+                                href="{{ route('admin.services.categories.index') }}"
                                 class="cursor-pointer text-xs font-semibold text-text-link transition-all hover:underline"
                                 v-else
                             >
-                                @lang('admin::app.components.layouts.header.mega-search.explore-all-categories')
+                                @lang('Admin::app.components.layouts.header.mega-search.explore-all-service-categories')
                             </a>
                         </div>
                     </template>
                 </template>
 
-                <template v-if="activeTab == 'customers'">
+                <template v-if="activeTab == 'citizens'">
                     <template v-if="isLoading">
                         <x-admin::shimmer.header.mega-search.customers />
                     </template>
@@ -396,35 +385,35 @@
                     <template v-else>
                         <div class="grid max-h-[300px] overflow-y-auto sm:max-h-[400px]">
                             <a
-{{--                                :href="'{{ route('admin.customers.customers.view', ':id') }}'.replace(':id', customer.id)"--}}
+                                :href="'{{ route('admin.citizens.view', ':id') }}'.replace(':id', citizen.id)"
                                 class="grid cursor-pointer place-content-start gap-1 border-b border-border-muted p-3 last:border-b-0 hover:bg-bg-mutedLight dark:border-border-default dark:hover:bg-surface-inverse sm:gap-1.5 sm:p-4"
-                                v-for="customer in searchedResults.customers.data"
+                                v-for="citizen in searchedResults.citizens.data"
                             >
                                 <p class="text-sm font-semibold text-text-secondary dark:text-text-secondary sm:text-base">
-                                    @{{ customer.first_name + ' ' + customer.last_name }}
+                                    @{{ (citizen.first_name || '') + ' ' + (citizen.middle_name || '') + ' ' + (citizen.last_name || '') }}
                                 </p>
 
                                 <p class="text-xs text-text-muted sm:text-sm">
-                                    @{{ customer.email }}
+                                    @{{ citizen.email || citizen.national_id }}
                                 </p>
                             </a>
                         </div>
 
                         <div class="flex border-t p-2 dark:border-border-default sm:p-3">
                             <a
-{{--                                :href="'{{ route('admin.customers.customers.index') }}?search=:query'.replace(':query', searchTerm)"--}}
+                                :href="'{{ route('admin.citizens.index') }}?search=' + searchTerm"
                                 class="cursor-pointer text-xs font-semibold text-text-link transition-all hover:underline"
-                                v-if="searchedResults.customers.data.length"
+                                v-if="searchedResults.citizens.data && searchedResults.citizens.data.length"
                             >
-                                @{{ "@lang('admin::app.components.layouts.header.mega-search.explore-all-matching-customers')".replace(':query', searchTerm).replace(':count', searchedResults.customers.total) }}
+                                @lang('Admin::app.components.layouts.header.mega-search.explore-all-citizens')
                             </a>
 
                             <a
-{{--                                href="{{ route('admin.customers.customers.index') }}"--}}
+                                href="{{ route('admin.citizens.index') }}"
                                 class="cursor-pointer text-xs font-semibold text-text-link transition-all hover:underline"
                                 v-else
                             >
-                                @lang('admin::app.components.layouts.header.mega-search.explore-all-customers')
+                                @lang('Admin::app.components.layouts.header.mega-search.explore-all-citizens')
                             </a>
                         </div>
                     </template>
@@ -439,34 +428,34 @@
 
             data() {
                 return {
-                    activeTab: 'products',
+                    activeTab: 'services',
 
                     isDropdownOpen: false,
 
                     tabs: {
-                        products: {
-                            key: 'products',
-                            title: "@lang('admin::app.components.layouts.header.mega-search.products')",
+                        services: {
+                            key: 'services',
+                            title: "@lang('Admin::app.components.layouts.header.mega-search.services')",
                             is_active: true,
-                            {{--endpoint: "{{ route('admin.catalog.products.search') }}"--}}
+                            endpoint: "{{ route('admin.services.search') }}"
                         },
 
-                        orders: {
-                            key: 'orders',
-                            title: "@lang('admin::app.components.layouts.header.mega-search.orders')",
-                            {{--endpoint: "{{ route('admin.sales.orders.search') }}"--}}
+                        service_requests: {
+                            key: 'service_requests',
+                            title: "@lang('Admin::app.components.layouts.header.mega-search.service-requests')",
+                            endpoint: "{{ route('admin.service-requests.search') }}"
                         },
 
-                        categories: {
-                            key: 'categories',
-                            title: "@lang('admin::app.components.layouts.header.mega-search.categories')",
-                            {{--endpoint: "{{ route('admin.catalog.categories.search') }}"--}}
+                        service_categories: {
+                            key: 'service_categories',
+                            title: "@lang('Admin::app.components.layouts.header.mega-search.service-categories')",
+                            endpoint: "{{ route('admin.services.categories.search') }}"
                         },
 
-                        customers: {
-                            key: 'customers',
-                            title: "@lang('admin::app.components.layouts.header.mega-search.customers')",
-                            {{--endpoint: "{{ route('admin.customers.customers.search') }}"--}}
+                        citizens: {
+                            key: 'citizens',
+                            title: "@lang('Admin::app.components.layouts.header.mega-search.citizens')",
+                            endpoint: "{{ route('admin.citizens.search') }}"
                         }
                     },
 
@@ -475,10 +464,10 @@
                     searchTerm: '',
 
                     searchedResults: {
-                        products: [],
-                        orders: [],
-                        categories: [],
-                        customers: []
+                        services: [],
+                        service_requests: [],
+                        service_categories: [],
+                        citizens: []
                     },
                 }
             },
@@ -512,7 +501,7 @@
                     let self = this;
 
                     this.isLoading = true;
-
+                    
                     this.$axios.get(this.tabs[this.activeTab].endpoint, {
                             params: {query: this.searchTerm}
                         })

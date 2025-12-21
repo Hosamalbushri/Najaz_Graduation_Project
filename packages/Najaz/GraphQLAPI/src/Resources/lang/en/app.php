@@ -52,6 +52,10 @@ return [
             'create_error'           => 'Failed to create service request: :message',
             'update_error'           => 'Failed to update service request: :message',
             'cancel_error'           => 'Failed to cancel service request: :message',
+            'invalid_file_field'     => 'Field ":field" is invalid or not a file/image type.',
+            'file_validation_failed' => 'File validation failed for field ":field": :errors',
+            'available_file_fields'  => 'Available file/image fields are: :fields',
+            'no_file_fields_available' => 'No file/image fields are available for this service.',
         ],
     ],
 ];

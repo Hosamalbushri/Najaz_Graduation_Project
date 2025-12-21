@@ -22,6 +22,7 @@ extend type Mutation @guard(with: ["citizen-api"]) {
     """
     createServiceRequest(
         input: CreateServiceRequestInput! @spread
+        files: [ServiceRequestFileInput!]
     ): ServiceRequestResponse
         @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\App\\Citizen\\ServiceRequestMutation@store")
 
@@ -31,6 +32,7 @@ extend type Mutation @guard(with: ["citizen-api"]) {
     updateServiceRequest(
         id: ID!,
         input: UpdateServiceRequestInput! @spread
+        files: [ServiceRequestFileInput!]
     ): ServiceRequestResponse
         @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\App\\Citizen\\ServiceRequestMutation@update")
 
@@ -50,6 +52,11 @@ input CreateServiceRequestInput {
 input UpdateServiceRequestInput {
     formData: JSON @rename(attribute: "form_data")
     notes: String
+}
+
+input ServiceRequestFileInput {
+    fieldCode: String! @rename(attribute: "field_code")
+    file: Upload!
 }
 
 enum ServiceRequestStatus {

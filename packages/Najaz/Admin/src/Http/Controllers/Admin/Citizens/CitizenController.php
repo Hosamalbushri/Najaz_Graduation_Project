@@ -357,4 +357,22 @@ class CitizenController extends Controller
 
         return redirect()->route('admin.citizens.view', $id);
     }
+
+    /**
+     * Result of search citizens.
+     */
+    public function search(): JsonResponse
+    {
+        $citizens = $this->citizenRepository->scopeQuery(function ($query) {
+            return $query->where('email', 'like', '%'.urldecode(request()->input('query')).'%')
+                ->orWhere('national_id', 'like', '%'.urldecode(request()->input('query')).'%')
+                ->orWhere('first_name', 'like', '%'.urldecode(request()->input('query')).'%')
+                ->orWhere('last_name', 'like', '%'.urldecode(request()->input('query')).'%')
+                ->orWhere('middle_name', 'like', '%'.urldecode(request()->input('query')).'%')
+                ->orWhereRaw('CONCAT(first_name, " ", middle_name, " ", last_name) LIKE ?', ['%'.urldecode(request()->input('query')).'%'])
+                ->orderBy('created_at', 'desc');
+        })->paginate(10);
+
+        return response()->json($citizens);
+    }
 }

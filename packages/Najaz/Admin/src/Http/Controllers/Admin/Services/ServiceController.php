@@ -250,4 +250,40 @@ class ServiceController extends Controller
         return $this->serviceRepository->getAvailableFieldsForTemplate($service, $locale);
     }
 
+    /**
+     * Result of search services.
+     */
+    public function search(): JsonResponse
+    {
+        $query = trim(request()->input('query'));
+
+        if (empty($query)) {
+            return response()->json([
+                'data' => [],
+            ]);
+        }
+
+        $locale = app()->getLocale();
+
+        $services = $this->serviceRepository->scopeQuery(function ($q) use ($query, $locale) {
+            return $q->whereHas('translations', function ($translationQuery) use ($query, $locale) {
+                $translationQuery->where('locale', $locale)
+                    ->where(function ($subQuery) use ($query) {
+                        $subQuery->where('name', 'like', "%{$query}%")
+                            ->orWhere('description', 'like', "%{$query}%");
+                    });
+            })->orderBy('created_at', 'desc');
+        })->with(['translations' => function ($q) use ($locale) {
+            $q->where('locale', $locale);
+        }])->paginate(10);
+
+        foreach ($services as $key => $service) {
+            $translation = $service->translate($locale);
+            $services[$key]['name'] = $translation?->name ?? '';
+            $services[$key]['image_url'] = $service->image ? \Storage::url($service->image) : null;
+        }
+
+        return response()->json($services);
+    }
+
 }

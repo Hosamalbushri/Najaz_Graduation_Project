@@ -958,6 +958,13 @@ return [
             'reject-msg'                    => 'يرجى إدخال سبب الرفض',
             'rejection-reason-required'     => 'سبب الرفض مطلوب',
             'in_progress'                   => 'قيد المعالجة',
+            'attachments'                   => 'المرفقات',
+            'image'                          => 'صورة',
+            'file'                           => 'ملف',
+            'view-file'                      => 'عرض الملف',
+            'download-file'                  => 'تحميل الملف',
+            'file-not-found'                 => 'الملف غير موجود',
+            'no-file-uploaded'               => 'لم يتم رفع ملف',
         ],
 
         'word-document' => [
@@ -1059,6 +1066,20 @@ return [
                 ],
                 'service-requests'          => 'طلبات الخدمات',
                 'reporting'                 => 'التقارير',
+            ],
+
+            'header' => [
+                'mega-search' => [
+                    'title'                        => 'البحث المتقدم',
+                    'services'                     => 'الخدمات',
+                    'service-requests'             => 'طلبات الخدمات',
+                    'service-categories'            => 'أقسام الخدمات',
+                    'citizens'                      => 'المواطنين',
+                    'explore-all-services'          => 'استكشف جميع الخدمات',
+                    'explore-all-service-requests'  => 'استكشف جميع طلبات الخدمات',
+                    'explore-all-service-categories' => 'استكشف جميع أقسام الخدمات',
+                    'explore-all-citizens'          => 'استكشف جميع المواطنين',
+                ],
             ],
         ],
     ],
