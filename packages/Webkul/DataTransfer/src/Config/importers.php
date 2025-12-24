@@ -36,4 +36,28 @@ return [
             'xml'  => 'data-transfer/samples/xml/tax-rates.xml',
         ],
     ],
+
+    'services' => [
+        'title'    => 'data_transfer::app.importers.services.title',
+        'importer' => 'Najaz\Service\Helpers\Importers\Service\Importer',
+
+        'sample_paths' => [
+            'csv'  => 'najaz-service/samples/csv/services.csv',
+            'xls'  => 'najaz-service/samples/xls/services.xls',
+            'xlsx' => 'najaz-service/samples/xlsx/services.xlsx',
+            'xml'  => 'najaz-service/samples/xml/services.xml',
+        ],
+    ],
+
+    'citizens' => [
+        'title'    => 'data_transfer::app.importers.citizens.title',
+        'importer' => 'Najaz\Citizen\Helpers\Importers\Citizen\Importer',
+
+        'sample_paths' => [
+            'csv'  => 'najaz-citizen/samples/csv/citizens.csv',
+            'xls'  => 'najaz-citizen/samples/xls/citizens.xls',
+            'xlsx' => 'najaz-citizen/samples/xlsx/citizens.xlsx',
+            'xml'  => 'najaz-citizen/samples/xml/citizens.xml',
+        ],
+    ],
 ];

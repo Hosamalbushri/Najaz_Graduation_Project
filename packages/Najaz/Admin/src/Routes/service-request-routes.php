@@ -24,6 +24,8 @@ Route::group(['middleware' => ['web', 'admin'], 'prefix' => 'admin/service-reque
         Route::get('download-word/{id}', 'downloadEditableWord')->name('admin.service-requests.download-word');
 
         Route::post('upload-pdf/{id}', 'uploadFilledPDF')->name('admin.service-requests.upload-pdf');
+
+        Route::get('{id}/document-content', 'getDocumentContent')->name('admin.service-requests.document-content');
     });
 
     // Custom Template Routes

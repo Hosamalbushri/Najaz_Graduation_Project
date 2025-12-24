@@ -1,0 +1,5 @@
+national_id,first_name,middle_name,last_name,gender,date_of_birth,email,phone,status
+1234567890,أحمد,محمد,علي,Male,1990-01-15,ahmed@example.com,+966501234567,1
+0987654321,فاطمة,عبدالله,حسن,Female,1992-05-20,fatima@example.com,+966502345678,1
+1122334455,خالد,سعد,إبراهيم,Male,1988-11-10,khalid@example.com,+966503456789,1
+

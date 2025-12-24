@@ -3,7 +3,7 @@
 return [
     [
         'key'   => 'dashboard',
-        'name'  => 'admin::app.components.layouts.sidebar.dashboard',
+        'name'  => 'Admin::app.components.layouts.sidebar.dashboard',
         'route' => 'najaz.admin.dashboard.index',
         'sort'  => 1,
         'icon'  => 'icon-dashboard',
@@ -114,5 +114,70 @@ return [
         'route' => 'admin.reporting.services.index',
         'sort'  => 2,
         'icon'  => '',
+    ],
+
+    /**
+     * Settings.
+     */
+    [
+        'key'        => 'settings',
+        'name'       => 'Admin::app.components.layouts.sidebar.settings',
+        'route'      => 'admin.settings.locales.index',
+        'sort'       => 6,
+        'icon'       => 'icon-settings',
+        'icon-class' => 'settings-icon',
+    ],
+    [
+        'key'        => 'settings.locales',
+        'name'       => 'Admin::app.components.layouts.sidebar.locales',
+        'route'      => 'admin.settings.locales.index',
+        'sort'       => 1,
+        'icon'       => '',
+    ],
+    [
+        'key'        => 'settings.channels',
+        'name'       => 'Admin::app.components.layouts.sidebar.channels',
+        'route'      => 'admin.settings.channels.index',
+        'sort'       => 2,
+        'icon'       => '',
+    ],
+    [
+        'key'        => 'settings.users',
+        'name'       => 'Admin::app.components.layouts.sidebar.users',
+        'route'      => 'admin.settings.users.index',
+        'sort'       => 3,
+        'icon'       => '',
+    ],
+    [
+        'key'        => 'settings.roles',
+        'name'       => 'Admin::app.components.layouts.sidebar.roles',
+        'route'      => 'admin.settings.roles.index',
+        'sort'       => 4,
+        'icon'       => '',
+    ],
+    [
+        'key'        => 'settings.data_transfer',
+        'name'       => 'Admin::app.components.layouts.sidebar.data-transfer',
+        'route'      => 'admin.settings.data_transfer.imports.index',
+        'sort'       => 5,
+        'icon'       => '',
+    ],
+    [
+        'key'        => 'settings.data_transfer.imports',
+        'name'       => 'Admin::app.components.layouts.sidebar.imports',
+        'route'      => 'admin.settings.data_transfer.imports.index',
+        'sort'       => 1,
+        'icon'       => '',
+    ],
+
+    /**
+     * Configuration.
+     */
+    [
+        'key'        => 'configuration',
+        'name'       => 'Admin::app.components.layouts.sidebar.configure',
+        'route'      => 'admin.configuration.index',
+        'sort'       => 7,
+        'icon'       => 'icon-configuration',
     ],
 ];

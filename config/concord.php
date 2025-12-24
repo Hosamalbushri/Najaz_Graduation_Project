@@ -42,6 +42,7 @@ return [
         // \Webkul\Tax\Providers\ModuleServiceProvider::class, // Disabled - Tax module
         \Webkul\Theme\Providers\ModuleServiceProvider::class,
         \Webkul\User\Providers\ModuleServiceProvider::class,
+        \Najaz\Service\Providers\ModuleServiceProvider::class,
         \Najaz\Citizen\Providers\ModuleServiceProvider::class,
         \Najaz\Request\Providers\ModuleServiceProvider::class,
         \Najaz\Notification\Providers\ModuleServiceProvider::class,

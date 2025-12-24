@@ -3255,7 +3255,7 @@ return [
                 'code'                    => 'Code',
                 'create-success'          => 'Channel created successfully.',
                 'currencies'              => 'Currencies',
-                'currencies-and-locales'  => 'Currencies and Locales',
+                'currencies-and-locales'  => 'Locales',
                 'default-currency'        => 'Default Currency',
                 'default-locale'          => 'Default Locale',
                 'description'             => 'Description',

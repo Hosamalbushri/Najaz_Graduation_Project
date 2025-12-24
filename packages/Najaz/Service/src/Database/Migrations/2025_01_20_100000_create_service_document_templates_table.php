@@ -18,7 +18,6 @@ return new class extends Migration
             $table->string('header_image')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-
             $table->foreign('service_id')->references('id')->on('services')->onDelete('cascade');
             $table->index('service_id');
         });

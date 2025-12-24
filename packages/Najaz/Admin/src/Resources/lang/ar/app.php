@@ -965,6 +965,8 @@ return [
             'download-file'                  => 'تحميل الملف',
             'file-not-found'                 => 'الملف غير موجود',
             'no-file-uploaded'               => 'لم يتم رفع ملف',
+            'no-attachments'                 => 'لا توجد مرفقات متاحة',
+            'document-preview'               => 'معاينة الوثيقة',
         ],
 
         'word-document' => [
@@ -1053,6 +1055,7 @@ return [
     'components' => [
         'layouts' => [
             'sidebar' => [
+                'dashboard'                 => 'لوحة التحكم',
                 'citizens'                  => 'المواطنين',
                 'citizen-types'             => 'انواع المواطنين',
                 'identity-verifications'    => 'التحقق من الهوية',
@@ -1066,8 +1069,15 @@ return [
                 ],
                 'service-requests'          => 'طلبات الخدمات',
                 'reporting'                 => 'التقارير',
+                'settings'                  => 'الإعدادات',
+                'locales'                   => 'اللغات',
+                'channels'                  => 'القنوات',
+                'users'                     => 'المستخدمون',
+                'roles'                     => 'الأدوار',
+                'data-transfer'             => 'نقل البيانات',
+                'imports'                   => 'الاستيراد',
+                'configure'                => 'تكوين',
             ],
-
             'header' => [
                 'mega-search' => [
                     'title'                        => 'البحث المتقدم',
@@ -1080,6 +1090,18 @@ return [
                     'explore-all-service-categories' => 'استكشف جميع أقسام الخدمات',
                     'explore-all-citizens'          => 'استكشف جميع المواطنين',
                 ],
+            ],
+
+        ],
+    ],
+
+    'settings' => [
+        'channels' => [
+            'create' => [
+                'currencies-and-locales' => 'اللغات',
+            ],
+            'edit' => [
+                'currencies-and-locales' => 'اللغات',
             ],
         ],
     ],

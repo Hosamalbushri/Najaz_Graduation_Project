@@ -2,6 +2,8 @@
 
 namespace Webkul\Core\Repositories;
 
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Webkul\Core\Eloquent\Repository;
 
@@ -35,11 +37,37 @@ class ChannelRepository extends Repository
 
         $channel = parent::create($data);
 
-        $channel->locales()->sync($data['locales']);
+        $channel->locales()->sync($data['locales'] ?? []);
 
-        $channel->currencies()->sync($data['currencies']);
+        $channel->currencies()->sync($data['currencies'] ?? []);
 
-        $channel->inventory_sources()->sync($data['inventory_sources']);
+        // Only sync inventory_sources if Inventory module is enabled
+        // Use DB query directly to avoid ModelProxy issues
+        if (isset($data['inventory_sources']) && is_array($data['inventory_sources'])) {
+            try {
+                // Check if table exists
+                if (Schema::hasTable('channel_inventory_sources')) {
+                    // Use DB query directly without checking Proxy to avoid ModelProxy error
+                    // This works even if Inventory module is disabled
+                    DB::table('channel_inventory_sources')
+                        ->where('channel_id', $channel->id)
+                        ->delete();
+                    
+                    if (!empty($data['inventory_sources'])) {
+                        $insertData = [];
+                        foreach ($data['inventory_sources'] as $inventorySourceId) {
+                            $insertData[] = [
+                                'channel_id' => $channel->id,
+                                'inventory_source_id' => $inventorySourceId,
+                            ];
+                        }
+                        DB::table('channel_inventory_sources')->insert($insertData);
+                    }
+                }
+            } catch (\Exception $e) {
+                // Inventory module is disabled or table doesn't exist, skip sync
+            }
+        }
 
         $this->uploadImages($data, $channel);
 
@@ -58,11 +86,37 @@ class ChannelRepository extends Repository
     {
         $channel = parent::update($data, $id);
 
-        $channel->locales()->sync($data['locales']);
+        $channel->locales()->sync($data['locales'] ?? []);
 
-        $channel->currencies()->sync($data['currencies']);
+        $channel->currencies()->sync($data['currencies'] ?? []);
 
-        $channel->inventory_sources()->sync($data['inventory_sources']);
+        // Only sync inventory_sources if Inventory module is enabled
+        // Use DB query directly to avoid ModelProxy issues
+        if (isset($data['inventory_sources']) && is_array($data['inventory_sources'])) {
+            try {
+                // Check if table exists
+                if (Schema::hasTable('channel_inventory_sources')) {
+                    // Use DB query directly without checking Proxy to avoid ModelProxy error
+                    // This works even if Inventory module is disabled
+                    DB::table('channel_inventory_sources')
+                        ->where('channel_id', $channel->id)
+                        ->delete();
+                    
+                    if (!empty($data['inventory_sources'])) {
+                        $insertData = [];
+                        foreach ($data['inventory_sources'] as $inventorySourceId) {
+                            $insertData[] = [
+                                'channel_id' => $channel->id,
+                                'inventory_source_id' => $inventorySourceId,
+                            ];
+                        }
+                        DB::table('channel_inventory_sources')->insert($insertData);
+                    }
+                }
+            } catch (\Exception $e) {
+                // Inventory module is disabled or table doesn't exist, skip sync
+            }
+        }
 
         $this->uploadImages($data, $channel);
 

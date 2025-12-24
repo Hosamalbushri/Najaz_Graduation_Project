@@ -44,7 +44,6 @@ class ServiceDocumentTemplate extends TranslatableModel implements ServiceDocume
     protected $fillable = [
         'service_id',
         'available_fields',
-        'used_fields',
         'header_image',
         'is_active',
     ];

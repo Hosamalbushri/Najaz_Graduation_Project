@@ -965,6 +965,8 @@ return [
             'download-file'                  => 'Download File',
             'file-not-found'                 => 'File not found',
             'no-file-uploaded'               => 'No file uploaded',
+            'no-attachments'                => 'No attachments available',
+            'document-preview'              => 'Document Preview',
         ],
 
         'word-document' => [
@@ -1053,6 +1055,7 @@ return [
     'components' => [
         'layouts' => [
             'sidebar' => [
+                'dashboard'                 => 'Dashboard',
                 'citizens'                  => 'Citizens',
                 'citizen-types'             => 'Citizen Types',
                 'identity-verifications'    => 'Identity Verification',
@@ -1066,8 +1069,31 @@ return [
                 ],
                 'service-requests'          => 'Service Requests',
                 'reporting'                 => 'Reporting',
+                'settings'                  => 'Settings',
+                'locales'                   => 'Locales',
+                'channels'                  => 'Channels',
+                'users'                     => 'Users',
+                'roles'                     => 'Roles',
+                'data-transfer'             => 'Data Transfer',
+                'imports'                   => 'Imports',
+                'configure'                 => 'Configure',
             ],
+        ],
+    ],
 
+    'settings' => [
+        'channels' => [
+            'create' => [
+                'currencies-and-locales' => 'Locales',
+            ],
+            'edit' => [
+                'currencies-and-locales' => 'Locales',
+            ],
+        ],
+    ],
+
+    'components' => [
+        'layouts' => [
             'header' => [
                 'mega-search' => [
                     'title'                        => 'Mega Search',

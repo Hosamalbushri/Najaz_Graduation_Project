@@ -44,7 +44,7 @@ class ServiceRequestController extends Controller
     /**
      * Show the view for the specified resource.
      */
-    public function view(int $id): View
+    public function view(int $id): View|JsonResponse
     {
         $request = $this->serviceRequestRepository->with([
             'service.documentTemplate',
@@ -293,6 +293,23 @@ class ServiceRequestController extends Controller
                 ];
             })->toArray(),
         ]);
+
+        // If AJAX request, return JSON data for Vue component
+        if (request()->ajax()) {
+            return response()->json([
+                'data' => [
+                    'request' => $request,
+                    'documentContent' => $documentContent,
+                    'template' => $template,
+                    'fieldLabelsMap' => $fieldLabelsMap,
+                    'nationalIdToCitizenMap' => $nationalIdToCitizenMap,
+                    'localeName' => $localeName,
+                    'uploadedFiles' => $uploadedFiles,
+                    'fileImageFieldsMap' => $fileImageFieldsMap,
+                    'allFileImageFields' => $allFileImageFields,
+                ],
+            ]);
+        }
 
         return view('admin::service-requests.view', compact('request', 'documentContent', 'template', 'fieldLabelsMap', 'nationalIdToCitizenMap', 'localeName', 'isNationalIdField', 'uploadedFiles', 'fileImageFieldsMap', 'isFileImageField', 'allFileImageFields'));
     }
@@ -568,6 +585,67 @@ class ServiceRequestController extends Controller
             session()->flash('error', trans('Admin::app.service-requests.word-document.upload-failed'));
 
             return redirect()->back();
+        }
+    }
+
+    /**
+     * Get document content for the specified resource by locale.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getDocumentContent(int $id): JsonResponse
+    {
+        try {
+            $serviceRequest = $this->serviceRequestRepository->with([
+                'service.documentTemplate',
+            ])->findOrFail($id);
+
+            $template = $serviceRequest->service->documentTemplate;
+
+            if (! $template || ! $template->is_active) {
+                return new JsonResponse([
+                    'success' => false,
+                    'message' => trans('Admin::app.service-requests.view.template-not-found'),
+                ], 404);
+            }
+
+            // Get locale from request or use request's locale
+            $locale = request()->input('locale', $serviceRequest->locale ?? app()->getLocale());
+
+            // Generate document content
+            $documentService = new DocumentTemplateService;
+            $fieldValues = $documentService->getFieldValues($serviceRequest);
+            
+            // Get template content for the specified locale
+            $templateTranslation = $template->translate($locale);
+            $templateContent = $templateTranslation?->template_content ?? $template->template_content;
+            
+            $documentContent = $documentService->replacePlaceholders($templateContent, $fieldValues);
+
+            // Merge custom template content if available
+            if ($serviceRequest->customTemplate) {
+                $customTemplateTranslation = $serviceRequest->customTemplate->translate($locale);
+                $customContent = $customTemplateTranslation?->template_content ?? $serviceRequest->customTemplate->template_content;
+                if ($customContent) {
+                    $documentContent = $customContent;
+                }
+            }
+
+            return new JsonResponse([
+                'success' => true,
+                'content' => $documentContent,
+                'locale' => $locale,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to get document content', [
+                'service_request_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return new JsonResponse([
+                'success' => false,
+                'message' => trans('Admin::app.service-requests.view.document-content-error'),
+            ], 500);
         }
     }
 }

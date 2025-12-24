@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<citizens>
+    <citizen
+        national_id="1234567890"
+        first_name="أحمد"
+        middle_name="محمد"
+        last_name="علي"
+        gender="Male"
+        date_of_birth="1990-01-15"
+        email="ahmed@example.com"
+        phone="+966501234567"
+        status="1"
+    />
+    <citizen
+        national_id="0987654321"
+        first_name="فاطمة"
+        middle_name="عبدالله"
+        last_name="حسن"
+        gender="Female"
+        date_of_birth="1992-05-20"
+        email="fatima@example.com"
+        phone="+966502345678"
+        status="1"
+    />
+    <citizen
+        national_id="1122334455"
+        first_name="خالد"
+        middle_name="سعد"
+        last_name="إبراهيم"
+        gender="Male"
+        date_of_birth="1988-11-10"
+        email="khalid@example.com"
+        phone="+966503456789"
+        status="1"
+    />
+</citizens>
+

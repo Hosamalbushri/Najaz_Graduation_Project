@@ -66,7 +66,9 @@
                             :label="trans('admin::app.settings.data-transfer.imports.edit.type')"
                         >
                             @foreach (config('importers') as $code => $importer)
-                                <option value="{{ $code }}">@lang($importer['title'])</option>
+                                @if (!in_array($code, ['products', 'customers', 'tax_rates']))
+                                    <option value="{{ $code }}">@lang($importer['title'])</option>
+                                @endif
                             @endforeach
                         </x-admin::form.control-group.control>
 

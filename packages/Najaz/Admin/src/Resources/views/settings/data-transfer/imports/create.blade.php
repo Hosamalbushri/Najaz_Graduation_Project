@@ -59,13 +59,15 @@
                             type="select"
                             name="type"
                             id="import-type"
-                            :value="old('type') ?? 'products'"
+                            :value="old('type') ?? 'services'"
                             ref="importType"
                             rules="required"
                             :label="trans('admin::app.settings.data-transfer.imports.create.type')"
                         >
                             @foreach (config('importers') as $code => $importer)
-                                <option value="{{ $code }}">@lang($importer['title'])</option>
+                                @if (!in_array($code, ['products', 'customers', 'tax_rates']))
+                                    <option value="{{ $code }}">@lang($importer['title'])</option>
+                                @endif
                             @endforeach
                         </x-admin::form.control-group.control>
 
