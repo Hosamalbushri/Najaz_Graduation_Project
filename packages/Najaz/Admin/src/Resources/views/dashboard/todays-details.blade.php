@@ -259,7 +259,7 @@
 
                     filters.type = 'today';
 
-                    this.$axios.get("{{ route('najaz.admin.dashboard.stats') }}", {
+                    this.$axios.get("{{ route('admin.dashboard.stats') }}", {
                             params: filters
                         })
                         .then(response => {

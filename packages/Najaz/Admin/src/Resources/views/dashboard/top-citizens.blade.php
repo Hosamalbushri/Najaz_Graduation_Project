@@ -32,7 +32,7 @@
                     v-if="report.statistics.length"
                     v-for="citizen in report.statistics"
                 >
-                    <a :href="getCitizenViewUrl(citizen.id)">
+                    <a :href="citizen.id ? `{{ route('admin.citizens.view', '') }}/${citizen.id}` : '#'">
                         <div class="flex justify-between gap-1.5">
                             <div class="flex flex-col">
                                 <p class="font-semibold text-gray-600 dark:text-gray-300">
@@ -106,7 +106,7 @@
 
                     filters.type = 'top-citizens';
 
-                    this.$axios.get("{{ route('najaz.admin.dashboard.stats') }}", {
+                    this.$axios.get("{{ route('admin.dashboard.stats') }}", {
                             params: filters
                         })
                         .then(response => {
@@ -116,12 +116,6 @@
                         })
                         .catch(error => {});
                 },
-
-                getCitizenViewUrl(id) {
-                    if (!id) return '#';
-                    // Build URL: /admin/citizens/view/{id}
-                    return `/admin/citizens/view/${id}`;
-                }
             }
         });
     </script>

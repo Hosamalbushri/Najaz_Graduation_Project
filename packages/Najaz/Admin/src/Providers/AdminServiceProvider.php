@@ -44,6 +44,8 @@ class AdminServiceProvider extends ServiceProvider
         // Load settings routes to override Webkul routes
         $this->app->booted(function () {
             Route::middleware(['web', 'admin'])->prefix(config('app.admin_url'))->group(__DIR__.'/../Routes/settings-routes.php');
+            Route::middleware(['web', 'admin'])->prefix(config('app.admin_url'))->group(__DIR__.'/../Routes/dashboard-routes.php');
+
         });
 
         $this->loadTranslationsFrom(__DIR__.'/../Resources/lang', 'Admin');

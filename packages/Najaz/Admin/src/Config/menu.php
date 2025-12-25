@@ -4,7 +4,7 @@ return [
     [
         'key'   => 'dashboard',
         'name'  => 'Admin::app.components.layouts.sidebar.dashboard',
-        'route' => 'najaz.admin.dashboard.index',
+        'route' => 'admin.dashboard.index',
         'sort'  => 1,
         'icon'  => 'icon-dashboard',
     ],

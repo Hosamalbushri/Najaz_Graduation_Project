@@ -12,7 +12,7 @@
         </i>
 
         <!-- Logo -->
-        <a href="{{ route('najaz.admin.dashboard.index') }}" class="flex-shrink-0">
+        <a href="{{ route('admin.dashboard.index') }}" class="flex-shrink-0">
             @if ($logo = core()->getConfigData('general.design.admin_logo.logo_image'))
                 <img
                     class="h-8 w-auto sm:h-10"

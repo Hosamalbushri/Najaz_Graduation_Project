@@ -32,7 +32,7 @@ Route::group(['middleware' => ['web', 'admin'], 'prefix' => 'admin/services'], f
         Route::get('', 'index')->name('admin.services.index');
         Route::get('create', 'create')->name('admin.services.create');
         Route::post('', 'store')->name('admin.services.store');
-        Route::get('{id}/edit', 'edit')->name('admin.services.edit');
+        Route::get('edit/{id}', 'edit')->name('admin.services.edit');
         Route::put('{id}', 'update')->name('admin.services.update');
         Route::delete('{id}', 'destroy')->name('admin.services.delete');
         Route::post('mass-delete', 'massDestroy')->name('admin.services.mass_delete');

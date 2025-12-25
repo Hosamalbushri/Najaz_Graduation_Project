@@ -1054,6 +1054,20 @@ return [
 
     'components' => [
         'layouts' => [
+            'header' => [
+                'mega-search' => [
+                    'title'                        => 'Mega Search',
+                    'services'                     => 'Services',
+                    'service-requests'             => 'Service Requests',
+                    'service-categories'            => 'Service Categories',
+                    'citizens'                      => 'Citizens',
+                    'explore-all-services'          => 'Explore all services',
+                    'explore-all-service-requests'  => 'Explore all service requests',
+                    'explore-all-service-categories' => 'Explore all service categories',
+                    'explore-all-citizens'          => 'Explore all citizens',
+                ],
+            ],
+
             'sidebar' => [
                 'dashboard'                 => 'Dashboard',
                 'citizens'                  => 'Citizens',
@@ -1092,23 +1106,7 @@ return [
         ],
     ],
 
-    'components' => [
-        'layouts' => [
-            'header' => [
-                'mega-search' => [
-                    'title'                        => 'Mega Search',
-                    'services'                     => 'Services',
-                    'service-requests'             => 'Service Requests',
-                    'service-categories'            => 'Service Categories',
-                    'citizens'                      => 'Citizens',
-                    'explore-all-services'          => 'Explore all services',
-                    'explore-all-service-requests'  => 'Explore all service requests',
-                    'explore-all-service-categories' => 'Explore all service categories',
-                    'explore-all-citizens'          => 'Explore all citizens',
-                ],
-            ],
-        ],
-    ],
+
 
     'reporting' => [
         'citizens' => [

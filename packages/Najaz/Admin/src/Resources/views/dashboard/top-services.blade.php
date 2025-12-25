@@ -33,7 +33,7 @@
                     v-if="report.statistics.length"
                 >
                     <a
-                        :href="getServiceEditUrl(item.id)"
+                        :href="`{{route('admin.services.edit', '')}}/${item.id}`"
                         class="flex gap-2.5 border-b p-4 transition-all last:border-b-0 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-950"
                         v-for="item in report.statistics"
                     >
@@ -126,7 +126,7 @@
 
                     filters.type = 'top-services';
 
-                    this.$axios.get("{{ route('najaz.admin.dashboard.stats') }}", {
+                    this.$axios.get("{{ route('admin.dashboard.stats') }}", {
                             params: filters
                         })
                         .then(response => {
@@ -136,12 +136,6 @@
                         })
                         .catch(error => {});
                 },
-
-                getServiceEditUrl(id) {
-                    if (!id) return '#';
-                    // Build URL: /admin/services/{id}/edit
-                    return `/admin/services/${id}/edit`;
-                }
             }
         });
     </script>
