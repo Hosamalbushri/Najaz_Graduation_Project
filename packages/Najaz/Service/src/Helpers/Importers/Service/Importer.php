@@ -42,10 +42,13 @@ class Importer extends AbstractImporter
      */
     protected array $validColumnNames = [
         'id',
+        'locale',
         'category_id',
         'status',
         'image',
         'sort_order',
+        'name',
+        'description',
     ];
 
     /**
@@ -162,6 +165,24 @@ class Importer extends AbstractImporter
         }
 
         /**
+         * Check if locale is valid.
+         */
+        if (! isset($rowData['locale']) || ! in_array($rowData['locale'], $this->locales)) {
+            $this->skipRow($rowNumber, self::ERROR_CODE_COLUMN_NAME_INVALID, 'locale');
+
+            return false;
+        }
+
+        /**
+         * Check if name is provided.
+         */
+        if (! isset($rowData['name']) || empty(trim($rowData['name']))) {
+            $this->skipRow($rowNumber, self::ERROR_MISSING_TRANSLATION, 'name');
+
+            return false;
+        }
+
+        /**
          * Check if category_id exists.
          */
         if (! isset($rowData['category_id']) || ! $this->serviceCategories->where('id', $rowData['category_id'])->first()) {
@@ -174,6 +195,8 @@ class Importer extends AbstractImporter
          * Validate service attributes.
          */
         $validator = Validator::make($rowData, [
+            'locale'      => 'required|string|in:' . implode(',', $this->locales),
+            'name'        => 'required|string',
             'category_id' => 'required|integer|exists:service_categories,id',
             'status'      => 'nullable|boolean',
             'sort_order'  => 'nullable|integer',
@@ -187,23 +210,6 @@ class Importer extends AbstractImporter
 
                 $this->skipRow($rowNumber, $errorCode, $attributeCode, current($message));
             }
-        }
-
-        /**
-         * Check if at least one translation exists.
-         */
-        $hasTranslation = false;
-        foreach ($this->locales as $locale) {
-            if (isset($rowData["name_{$locale}"]) && ! empty($rowData["name_{$locale}"])) {
-                $hasTranslation = true;
-                break;
-            }
-        }
-
-        if (! $hasTranslation) {
-            $this->skipRow($rowNumber, self::ERROR_MISSING_TRANSLATION, 'name');
-
-            return false;
         }
 
         return ! $this->errorHelper->isRowInvalid($rowNumber);
@@ -276,6 +282,45 @@ class Importer extends AbstractImporter
     protected function saveServicesData(ImportBatchContract $batch): bool
     {
         /**
+         * Group rows by service id (similar to how products are grouped by SKU).
+         * For new services (without id), group consecutive rows with same category_id and sort_order.
+         */
+        $groupedData = [];
+        $currentNewServiceKey = null;
+        $currentTempId = null;
+        $newServiceIndex = 0;
+
+        foreach ($batch->data as $rowData) {
+            $serviceId = $rowData['id'] ?? null;
+            
+            if (! empty($serviceId)) {
+                // Existing service - group by id
+                $currentNewServiceKey = null; // Reset new service grouping
+                $currentTempId = null;
+                if (! isset($groupedData[$serviceId])) {
+                    $groupedData[$serviceId] = [];
+                }
+                $groupedData[$serviceId][] = $rowData;
+            } else {
+                // New service - group consecutive rows with same category_id and sort_order
+                $groupKey = ($rowData['category_id'] ?? '') . '_' . ($rowData['sort_order'] ?? '0');
+                
+                // If this is a different group than the previous row, start a new service
+                if ($currentNewServiceKey !== $groupKey) {
+                    $currentNewServiceKey = $groupKey;
+                    $currentTempId = 'new_' . $newServiceIndex;
+                    $newServiceIndex++;
+                    
+                    if (! isset($groupedData[$currentTempId])) {
+                        $groupedData[$currentTempId] = [];
+                    }
+                }
+                
+                $groupedData[$currentTempId][] = $rowData;
+            }
+        }
+
+        /**
          * Load service storage with batch ids.
          */
         $ids = array_filter(Arr::pluck($batch->data, 'id'));
@@ -283,50 +328,51 @@ class Importer extends AbstractImporter
             $this->serviceStorage->load($ids);
         }
 
-        foreach ($batch->data as $rowData) {
-            $this->saveService($rowData);
+        /**
+         * Process each service group.
+         */
+        foreach ($groupedData as $serviceId => $rows) {
+            $this->saveService($serviceId, $rows);
         }
 
         return true;
     }
 
     /**
-     * Save a single service.
+     * Save a single service with its translations.
      */
-    protected function saveService(array $rowData): void
+    protected function saveService($serviceId, array $rows): void
     {
-        // Extract translation data
-        $translations = [];
-        foreach ($this->locales as $locale) {
-            $nameKey = "name_{$locale}";
-            $descriptionKey = "description_{$locale}";
+        // Get the first row to extract common service data
+        $firstRow = $rows[0];
+        
+        // Check if this is a new service or existing one
+        $isNewService = is_string($serviceId) && str_starts_with($serviceId, 'new_');
+        $actualServiceId = $isNewService ? null : $serviceId;
 
-            if (isset($rowData[$nameKey]) || isset($rowData[$descriptionKey])) {
-                $translations[$locale] = [
-                    'name'        => $rowData[$nameKey] ?? null,
-                    'description' => $rowData[$descriptionKey] ?? null,
+        // Prepare main service data from first row
+        $serviceData = [
+            'category_id' => $firstRow['category_id'],
+            'status'      => isset($firstRow['status']) ? (bool) $firstRow['status'] : true,
+            'image'       => $firstRow['image'] ?? null,
+            'sort_order'  => isset($firstRow['sort_order']) ? (int) $firstRow['sort_order'] : 0,
+        ];
+
+        // Extract translation data from all rows
+        foreach ($rows as $rowData) {
+            $locale = $rowData['locale'] ?? null;
+            
+            if ($locale && isset($rowData['name'])) {
+                $serviceData[$locale] = [
+                    'name'        => $rowData['name'] ?? null,
+                    'description' => $rowData['description'] ?? null,
                 ];
             }
         }
 
-        // Prepare main service data
-        $serviceData = [
-            'category_id' => $rowData['category_id'],
-            'status'      => isset($rowData['status']) ? (bool) $rowData['status'] : true,
-            'image'       => $rowData['image'] ?? null,
-            'sort_order'  => isset($rowData['sort_order']) ? (int) $rowData['sort_order'] : 0,
-        ];
-
-        // Merge translations into service data
-        foreach ($translations as $locale => $translationData) {
-            $serviceData[$locale] = $translationData;
-        }
-
-        $serviceId = $rowData['id'] ?? null;
-
-        if ($serviceId && $this->isServiceExist($serviceId)) {
+        if ($actualServiceId && $this->isServiceExist($actualServiceId)) {
             // Update existing service
-            $this->serviceRepository->update($serviceData, $serviceId);
+            $this->serviceRepository->update($serviceData, $actualServiceId);
             $this->updatedItemsCount++;
         } else {
             // Create new service

@@ -67,7 +67,7 @@
                         >
                             @foreach (config('importers') as $code => $importer)
                                 @if (!in_array($code, ['products', 'customers', 'tax_rates']))
-                                    <option value="{{ $code }}">@lang($importer['title'])</option>
+                                <option value="{{ $code }}">@lang($importer['title'])</option>
                                 @endif
                             @endforeach
                         </x-admin::form.control-group.control>
