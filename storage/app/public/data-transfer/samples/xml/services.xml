@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<services>
+    <service
+        id=""
+        locale="ar"
+        category_id="1"
+        status="1"
+        image=""
+        sort_order="0"
+        name="خدمة تجديد الهوية"
+        description="خدمة تجديد بطاقة الهوية الوطنية"
+    />
+    <service
+        id=""
+        locale="en"
+        category_id="1"
+        status="1"
+        image=""
+        sort_order="0"
+        name="Identity Renewal Service"
+        description="Service for renewing national identity card"
+    />
+    <service
+        id=""
+        locale="ar"
+        category_id="1"
+        status="1"
+        image=""
+        sort_order="1"
+        name="خدمة استخراج شهادة الميلاد"
+        description="خدمة استخراج شهادة الميلاد"
+    />
+    <service
+        id=""
+        locale="en"
+        category_id="1"
+        status="1"
+        image=""
+        sort_order="1"
+        name="Birth Certificate Service"
+        description="Service for obtaining birth certificate"
+    />
+    <service
+        id="2"
+        locale="ar"
+        category_id="1"
+        status="0"
+        image=""
+        sort_order="2"
+        name="خدمة تحديث"
+        description="خدمة تحديث البيانات"
+    />
+    <service
+        id="2"
+        locale="en"
+        category_id="1"
+        status="0"
+        image=""
+        sort_order="2"
+        name="Update Service"
+        description="Service for updating data"
+    />
+</services>

@@ -1,4 +1,3 @@
-!customers.xml
-!products.xml
-!tax-rates.xml
+!citizens.xml
+!services.xml
 !.gitignore

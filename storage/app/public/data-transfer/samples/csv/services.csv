@@ -1,0 +1,7 @@
+id,locale,category_id,status,image,sort_order,name,description
+,ar,1,1,,0,خدمة تجديد الهوية,خدمة تجديد بطاقة الهوية الوطنية
+,en,1,1,,0,Identity Renewal Service,Service for renewing national identity card
+,ar,1,1,,1,خدمة استخراج شهادة الميلاد,خدمة استخراج شهادة الميلاد
+,en,1,1,,1,Birth Certificate Service,Service for obtaining birth certificate
+2,ar,1,0,,2,خدمة تحديث,خدمة تحديث البيانات
+2,en,1,0,,2,Update Service,Service for updating data

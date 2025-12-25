@@ -1,4 +1,3 @@
-!customers.csv
-!products.csv
-!tax-rates.csv
+!citizens.csv
+!services.csv
 !.gitignore
