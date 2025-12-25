@@ -1,0 +1,83 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>id</th>
+      <th>locale</th>
+      <th>category_id</th>
+      <th>status</th>
+      <th>image</th>
+      <th>sort_order</th>
+      <th>name</th>
+      <th>description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td></td>
+      <td>ar</td>
+      <td>1</td>
+      <td>1</td>
+      <td></td>
+      <td>0</td>
+      <td>خدمة تجديد الهوية</td>
+      <td>خدمة تجديد بطاقة الهوية الوطنية</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td>en</td>
+      <td>1</td>
+      <td>1</td>
+      <td></td>
+      <td>0</td>
+      <td>Identity Renewal Service</td>
+      <td>Service for renewing national identity card</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td>ar</td>
+      <td>1</td>
+      <td>1</td>
+      <td></td>
+      <td>1</td>
+      <td>خدمة استخراج شهادة الميلاد</td>
+      <td>خدمة استخراج شهادة الميلاد</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td>en</td>
+      <td>1</td>
+      <td>1</td>
+      <td></td>
+      <td>1</td>
+      <td>Birth Certificate Service</td>
+      <td>Service for obtaining birth certificate</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>ar</td>
+      <td>1</td>
+      <td>0</td>
+      <td></td>
+      <td>2</td>
+      <td>خدمة تحديث</td>
+      <td>خدمة تحديث البيانات</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>en</td>
+      <td>1</td>
+      <td>0</td>
+      <td></td>
+      <td>2</td>
+      <td>Update Service</td>
+      <td>Service for updating data</td>
+    </tr>
+  </tbody>
+</table>
+</body>
+</html>
