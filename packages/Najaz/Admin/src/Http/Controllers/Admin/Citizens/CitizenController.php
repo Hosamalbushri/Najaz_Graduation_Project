@@ -12,7 +12,7 @@ use Najaz\Admin\Http\Controllers\Controller;
 use Najaz\Citizen\Repositories\CitizenRepository;
 use Najaz\Citizen\Repositories\CitizenTypeRepository;
 use Webkul\Admin\Http\Requests\MassUpdateRequest;
-use Webkul\Core\Rules\PhoneNumber;
+use Najaz\Admin\Rules\PhoneNumber;
 
 class CitizenController extends Controller
 {
@@ -154,7 +154,7 @@ class CitizenController extends Controller
         $isIdentityVerified = ($citizen->identity_verification_status === 1 || $citizen->identity_verification_status === true)
             || ($citizen->identityVerification && $citizen->identityVerification->status === 'approved');
 
-        // If identity is verified, prevent updating identity-related fields
+        // If identity is verified, verify that hidden fields match original values
         if ($isIdentityVerified) {
             $identityFields = [
                 'first_name',
@@ -165,14 +165,29 @@ class CitizenController extends Controller
                 'gender',
             ];
 
-            $attemptedUpdates = [];
+            $tamperedFields = [];
             foreach ($identityFields as $field) {
-                if (request()->has($field)) {
-                    $attemptedUpdates[] = $field;
+                $requestValue = request()->input($field);
+                $originalValue = $citizen->$field;
+                
+                // Compare values (handle date format differences)
+                if ($field === 'date_of_birth') {
+                    $requestDate = $requestValue ? date('Y-m-d', strtotime($requestValue)) : null;
+                    $originalDate = $originalValue ? date('Y-m-d', strtotime($originalValue)) : null;
+                    if ($requestDate !== $originalDate) {
+                        $tamperedFields[] = $field;
+                    }
+                } else {
+                    // Convert both to string for comparison
+                    $requestValueStr = (string) $requestValue;
+                    $originalValueStr = (string) $originalValue;
+                    if ($requestValueStr !== $originalValueStr) {
+                        $tamperedFields[] = $field;
+                    }
                 }
             }
 
-            if (!empty($attemptedUpdates)) {
+            if (!empty($tamperedFields)) {
                 return new JsonResponse([
                     'message' => trans('Admin::app.citizens.citizens.view.edit.identity-locked'),
                     'errors'  => [

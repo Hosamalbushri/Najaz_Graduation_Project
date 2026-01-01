@@ -25,6 +25,9 @@ class ServiceForm extends FormRequest
     {
         $locale = core()->getRequestedLocaleCode();
 
+        // Check if this is an update request
+        $id = $this->route('id');
+
         $rules = [
             'status'      => 'nullable|boolean',
             'image'       => 'nullable|string|max:2048',
@@ -33,8 +36,14 @@ class ServiceForm extends FormRequest
             'citizen_type_ids.*' => 'integer|exists:citizen_types,id',
         ];
 
-        // Check if this is an update request
-        $id = $this->route('id');
+        // Service number validation
+        if ($id) {
+            // Update: unique but ignore current record
+            $rules['service_number'] = 'required|string|unique:services,service_number,'.$id.'|regex:/^[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*$/';
+        } else {
+            // Create: must be unique
+            $rules['service_number'] = 'required|string|unique:services,service_number|regex:/^[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*$/';
+        }
 
         if ($id) {
             // Update: require locale-specific fields

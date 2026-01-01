@@ -3,6 +3,8 @@
 namespace Najaz\Admin\DataGrids\Services;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Najaz\Service\Repositories\ServiceCategoryRepository;
 use Webkul\DataGrid\DataGrid;
 
 class ServiceDataGrid extends DataGrid
@@ -13,6 +15,13 @@ class ServiceDataGrid extends DataGrid
      * @var string
      */
     protected $primaryColumn = 'service_id';
+
+    /**
+     * Constructor for the class.
+     *
+     * @return void
+     */
+    public function __construct(protected ServiceCategoryRepository $serviceCategoryRepository) {}
 
     /**
      * Prepare query builder.
@@ -33,6 +42,7 @@ class ServiceDataGrid extends DataGrid
             })
             ->select(
                 'services.id as service_id',
+                'services.service_number',
                 'service_translations.name',
                 'service_translations.description',
                 'services.status',
@@ -45,6 +55,7 @@ class ServiceDataGrid extends DataGrid
             ->groupBy('services.id');
 
         $this->addFilter('service_id', 'services.id');
+        $this->addFilter('service_number', 'services.service_number');
         $this->addFilter('name', 'service_translations.name');
         $this->addFilter('price', 'services.price');
         $this->addFilter('status', 'services.status');
@@ -69,6 +80,15 @@ class ServiceDataGrid extends DataGrid
         ]);
 
         $this->addColumn([
+            'index'      => 'service_number',
+            'label'      => trans('Admin::app.services.services.index.datagrid.service-number'),
+            'type'       => 'string',
+            'searchable' => true,
+            'filterable' => true,
+            'sortable'   => true,
+        ]);
+
+        $this->addColumn([
             'index'      => 'name',
             'label'      => trans('Admin::app.services.services.index.datagrid.name'),
             'type'       => 'string',
@@ -78,12 +98,34 @@ class ServiceDataGrid extends DataGrid
         ]);
 
         $this->addColumn([
-            'index'      => 'category_name',
-            'label'      => trans('Admin::app.services.services.index.datagrid.category'),
-            'type'       => 'string',
-            'searchable' => true,
-            'filterable' => true,
+            'index'              => 'category_name',
+            'label'              => trans('Admin::app.services.services.index.datagrid.category'),
+            'type'               => 'string',
+            'searchable'         => true,
+            'filterable'         => true,
+            'filterable_type'    => 'dropdown',
+            'filterable_options' => DB::table('service_category_translations')
+                ->where('locale', app()->getLocale())
+                ->select('name as label', 'name as value')
+                ->distinct()
+                ->orderBy('name')
+                ->get()
+                ->toArray(),
             'sortable'   => true,
+        ]);
+
+        $this->addColumn([
+            'index'      => 'base_image',
+            'label'      => trans('Admin::app.services.services.index.datagrid.image'),
+            'type'       => 'string',
+            'exportable' => false,
+            'closure'    => function ($row) {
+                if (! $row->image) {
+                    return;
+                }
+
+                return Storage::url($row->image);
+            },
         ]);
 
         $this->addColumn([
@@ -127,14 +169,6 @@ class ServiceDataGrid extends DataGrid
             'label'      => trans('Admin::app.services.services.index.datagrid.sort-order'),
             'type'       => 'integer',
             'filterable' => false,
-            'sortable'   => true,
-        ]);
-
-        $this->addColumn([
-            'index'      => 'created_at',
-            'label'      => trans('Admin::app.services.services.index.datagrid.created-at'),
-            'type'       => 'date',
-            'filterable' => true,
             'sortable'   => true,
         ]);
     }

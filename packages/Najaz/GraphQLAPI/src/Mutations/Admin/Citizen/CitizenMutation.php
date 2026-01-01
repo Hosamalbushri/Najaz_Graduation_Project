@@ -5,8 +5,8 @@ namespace Najaz\GraphQLAPI\Mutations\Admin\Citizen;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Najaz\Admin\Rules\PhoneNumber;
 use Najaz\Citizen\Repositories\CitizenRepository;
-use Webkul\Core\Rules\PhoneNumber;
 
 class CitizenMutation
 {

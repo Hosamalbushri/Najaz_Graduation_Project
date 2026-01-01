@@ -184,7 +184,7 @@ class Importer extends AbstractImporter
                 'regex:/^\d{4}-\d{2}-\d{2}$/',
             ],
             'email'                      => 'nullable|email',
-            'phone'                      => 'nullable|regex:/^\+?[0-9]{7,15}$/',
+            'phone'                      => 'nullable|regex:/^(73|77|78|71)\d{7}$/',
             'status'                     => 'nullable|boolean',
         ]);
 

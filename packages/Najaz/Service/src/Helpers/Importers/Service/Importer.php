@@ -2,9 +2,14 @@
 
 namespace Najaz\Service\Helpers\Importers\Service;
 
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Storage as StorageFacade;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
+use Intervention\Image\ImageManager;
+use Najaz\Service\Helpers\Importers\Service\Storage;
 use Najaz\Service\Repositories\ServiceCategoryRepository;
 use Najaz\Service\Repositories\ServiceRepository;
 use Webkul\DataTransfer\Contracts\ImportBatch as ImportBatchContract;
@@ -15,11 +20,11 @@ use Webkul\DataTransfer\Repositories\ImportBatchRepository;
 class Importer extends AbstractImporter
 {
     /**
-     * Error code for non existing service id.
+     * Error code for non existing service number.
      *
      * @var string
      */
-    const ERROR_SERVICE_ID_NOT_FOUND_FOR_DELETE = 'service_id_not_found_to_delete';
+    const ERROR_SERVICE_NUMBER_NOT_FOUND_FOR_DELETE = 'service_number_not_found_to_delete';
 
     /**
      * Error code for invalid category id.
@@ -41,11 +46,12 @@ class Importer extends AbstractImporter
      * @var string[]
      */
     protected array $validColumnNames = [
-        'id',
+        'service_number',
         'locale',
         'category_id',
         'status',
         'image',
+        'images',
         'sort_order',
         'name',
         'description',
@@ -57,20 +63,20 @@ class Importer extends AbstractImporter
      * @var string[]
      */
     protected array $messages = [
-        self::ERROR_SERVICE_ID_NOT_FOUND_FOR_DELETE => 'data_transfer::app.importers.services.validation.errors.service-id-not-found',
-        self::ERROR_INVALID_CATEGORY_ID             => 'data_transfer::app.importers.services.validation.errors.invalid-category-id',
-        self::ERROR_MISSING_TRANSLATION              => 'data_transfer::app.importers.services.validation.errors.missing-translation',
+        self::ERROR_SERVICE_NUMBER_NOT_FOUND_FOR_DELETE => 'data_transfer::app.importers.services.validation.errors.service-number-not-found',
+        self::ERROR_INVALID_CATEGORY_ID                 => 'data_transfer::app.importers.services.validation.errors.invalid-category-id',
+        self::ERROR_MISSING_TRANSLATION                  => 'data_transfer::app.importers.services.validation.errors.missing-translation',
     ];
 
     /**
      * Permanent entity columns.
      */
-    protected $permanentAttributes = ['id'];
+    protected $permanentAttributes = ['service_number'];
 
     /**
      * Permanent entity column.
      */
-    protected string $masterAttributeCode = 'id';
+    protected string $masterAttributeCode = 'service_number';
 
     /**
      * Cached service categories.
@@ -155,8 +161,8 @@ class Importer extends AbstractImporter
          * If import action is delete than no need for further validation.
          */
         if ($this->import->action == Import::ACTION_DELETE) {
-            if (! isset($rowData['id']) || ! $this->isServiceExist($rowData['id'])) {
-                $this->skipRow($rowNumber, self::ERROR_SERVICE_ID_NOT_FOUND_FOR_DELETE);
+            if (! isset($rowData['service_number']) || ! $this->isServiceExistByServiceNumber($rowData['service_number'])) {
+                $this->skipRow($rowNumber, self::ERROR_SERVICE_NUMBER_NOT_FOUND_FOR_DELETE);
 
                 return false;
             }
@@ -195,11 +201,12 @@ class Importer extends AbstractImporter
          * Validate service attributes.
          */
         $validator = Validator::make($rowData, [
-            'locale'      => 'required|string|in:' . implode(',', $this->locales),
-            'name'        => 'required|string',
-            'category_id' => 'required|integer|exists:service_categories,id',
-            'status'      => 'nullable|boolean',
-            'sort_order'  => 'nullable|integer',
+            'locale'        => 'required|string|in:' . implode(',', $this->locales),
+            'name'          => 'required|string',
+            'service_number' => 'required|string|regex:/^[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*$/',
+            'category_id'   => 'required|integer|exists:service_categories,id',
+            'status'        => 'nullable|boolean',
+            'sort_order'    => 'nullable|integer',
         ]);
 
         if ($validator->fails()) {
@@ -252,19 +259,22 @@ class Importer extends AbstractImporter
     protected function deleteServices(ImportBatchContract $batch): bool
     {
         /**
-         * Load service storage with batch ids.
+         * Load service storage with batch service numbers.
          */
-        $ids = array_filter(Arr::pluck($batch->data, 'id'));
-        $this->serviceStorage->load($ids);
+        $serviceNumbers = array_filter(Arr::pluck($batch->data, 'service_number'));
+        $this->serviceStorage->loadByServiceNumbers($serviceNumbers);
 
         $idsToDelete = [];
 
         foreach ($batch->data as $rowData) {
-            if (! isset($rowData['id']) || ! $this->isServiceExist($rowData['id'])) {
+            if (! isset($rowData['service_number']) || ! $this->isServiceExistByServiceNumber($rowData['service_number'])) {
                 continue;
             }
 
-            $idsToDelete[] = $rowData['id'];
+            $serviceId = $this->serviceStorage->getIdByServiceNumber($rowData['service_number']);
+            if ($serviceId) {
+                $idsToDelete[] = $serviceId;
+            }
         }
 
         $idsToDelete = array_unique($idsToDelete);
@@ -282,28 +292,50 @@ class Importer extends AbstractImporter
     protected function saveServicesData(ImportBatchContract $batch): bool
     {
         /**
-         * Group rows by service id (similar to how products are grouped by SKU).
-         * For new services (without id), group consecutive rows with same category_id and sort_order.
+         * Load service storage with batch service numbers.
+         */
+        $serviceNumbers = array_filter(Arr::pluck($batch->data, 'service_number'));
+        
+        if (! empty($serviceNumbers)) {
+            $this->serviceStorage->loadByServiceNumbers($serviceNumbers);
+        }
+
+        /**
+         * Group rows by service_number (similar to how products are grouped by SKU).
+         * For new services (without service_number), group consecutive rows with same category_id and sort_order.
          */
         $groupedData = [];
         $currentNewServiceKey = null;
         $currentTempId = null;
         $newServiceIndex = 0;
 
+        $imagesData = [];
+
         foreach ($batch->data as $rowData) {
-            $serviceId = $rowData['id'] ?? null;
+            $serviceNumber = $rowData['service_number'] ?? null;
+            
+            // Try to find service by service_number
+            $serviceId = null;
+            if (!empty($serviceNumber) && $this->serviceStorage->hasByServiceNumber($serviceNumber)) {
+                $serviceId = $this->serviceStorage->getIdByServiceNumber($serviceNumber);
+            }
+            
+            /**
+             * Prepare service images
+             */
+            $this->prepareImages($rowData, $imagesData);
             
             if (! empty($serviceId)) {
-                // Existing service - group by id
+                // Existing service - group by service_number
                 $currentNewServiceKey = null; // Reset new service grouping
                 $currentTempId = null;
-                if (! isset($groupedData[$serviceId])) {
-                    $groupedData[$serviceId] = [];
+                if (! isset($groupedData[$serviceNumber])) {
+                    $groupedData[$serviceNumber] = [];
                 }
-                $groupedData[$serviceId][] = $rowData;
+                $groupedData[$serviceNumber][] = $rowData;
             } else {
-                // New service - group consecutive rows with same category_id and sort_order
-                $groupKey = ($rowData['category_id'] ?? '') . '_' . ($rowData['sort_order'] ?? '0');
+                // New service - group consecutive rows with same service_number, category_id and sort_order
+                $groupKey = ($serviceNumber ?? '') . '_' . ($rowData['category_id'] ?? '') . '_' . ($rowData['sort_order'] ?? '0');
                 
                 // If this is a different group than the previous row, start a new service
                 if ($currentNewServiceKey !== $groupKey) {
@@ -321,19 +353,16 @@ class Importer extends AbstractImporter
         }
 
         /**
-         * Load service storage with batch ids.
+         * Process each service group.
          */
-        $ids = array_filter(Arr::pluck($batch->data, 'id'));
-        if (! empty($ids)) {
-            $this->serviceStorage->load($ids);
+        foreach ($groupedData as $serviceKey => $rows) {
+            $this->saveService($serviceKey, $rows);
         }
 
         /**
-         * Process each service group.
+         * Save service images
          */
-        foreach ($groupedData as $serviceId => $rows) {
-            $this->saveService($serviceId, $rows);
-        }
+        $this->saveImages($imagesData);
 
         return true;
     }
@@ -341,22 +370,34 @@ class Importer extends AbstractImporter
     /**
      * Save a single service with its translations.
      */
-    protected function saveService($serviceId, array $rows): void
+    protected function saveService($serviceKey, array $rows): void
     {
         // Get the first row to extract common service data
         $firstRow = $rows[0];
         
         // Check if this is a new service or existing one
-        $isNewService = is_string($serviceId) && str_starts_with($serviceId, 'new_');
-        $actualServiceId = $isNewService ? null : $serviceId;
+        $isNewService = is_string($serviceKey) && str_starts_with($serviceKey, 'new_');
+        $serviceNumber = $isNewService ? ($firstRow['service_number'] ?? null) : $serviceKey;
+        
+        // Get actual service id if service exists
+        $actualServiceId = null;
+        if (!empty($serviceNumber) && $this->serviceStorage->hasByServiceNumber($serviceNumber)) {
+            $actualServiceId = $this->serviceStorage->getIdByServiceNumber($serviceNumber);
+        }
 
         // Prepare main service data from first row
+        // Note: image is handled separately in saveImages() method
         $serviceData = [
-            'category_id' => $firstRow['category_id'],
-            'status'      => isset($firstRow['status']) ? (bool) $firstRow['status'] : true,
-            'image'       => $firstRow['image'] ?? null,
-            'sort_order'  => isset($firstRow['sort_order']) ? (int) $firstRow['sort_order'] : 0,
+            'service_number' => $serviceNumber,
+            'category_id'    => $firstRow['category_id'],
+            'status'         => isset($firstRow['status']) ? (bool) $firstRow['status'] : true,
+            'sort_order'     => isset($firstRow['sort_order']) ? (int) $firstRow['sort_order'] : 0,
         ];
+        
+        // Only set image if it's a direct URL/path (not from images column)
+        if (isset($firstRow['image']) && !isset($firstRow['images'])) {
+            $serviceData['image'] = $firstRow['image'];
+        }
 
         // Extract translation data from all rows
         foreach ($rows as $rowData) {
@@ -370,7 +411,7 @@ class Importer extends AbstractImporter
             }
         }
 
-        if ($actualServiceId && $this->isServiceExist($actualServiceId)) {
+        if ($actualServiceId) {
             // Update existing service
             $this->serviceRepository->update($serviceData, $actualServiceId);
             $this->updatedItemsCount++;
@@ -382,11 +423,111 @@ class Importer extends AbstractImporter
     }
 
     /**
-     * Check if service exists.
+     * Check if service exists by service number.
      */
-    public function isServiceExist(int $id): bool
+    public function isServiceExistByServiceNumber(string $serviceNumber): bool
     {
-        return $this->serviceStorage->has($id);
+        return $this->serviceStorage->hasByServiceNumber($serviceNumber);
+    }
+
+    /**
+     * Prepare service image from row data.
+     */
+    public function prepareImages(array $rowData, array &$imagesData): void
+    {
+        // Use 'images' column if available, otherwise fallback to 'image'
+        $imageField = $rowData['images'] ?? $rowData['image'] ?? null;
+
+        if (empty($imageField)) {
+            return;
+        }
+
+        $serviceNumber = $rowData['service_number'] ?? null;
+
+        if (empty($serviceNumber)) {
+            return;
+        }
+
+        /**
+         * Skip the image upload if service is already created
+         */
+        if ($this->serviceStorage->hasByServiceNumber($serviceNumber)) {
+            return;
+        }
+
+        /**
+         * Reset the service number image data to prevent
+         * data duplication in case of multiple locales
+         */
+        if (!isset($imagesData[$serviceNumber])) {
+            // Take the first image name if multiple are provided (comma-separated)
+            $imageNames = array_map('trim', explode(',', $imageField));
+            $imageName = $imageNames[0] ?? null;
+
+            if (empty($imageName)) {
+                return;
+            }
+
+            $path = 'import/'.$this->import->images_directory_path.'/'.$imageName;
+
+            if (! StorageFacade::disk('local')->has($path)) {
+                return;
+            }
+
+            $imagesData[$serviceNumber] = [
+                'name' => $imageName,
+                'path' => StorageFacade::disk('local')->path($path),
+            ];
+        }
+    }
+
+    /**
+     * Save service image from current batch.
+     */
+    public function saveImages(array $imagesData): void
+    {
+        if (empty($imagesData)) {
+            return;
+        }
+
+        foreach ($imagesData as $serviceNumber => $imageData) {
+            // Get service id by service number
+            $serviceId = $this->serviceStorage->getIdByServiceNumber($serviceNumber);
+
+            if (! $serviceId) {
+                // Try to find the service that was just created
+                $service = $this->serviceRepository->findWhereIn('service_number', [$serviceNumber])->first();
+                
+                if (! $service) {
+                    continue;
+                }
+                
+                $serviceId = $service->id;
+                
+                // Update storage with the newly created service
+                $this->serviceStorage->set($serviceId, $serviceId);
+                if (!empty($service->service_number)) {
+                    $this->serviceStorage->loadByServiceNumbers([$service->service_number]);
+                }
+            }
+
+            // Process the single image
+            if (! empty($imageData)) {
+                $file = new UploadedFile($imageData['path'], $imageData['name']);
+
+                $image = (new ImageManager)->make($file)->encode('webp');
+
+                $imageDirectory = 'services/'.$serviceId;
+                $path = $imageDirectory.'/'.Str::random(40).'.webp';
+
+                StorageFacade::disk('public')->put($path, $image);
+
+                // Update service with image path
+                $this->serviceRepository->update([
+                    'image' => $path,
+                ], $serviceId);
+            }
+        }
     }
 }
 

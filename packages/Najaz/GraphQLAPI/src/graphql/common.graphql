@@ -18,6 +18,7 @@ type CitizenLoginResponse {
 
 type Service {
     id: ID!
+    serviceNumber: String! @rename(attribute: "service_number")
     name: String! @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ServiceResolver@name")
     description: String @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ServiceResolver@description")
     status: Boolean

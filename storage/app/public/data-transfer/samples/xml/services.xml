@@ -1,61 +1,61 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <services>
     <service
-        id=""
+        service_number="SVC-001"
         locale="ar"
         category_id="1"
         status="1"
-        image=""
+        images="service-image-1.jpg"
         sort_order="0"
         name="خدمة تجديد الهوية"
         description="خدمة تجديد بطاقة الهوية الوطنية"
     />
     <service
-        id=""
+        service_number="SVC-001"
         locale="en"
         category_id="1"
         status="1"
-        image=""
+        images="service-image-1.jpg"
         sort_order="0"
         name="Identity Renewal Service"
         description="Service for renewing national identity card"
     />
     <service
-        id=""
+        service_number="SVC-002"
         locale="ar"
         category_id="1"
         status="1"
-        image=""
+        images="service-image-2.jpg"
         sort_order="1"
         name="خدمة استخراج شهادة الميلاد"
         description="خدمة استخراج شهادة الميلاد"
     />
     <service
-        id=""
+        service_number="SVC-002"
         locale="en"
         category_id="1"
         status="1"
-        image=""
+        images="service-image-2.jpg"
         sort_order="1"
         name="Birth Certificate Service"
         description="Service for obtaining birth certificate"
     />
     <service
-        id="2"
+        service_number="SVC-003"
         locale="ar"
         category_id="1"
         status="0"
-        image=""
+        images="service-image-3.jpg"
         sort_order="2"
         name="خدمة تحديث"
         description="خدمة تحديث البيانات"
     />
     <service
-        id="2"
+        service_number="SVC-003"
         locale="en"
         category_id="1"
         status="0"
-        image=""
+        images="service-image-3.jpg"
         sort_order="2"
         name="Update Service"
         description="Service for updating data"

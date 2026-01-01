@@ -253,8 +253,10 @@ return [
                 'create-btn'  => 'Create Service',
                 'datagrid'    => [
                     'id'                  => 'ID',
+                    'service-number'      => 'Service Number',
                     'name'                => 'Name',
                     'category'            => 'Category',
+                    'image'               => 'Image',
                     'description'         => 'Description',
                     'price'               => 'Price',
                     'status'              => 'Status',
@@ -271,6 +273,7 @@ return [
         ],
         'create' => [
                 'title'              => 'Create Service',
+                'service-number'     => 'Service Number',
                 'name'               => 'Name',
                 'description'        => 'Description',
                 'general'            => 'General Information',
@@ -293,6 +296,7 @@ return [
         ],
         'edit' => [
                 'title'              => 'Edit Service',
+                'service-number'     => 'Service Number',
                 'name'               => 'Name',
                 'description'        => 'Description',
                 'general'            => 'General Information',
@@ -879,7 +883,7 @@ return [
         'index' => [
             'title'    => 'Service Requests',
             'datagrid' => [
-                'order-id'     => 'Request #:id',
+                'order-id'     => 'Request ID',
                 'id'           => 'Request ID',
                 'status'       => 'Status',
                 'pending'      => 'Pending',

@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Event;
 use Najaz\Admin\DataGrids\Citizens\CitizenTypeDateGrid;
 use Najaz\Citizen\Repositories\CitizenTypeRepository;
 use Najaz\Admin\Http\Controllers\Controller;
-use Webkul\Core\Rules\Code;
+use Najaz\Admin\Rules\Code;
 
 class CitizenTypesController extends Controller
 {

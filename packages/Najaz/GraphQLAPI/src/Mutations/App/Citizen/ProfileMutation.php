@@ -4,8 +4,8 @@ namespace Najaz\GraphQLAPI\Mutations\App\Citizen;
 
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Najaz\Admin\Rules\PhoneNumber;
 use Najaz\Citizen\Repositories\CitizenRepository;
-use Webkul\Core\Rules\PhoneNumber;
 
 class ProfileMutation
 {

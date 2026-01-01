@@ -5,8 +5,8 @@ namespace Najaz\GraphQLAPI\Mutations\Admin\Citizen;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Najaz\Admin\Rules\Code;
 use Najaz\Citizen\Repositories\CitizenTypeRepository;
-use Webkul\Core\Rules\Code;
 
 class CitizenTypeMutation
 {

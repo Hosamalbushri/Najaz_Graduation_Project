@@ -5,11 +5,38 @@
 
     @pushOnce('styles')
         <style>
-            /* شبكة عرض الخدمات: 3 أعمدة على الشاشات المتوسطة فما فوق */
+            /* شبكة عرض الخدمات: عمودين على الشاشات المتوسطة فما فوق */
             @media (min-width: 768px) {
                 .services-dg-grid {
-                    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) 220px;
+                    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
                 }
+            }
+
+            /* تحسينات احترافية للتصميم */
+            .service-row {
+                transition: all 0.2s ease;
+            }
+
+            .service-row:hover {
+                background-color: rgba(249, 250, 251, 0.8);
+            }
+
+            .dark .service-row:hover {
+                background-color: rgba(17, 24, 39, 0.6);
+            }
+
+            .service-info-badge {
+                display: inline-flex;
+                align-items: center;
+                padding: 0.25rem 0.5rem;
+                background-color: rgba(243, 244, 246, 0.8);
+                border-radius: 0.375rem;
+                font-size: 0.75rem;
+                font-weight: 500;
+            }
+
+            .dark .service-info-badge {
+                background-color: rgba(31, 41, 55, 0.8);
             }
         </style>
     @endPushOnce
@@ -65,12 +92,12 @@
             </template>
 
             <template v-else>
-                <div class="row grid services-dg-grid gap-2 items-center border-b px-4 py-2.5 dark:border-gray-800">
+                <div class="row grid services-dg-grid gap-6 items-center border-b border-gray-200 bg-gray-50 px-6 py-4 dark:border-gray-700 dark:bg-gray-800">
                     <div
-                            class="flex min-w-0 select-none items-center gap-2.5"
+                            class="flex min-w-0 select-none items-center gap-3"
                             v-for="(columnGroup, index) in [
-                            ['name', 'category_name', 'description'],
-                            ['service_id', 'sort_order', 'status'],
+                            ['name', 'service_number', 'category_name', 'description'],
+                            ['base_image', 'service_id', 'sort_order', 'status'],
                         ]"
                     >
                         @if ($hasPermission)
@@ -99,14 +126,14 @@
                             </label>
                         @endif
 
-                        <p class="min-w-0 text-gray-600 dark:text-gray-300">
+                        <p class="min-w-0 text-sm font-medium text-gray-700 dark:text-gray-300">
                             <span class="[&>*]:after:content-['_/_']">
                                 <template v-for="column in columnGroup">
                                     <span
                                             class="after:content-['/'] last:after:content-['']"
                                             :class="{
-                                            'font-medium text-gray-800 dark:text-white': applied.sort.column == column,
-                                            'cursor-pointer hover:text-gray-800 dark:hover:text-white': available.columns.find(c => c.index === column)?.sortable,
+                                            'font-semibold text-gray-900 dark:text-white': applied.sort.column == column,
+                                            'cursor-pointer hover:text-gray-900 dark:hover:text-white': available.columns.find(c => c.index === column)?.sortable,
                                         }"
                                             @click="
                                             available.columns.find(c => c.index === column)?.sortable
@@ -120,7 +147,7 @@
                             </span>
 
                             <i
-                                    class="align-text-bottom text-base text-gray-800 dark:text-white ltr:ml-1.5 rtl:mr-1.5"
+                                    class="align-text-bottom text-sm text-gray-900 dark:text-white ltr:ml-2 rtl:mr-2"
                                     :class="[applied.sort.order === 'asc' ? 'icon-down-stat': 'icon-up-stat']"
                                     v-if="columnGroup.includes(applied.sort.column)"
                             ></i>
@@ -145,13 +172,13 @@
 
             <template v-else>
                 <div
-                        class="row grid services-dg-grid gap-2 border-b px-2 py-2.5 transition-all hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-950 sm:px-4"
+                        class="service-row row grid services-dg-grid gap-6 border-b border-gray-100 px-6 py-4 dark:border-gray-800"
                         v-for="record in available.records"
                 >
                     {{-- Column 1: Name / Category / Description (+ checkbox) --}}
-                    <div class="flex min-w-0 gap-2.5">
+                    <div class="flex min-w-0 gap-4">
                         @if ($hasPermission)
-                            <div class="pt-1">
+                            <div class="pt-0.5">
                                 <input
                                         type="checkbox"
                                         :name="`mass_action_select_record_${record.service_id}`"
@@ -162,57 +189,87 @@
                                 >
 
                                 <label
-                                        class="icon-uncheckbox peer-checked:icon-checked cursor-pointer rounded-md text-2xl peer-checked:text-blue-600"
+                                        class="icon-uncheckbox peer-checked:icon-checked cursor-pointer rounded transition-colors text-2xl text-gray-400 peer-checked:text-blue-600 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-400"
                                         :for="`mass_action_select_record_${record.service_id}`"
                                 ></label>
                             </div>
                         @endif
 
-                        <div class="flex min-w-0 flex-col gap-1.5">
-                            <p class="break-words text-base font-semibold text-gray-800 dark:text-white">
-                                @{{ record.name }}
-                            </p>
+                        <div class="flex min-w-0 flex-col gap-2.5 flex-1">
+                            <div class="flex flex-col gap-1.5">
+                                <h3 class="break-words text-base font-semibold leading-6 text-gray-900 dark:text-white">
+                                    @{{ record.name }}
+                                </h3>
+                                <p class="text-sm text-gray-800 dark:text-gray-200">
+                                    @{{ record.service_number }}
+                                </p>
+                            </div>
 
-                            <p class="text-gray-600 dark:text-gray-300">
-                                <span class="font-medium">@lang('Admin::app.services.services.index.datagrid.category'):</span>
-                                @{{ record.category_name ?? 'N/A' }}
-                            </p>
+                            <div class="flex items-center gap-2">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                                    @{{ record.category_name ?? 'N/A' }}
+                                </span>
+                            </div>
 
-                            <p class="text-gray-600 dark:text-gray-300 break-words">
-                                <span class="font-medium">@lang('Admin::app.services.services.index.datagrid.description'):</span>
-                                @{{ record.description ?? '—' }}
+                            <p class="text-sm leading-5 text-gray-600 dark:text-gray-400 break-words line-clamp-2">
+                                @{{ record.description || '—' }}
                             </p>
                         </div>
                     </div>
 
-                    {{-- Column 2: ID / Sort Order / Created --}}
-                    <div class="flex min-w-0 flex-col gap-1.5 text-gray-600 dark:text-gray-300">
-                        <p>
-                            <span class="font-medium">@lang('Admin::app.services.services.index.datagrid.id'):</span>
-                            @{{ record.service_id }}
-                        </p>
+                    {{-- Column 2: Image / ID / Sort Order / Status / Actions --}}
+                    <div class="flex items-start justify-between gap-4">
+                        <div class="flex gap-4 flex-1 min-w-0">
+                            <div class="service-image-container relative flex-shrink-0">
+                                <template v-if="record.base_image">
+                                    <img
+                                        class="h-20 w-20 rounded-lg object-cover border-2 border-gray-200 shadow-sm dark:border-gray-700"
+                                        :src='record.base_image'
+                                        alt="Service image"
+                                    />
+                                </template>
 
-                        <p>
-                            <span class="font-medium">@lang('Admin::app.services.services.index.datagrid.sort-order'):</span>
-                            @{{ record.sort_order }}
-                        </p>
+                                <template v-else>
+                                    <div class="h-20 w-20 rounded-lg border-2 border-dashed border-gray-300 bg-gradient-to-br from-gray-50 to-gray-100 dark:border-gray-700 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center shadow-sm">
+                                        <img src="{{ bagisto_asset('images/product-placeholders/front.svg')}}" class="h-8 w-8 opacity-30 dark:opacity-20">
+                                    </div>
+                                </template>
+                            </div>
 
-                        <p class="break-words">
-                        <p v-html="record.status"></p>
+                            <div class="flex flex-col gap-3 flex-1 min-w-0">
+                                <div class="flex flex-col gap-2">
+                                    <div class="flex items-center gap-2">
+                                        <span class="service-info-badge text-gray-700 dark:text-gray-300">
+                                            <span class="ml-1 font-semibold">@{{ record.service_id }}</span>
+                                        </span>
+                                    </div>
 
-                        </p>
-                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="service-info-badge text-gray-700 dark:text-gray-300">
+                                            <span class="font-medium">@lang('Admin::app.services.services.index.datagrid.sort-order') -  </span>
+                                            <span class="ml-1 font-semibold">@{{ record.sort_order }}</span>
+                                        </span>
+                                    </div>
+                                </div>
 
-                    {{-- Column 3: Status / Actions --}}
-                    <div class="flex items-center justify-end gap-x-3">
-                        <div class="flex items-center gap-1.5 shrink-0">
-                            <span
-                                    class="cursor-pointer rounded-md p-1.5 text-2xl transition-all hover:bg-gray-200 dark:hover:bg-gray-800"
-                                    :class="action.icon"
-                                    v-text="! action.icon ? action.title : ''"
-                                    v-for="action in record.actions"
-                                    @click="performAction(action)"
-                            ></span>
+                                <div class="flex items-center" v-html="record.status"></div>
+                            </div>
+                        </div>
+
+                        <div
+                            class="flex items-center gap-1.5 shrink-0"
+                            v-if="available.actions.length"
+                        >
+                            <button
+                                type="button"
+                                class="group relative flex items-center justify-center rounded-lg p-2.5 text-2xl text-gray-500 transition-all hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+                                :class="action.icon"
+                                v-text="! action.icon ? action.title : ''"
+                                v-for="action in record.actions"
+                                @click="performAction(action)"
+                                :title="action.title"
+                            >
+                            </button>
                         </div>
                     </div>
                 </div>

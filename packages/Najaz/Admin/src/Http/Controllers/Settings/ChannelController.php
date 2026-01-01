@@ -5,6 +5,7 @@ namespace Najaz\Admin\Http\Controllers\Settings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Najaz\Admin\Rules\Code;
 use Webkul\Admin\DataGrids\Settings\ChannelDataGrid;
 use Webkul\Admin\Http\Controllers\Controller;
 use Webkul\Core\Repositories\ChannelRepository;
@@ -51,7 +52,7 @@ class ChannelController extends Controller
     {
         $data = $this->validate(request(), [
             /* general */
-            'code'                  => ['required', 'unique:channels,code', new \Webkul\Core\Rules\Code],
+            'code'                  => ['required', 'unique:channels,code', new Code],
             'name'                  => 'required',
             'description'           => 'nullable',
             'hostname'              => 'unique:channels,hostname',
@@ -134,7 +135,7 @@ class ChannelController extends Controller
 
         $data = $this->validate(request(), [
             /* general */
-            'code'                             => ['required', 'unique:channels,code,'.$id, new \Webkul\Core\Rules\Code],
+            'code'                             => ['required', 'unique:channels,code,'.$id, new Code],
             $locale.'.name'                    => 'required',
             $locale.'.description'             => 'nullable',
             'hostname'                         => 'unique:channels,hostname,'.$id,

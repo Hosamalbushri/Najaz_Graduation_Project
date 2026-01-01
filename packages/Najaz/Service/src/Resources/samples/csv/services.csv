@@ -1,7 +1,7 @@
-id,locale,category_id,status,image,sort_order,name,description
-,ar,1,1,,0,خدمة تجديد الهوية,خدمة تجديد بطاقة الهوية الوطنية
-,en,1,1,,0,Identity Renewal Service,Service for renewing national identity card
-,ar,1,1,,1,خدمة استخراج شهادة الميلاد,خدمة استخراج شهادة الميلاد
-,en,1,1,,1,Birth Certificate Service,Service for obtaining birth certificate
-2,ar,1,0,,2,خدمة تحديث,خدمة تحديث البيانات
-2,en,1,0,,2,Update Service,Service for updating data
+service_number,locale,category_id,status,images,sort_order,name,description
+SVC-001,ar,1,1,service-image-1.jpg,0,خدمة تجديد الهوية,خدمة تجديد بطاقة الهوية الوطنية
+SVC-001,en,1,1,service-image-1.jpg,0,Identity Renewal Service,Service for renewing national identity card
+SVC-002,ar,1,1,service-image-2.jpg,1,خدمة استخراج شهادة الميلاد,خدمة استخراج شهادة الميلاد
+SVC-002,en,1,1,service-image-2.jpg,1,Birth Certificate Service,Service for obtaining birth certificate
+SVC-003,ar,1,0,service-image-3.jpg,2,خدمة تحديث,خدمة تحديث البيانات
+SVC-003,en,1,0,service-image-3.jpg,2,Update Service,Service for updating data

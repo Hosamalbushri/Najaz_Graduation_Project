@@ -2,10 +2,13 @@
 
 namespace Najaz\Service\Repositories;
 
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Intervention\Image\ImageManager;
 use Najaz\Service\Models\ServiceAttributeGroupProxy;
 use Najaz\Service\Models\ServiceAttributeGroupService;
 use Webkul\Core\Eloquent\Repository;
@@ -266,9 +269,22 @@ class ServiceRepository extends Repository
      */
     public function create(array $data)
     {
+        // Handle image upload if present
+        $image = $data['image'] ?? null;
+        if ($image) {
+            unset($data['image']);
+        }
+
         // TranslatableModel will handle translations automatically
         // The data should come with locale structure like: ['ar' => ['name' => '...'], 'en' => ['name' => '...']]
-        return parent::create($data);
+        $service = parent::create($data);
+
+        // Upload image after service is created
+        if ($image) {
+            $this->uploadSingleImage($image, $service);
+        }
+
+        return $service;
     }
 
     /**
@@ -279,8 +295,122 @@ class ServiceRepository extends Repository
      */
     public function update(array $data, $id)
     {
+        $service = $this->findOrFail($id);
+
+        // Handle image upload/delete if present
+        // x-admin::media.images sends image[] array which can contain:
+        // - UploadedFile instances (new files)
+        // - Numeric IDs (existing images to keep)
+        // - Empty array (delete all images)
+        if (isset($data['image'])) {
+            $image = $data['image'];
+            unset($data['image']);
+            $this->uploadSingleImage($image, $service);
+        }
+
         // TranslatableModel will handle translations automatically
         return parent::update($data, $id);
+    }
+
+    /**
+     * Get service directory for images.
+     *
+     * @param  \Najaz\Service\Contracts\Service  $service
+     * @return string
+     */
+    public function getServiceDirectory($service): string
+    {
+        return 'services/'.$service->id;
+    }
+
+    /**
+     * Upload single service image.
+     * Handles image upload/delete from x-admin::form.control-group.control type="image"
+     * which sends data as image[] array (when name="image").
+     * x-admin::media.images sends data as name[] array directly.
+     *
+     * @param  mixed  $imageData
+     * @param  \Najaz\Service\Contracts\Service  $service
+     * @return void
+     */
+    public function uploadSingleImage($imageData, $service): void
+    {
+        $uploadedFile = null;
+        $hasExistingImage = false;
+
+        // x-admin::form.control-group.control type="image" with name="image" sends data as image[] array
+        // It can be either:
+        // 1. image[] - direct array containing:
+        //    - UploadedFile instances (new files to upload)
+        //    - String/Numeric IDs (existing images to keep - hash of path)
+        //    - Empty array (delete all images)
+        // 2. image[files] - nested array (if sent differently)
+        // 3. UploadedFile - direct file
+        if (is_array($imageData)) {
+            // Check for nested 'files' key first
+            if (isset($imageData['files']) && is_array($imageData['files'])) {
+                foreach ($imageData['files'] as $indexOrFile) {
+                    if ($indexOrFile instanceof UploadedFile) {
+                        $uploadedFile = $indexOrFile;
+                        break;
+                    } elseif (is_string($indexOrFile) || is_numeric($indexOrFile)) {
+                        // Existing image ID to keep (can be hash string or numeric)
+                        // Check if it matches current image hash
+                        if ($service->image && md5($service->image) === (string) $indexOrFile) {
+                            $hasExistingImage = true;
+                        }
+                    }
+                }
+            } else {
+                // Direct array (image[] format from x-admin::media.images)
+                foreach ($imageData as $indexOrFile) {
+                    if ($indexOrFile instanceof UploadedFile) {
+                        $uploadedFile = $indexOrFile;
+                        break; // Only process the first file
+                    } elseif (is_string($indexOrFile) || is_numeric($indexOrFile)) {
+                        // Existing image ID to keep (can be hash string or numeric)
+                        // Check if it matches current image hash
+                        if ($service->image && md5($service->image) === (string) $indexOrFile) {
+                            $hasExistingImage = true;
+                        }
+                    }
+                }
+            }
+        } elseif ($imageData instanceof UploadedFile) {
+            // Direct UploadedFile (fallback)
+            $uploadedFile = $imageData;
+        }
+
+        // If array is empty, delete existing image
+        if (is_array($imageData) && empty($imageData)) {
+            if ($service->image) {
+                Storage::disk('public')->delete($service->image);
+                parent::update(['image' => null], $service->id);
+            }
+            return;
+        }
+
+        // If new file uploaded, replace existing image
+        if ($uploadedFile instanceof UploadedFile) {
+            // Delete old image if exists (services have only one image)
+            if ($service->image) {
+                Storage::disk('public')->delete($service->image);
+            }
+
+            // Process and save image
+            if (Str::contains($uploadedFile->getMimeType(), 'image')) {
+                $manager = new ImageManager;
+                $image = $manager->make($uploadedFile)->encode('webp');
+
+                $path = $this->getServiceDirectory($service).'/'.Str::random(40).'.webp';
+
+                Storage::disk('public')->put($path, $image);
+
+                // Update service with image path (skip image handling to avoid recursion)
+                parent::update(['image' => $path], $service->id);
+            }
+        }
+        // If no new file and no existing image ID, keep current image (do nothing)
     }
 
     protected function toBoolean($value): bool

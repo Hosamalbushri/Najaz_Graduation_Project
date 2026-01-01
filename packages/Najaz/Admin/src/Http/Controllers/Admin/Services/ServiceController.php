@@ -53,12 +53,17 @@ class ServiceController extends Controller
         $locale = core()->getRequestedLocaleCode();
 
         $data = $serviceForm->only([
+            'service_number',
             'category_id',
             'status',
-            'image',
             'sort_order',
             'citizen_type_ids',
         ]);
+
+        // Handle image if present (x-admin::form.control-group.control type="image" sends as image)
+        if ($serviceForm->has('image')) {
+            $data['image'] = $serviceForm->input('image');
+        }
 
         $data['locale'] = $locale;
         $data[$locale] = $serviceForm->input($locale, []);
@@ -112,12 +117,17 @@ class ServiceController extends Controller
         $locale = core()->getRequestedLocaleCode();
 
         $data = $serviceForm->only([
+            'service_number',
             'category_id',
             'status',
-            'image',
             'sort_order',
             'citizen_type_ids',
         ]);
+
+        // Handle image if present (x-admin::form.control-group.control type="image" sends as image)
+        if ($serviceForm->has('image')) {
+            $data['image'] = $serviceForm->input('image');
+        }
 
         $data['locale'] = $locale;
         $data[$locale] = $serviceForm->input($locale, []);

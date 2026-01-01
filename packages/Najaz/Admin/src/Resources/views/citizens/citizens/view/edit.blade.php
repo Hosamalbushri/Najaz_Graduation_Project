@@ -45,6 +45,16 @@
 
                         <!-- Names Section -->
                         <div class="flex gap-4 max-sm:flex-wrap">
+                            <!-- Hidden fields for locked identity fields -->
+                            <template v-if="isIdentityVerified">
+                                <input type="hidden" name="first_name" :value="citizen.first_name" />
+                                <input type="hidden" name="middle_name" :value="citizen.middle_name" />
+                                <input type="hidden" name="last_name" :value="citizen.last_name" />
+                                <input type="hidden" name="national_id" :value="citizen.national_id" />
+                                <input type="hidden" name="date_of_birth" :value="citizen.date_of_birth" />
+                                <input type="hidden" name="gender" :value="citizen.gender" />
+                            </template>
+
                             <!--First Name -->
                             <x-admin::form.control-group class="mb-2.5 w-full">
                                 <x-admin::form.control-group.label class="required">

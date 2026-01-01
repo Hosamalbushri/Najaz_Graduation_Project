@@ -12,10 +12,16 @@ class Storage
     protected array $items = [];
 
     /**
+     * Service numbers mapped to ids for quick lookup
+     */
+    protected array $serviceNumberMap = [];
+
+    /**
      * Columns which will be selected from database
      */
     protected array $selectColumns = [
         'id',
+        'service_number',
     ];
 
     /**
@@ -31,6 +37,7 @@ class Storage
     public function init(): void
     {
         $this->items = [];
+        $this->serviceNumberMap = [];
 
         $this->load();
     }
@@ -48,6 +55,11 @@ class Storage
 
         foreach ($services as $service) {
             $this->set($service->id, $service->id);
+            
+            // Also index by service_number if available
+            if (!empty($service->service_number)) {
+                $this->serviceNumberMap[$service->service_number] = $service->id;
+            }
         }
     }
 
@@ -79,6 +91,42 @@ class Storage
         }
 
         return $this->items[$id];
+    }
+
+    /**
+     * Check if service exists by service number
+     */
+    public function hasByServiceNumber(string $serviceNumber): bool
+    {
+        return isset($this->serviceNumberMap[$serviceNumber]);
+    }
+
+    /**
+     * Get service id by service number
+     */
+    public function getIdByServiceNumber(string $serviceNumber): ?int
+    {
+        return $this->serviceNumberMap[$serviceNumber] ?? null;
+    }
+
+    /**
+     * Load services by service numbers
+     */
+    public function loadByServiceNumbers(array $serviceNumbers): void
+    {
+        if (empty($serviceNumbers)) {
+            return;
+        }
+
+        $services = $this->serviceRepository->findWhereIn('service_number', $serviceNumbers, $this->selectColumns);
+
+        foreach ($services as $service) {
+            $this->set($service->id, $service->id);
+            
+            if (!empty($service->service_number)) {
+                $this->serviceNumberMap[$service->service_number] = $service->id;
+            }
+        }
     }
 
     /**

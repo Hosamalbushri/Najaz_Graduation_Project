@@ -98,6 +98,23 @@
                         @lang('Admin::app.services.services.create.general')
                     </p>
 
+                    <!-- Service Number -->
+                    <x-admin::form.control-group>
+                        <x-admin::form.control-group.label class="required">
+                            @lang('Admin::app.services.services.create.service-number')
+                        </x-admin::form.control-group.label>
+
+                        <x-admin::form.control-group.control
+                            type="text"
+                            name="service_number"
+                            value="{{ old('service_number') }}"
+                            ::rules="{ required: true, regex: /^[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*$/ }"
+                            :label="trans('Admin::app.services.services.create.service-number')"
+                        />
+
+                        <x-admin::form.control-group.error control-name="service_number" />
+                    </x-admin::form.control-group>
+
                     <!-- Name -->
                     <x-admin::form.control-group>
                         <x-admin::form.control-group.label class="required">
@@ -285,25 +302,24 @@
                     </x-slot:header>
 
                     <x-slot:content>
-                    <x-admin::form.control-group class="!mb-0">
+                        <x-admin::form.control-group class="!mb-0">
                             <x-admin::form.control-group.label class="text-gray-800 dark:text-white">
-                            @lang('Admin::app.services.services.create.image')
-                        </x-admin::form.control-group.label>
+                                @lang('Admin::app.services.services.create.image')
+                            </x-admin::form.control-group.label>
 
-                        <x-admin::form.control-group.control
-                            type="image"
-                            name="image"
-                            value="{{ old('image') }}"
-                            placeholder="{{ trans('Admin::app.services.services.create.image-placeholder') }}"
-                            :label="trans('Admin::app.services.services.create.image')"
-                        />
+                            <x-admin::form.control-group.control
+                                type="image"
+                                name="image"
+                                rules="nullable"
+                                :is-multiple="false"
+                            />
 
                             <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                            @lang('Admin::app.services.services.create.image-help')
-                        </p>
+                                @lang('Admin::app.services.services.create.image-help')
+                            </p>
 
-                        <x-admin::form.control-group.error control-name="image" />
-                    </x-admin::form.control-group>
+                            <x-admin::form.control-group.error control-name="image" />
+                        </x-admin::form.control-group>
                     </x-slot:content>
                 </x-admin::accordion>
 

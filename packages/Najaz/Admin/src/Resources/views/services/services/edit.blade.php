@@ -102,6 +102,23 @@
                         @lang('Admin::app.services.services.edit.general')
                     </p>
 
+                    <!-- Service Number -->
+                    <x-admin::form.control-group>
+                        <x-admin::form.control-group.label class="required">
+                            @lang('Admin::app.services.services.edit.service-number')
+                        </x-admin::form.control-group.label>
+
+                        <x-admin::form.control-group.control
+                            type="text"
+                            name="service_number"
+                            value="{{ old('service_number', $service->service_number) }}"
+                            ::rules="{ required: true, regex: /^[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*$/ }"
+                            :label="trans('Admin::app.services.services.edit.service-number')"
+                        />
+
+                        <x-admin::form.control-group.error control-name="service_number" />
+                    </x-admin::form.control-group>
+
                     <!-- Name -->
                     <x-admin::form.control-group>
                         <x-admin::form.control-group.label class="required">
@@ -310,9 +327,9 @@
                             <x-admin::form.control-group.control
                                 type="image"
                                 name="image"
-                                value="{{ old('image', $service->image) }}"
-                                placeholder="{{ trans('Admin::app.services.services.edit.image-placeholder') }}"
-                                :label="trans('Admin::app.services.services.edit.image')"
+                                rules="nullable"
+                                :is-multiple="false"
+                                :uploaded-images="$service->images"
                             />
 
                             <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
