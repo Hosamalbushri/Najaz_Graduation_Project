@@ -488,7 +488,8 @@ return [
                 'create-success'               => 'Template has been created successfully',
                 'service'                      => 'Service',
                 'select-service'               => 'Select Service',
-                    ],
+                'error'                        => 'An error occurred while creating the template',
+            ],
                     'edit' => [
                 'title'                          => 'Edit Document Template - :service',
                 'cancel-btn'                     => 'Cancel',
@@ -513,6 +514,7 @@ return [
                 'header-image'                   => 'Header Image',
                 'footer-text'                    => 'Footer Text',
                 'is-active'                      => 'Template is Active',
+                'enable-custom-template'         => 'Enable Custom Template',
                 'header-footer-settings'         => 'Header and Footer Settings',
                 'click-to-delete'                => 'Double-click to delete field ":field"',
                 'confirm-delete-field'            => 'Are you sure you want to delete field ":field" from the template?',
@@ -970,7 +972,13 @@ return [
             'file-not-found'                 => 'File not found',
             'no-file-uploaded'               => 'No file uploaded',
             'no-attachments'                => 'No attachments available',
+            'no-attachments-description'    => 'No files or images have been uploaded for this service request',
             'document-preview'              => 'Document Preview',
+            'click-to-preview'               => 'Click to preview',
+            'image-load-error'               => 'Failed to load image',
+            'open-in-new-tab'                => 'Open in New Tab',
+            'view'                           => 'View',
+            'download'                       => 'Download',
         ],
 
         'word-document' => [

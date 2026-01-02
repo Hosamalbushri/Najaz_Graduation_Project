@@ -28,7 +28,6 @@ class ServiceDocumentTemplateTranslation extends Model implements ServiceDocumen
      */
     protected $fillable = [
         'template_content',
-        'footer_text',
         'locale',
         'service_document_template_id',
     ];

@@ -133,76 +133,6 @@
                 margin: 0 0 20px 0;
             }
 
-            .document-header-container {
-                position: absolute;
-                top: 20px;
-                left: 20px;
-                right: 20px;
-            }
-
-            .document-header-container.rtl {
-                left: 20px;
-                right: 20px;
-            }
-
-            .document-header-row {
-                display: table;
-                width: 100%;
-                table-layout: fixed;
-            }
-
-            .document-header-left,
-            .document-header-center,
-            .document-header-right {
-                display: table-cell;
-                vertical-align: top;
-                padding: 0 10px;
-            }
-
-            .document-header-left {
-                text-align: left;
-                width: 33.33%;
-            }
-
-            .document-header-center {
-                text-align: center;
-                width: 33.33%;
-            }
-
-            .document-header-right {
-                text-align: right;
-                width: 33.33%;
-            }
-
-            .document-header-logo {
-                max-width: 200px;
-                max-height: 100px;
-                margin: 0 auto;
-                display: block;
-            }
-
-            .document-header-placeholder {
-                color: #999;
-                font-style: italic;
-                font-size: 9pt;
-            }
-
-            .logo-container {
-                position: absolute;
-                top: 20px;
-                left: 20px;
-            }
-
-            .logo-container.rtl {
-                left: auto;
-                right: 20px;
-            }
-
-            .logo-container img {
-                max-width: 200px;
-                height: auto;
-            }
-
             .page-header b {
                 display: inline-block;
                 vertical-align: middle;
@@ -231,94 +161,10 @@
                 font-size: 14pt;
                 margin: 12px 0 6px 0;
             }
-
-            .footer-text {
-                margin-top: 40px;
-                padding-top: 20px;
-                border-top: 1px solid #ddd;
-                text-align: center;
-                font-size: 10pt;
-                color: #666;
-            }
         </style>
     </head>
 
     <body dir="{{ $localeModel->direction ?? core()->getCurrentLocale()->direction }}">
-        @php
-            // Get request locale
-            $requestLocale = $requestLocale ?? app()->getLocale();
-            $channelCode = core()->getRequestedChannelCode();
-            
-            // Get header settings from system config (same way as invoice)
-            $headerLeft = core()->getConfigData('documents.official.header.header_left', $channelCode, $requestLocale) ?? '';
-            $headerCenter = core()->getConfigData('documents.official.header.header_center', $channelCode, $requestLocale) ?? '';
-            $headerRight = core()->getConfigData('documents.official.header.header_right', $channelCode, $requestLocale) ?? '';
-        @endphp
-
-        <!-- Document Header (Left, Center, Right) - Same structure as invoice logo -->
-        <div class="document-header-container {{ $localeModel->direction ?? core()->getCurrentLocale()->direction }}">
-            <div class="document-header-row">
-                <!-- Left Part -->
-                <div class="document-header-left">
-                    @if (!empty($headerLeft))
-                        {!! $headerLeft !!}
-                    @else
-                        <span class="document-header-placeholder">
-                            {{ trans('Admin::app.configuration.index.documents.official.header.header-left-placeholder', [], $requestLocale) }}
-                        </span>
-                    @endif
-                </div>
-                
-                <!-- Center Part (Logo) - Same way as invoice -->
-                <div class="document-header-center">
-                    @if (!empty($headerCenter))
-                        @php
-                            $logoPath = public_path('storage/' . $headerCenter);
-                            if (!file_exists($logoPath)) {
-                                $logoPath = storage_path('app/public/' . $headerCenter);
-                            }
-                        @endphp
-                        @if (file_exists($logoPath))
-                            <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logoPath)) }}" class="document-header-logo"/>
-                        @else
-                            <span class="document-header-placeholder">
-                                {{ trans('Admin::app.configuration.index.documents.official.header.header-center-placeholder', [], $requestLocale) }}
-                            </span>
-                        @endif
-                    @elseif ($template->header_image)
-                        @php
-                            $logoPath = public_path('storage/' . $template->header_image);
-                            if (!file_exists($logoPath)) {
-                                $logoPath = storage_path('app/public/' . $template->header_image);
-                            }
-                        @endphp
-                        @if (file_exists($logoPath))
-                            <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logoPath)) }}" class="document-header-logo"/>
-                        @else
-                            <span class="document-header-placeholder">
-                                {{ trans('Admin::app.configuration.index.documents.official.header.header-center-placeholder', [], $requestLocale) }}
-                            </span>
-                        @endif
-                    @else
-                        <span class="document-header-placeholder">
-                            {{ trans('Admin::app.configuration.index.documents.official.header.header-center-placeholder', [], $requestLocale) }}
-                        </span>
-                    @endif
-                </div>
-                
-                <!-- Right Part -->
-                <div class="document-header-right">
-                    @if (!empty($headerRight))
-                        {!! $headerRight !!}
-                    @else
-                        <span class="document-header-placeholder">
-                            {{ trans('Admin::app.configuration.index.documents.official.header.header-right-placeholder', [], $requestLocale) }}
-                        </span>
-                    @endif
-                </div>
-            </div>
-        </div>
-
         <div class="page">
             <!-- Header -->
             <div class="page-header">
@@ -330,23 +176,6 @@
                 <div class="document-content">
                     {!! $content !!}
                 </div>
-
-                <!-- Footer Content - Same way as invoice -->
-                @if (core()->getConfigData('documents.official.footer.footer_text', $channelCode, $requestLocale))
-                    <div class="footer-text">
-                        {{ core()->getConfigData('documents.official.footer.footer_text', $channelCode, $requestLocale) }}
-                    </div>
-                @elseif (!empty($footerText ?? $template->footer_text))
-                    @php
-                        $templateTranslation = $template->translate($requestLocale);
-                        $templateFooterText = $footerText ?? ($templateTranslation?->footer_text ?? $template->footer_text);
-                    @endphp
-                    @if ($templateFooterText)
-                        <div class="footer-text">
-                            {!! $templateFooterText !!}
-                        </div>
-                    @endif
-                @endif
             </div>
         </div>
     </body>

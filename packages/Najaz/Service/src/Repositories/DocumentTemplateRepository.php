@@ -80,8 +80,8 @@ class DocumentTemplateRepository extends Repository
         $template = ServiceDocumentTemplateProxy::modelClass()::create([
             'service_id'        => $serviceId,
             'used_fields'       => [],
-            'header_image'      => null,
             'is_active'         => true,
+            'enable_custom_template' => false,
         ]);
 
         // Create default translation for current locale
@@ -90,7 +90,6 @@ class DocumentTemplateRepository extends Repository
             'service_document_template_id' => $template->id,
             'locale'                       => $currentLocale,
             'template_content'            => '',
-            'footer_text'                   => null,
         ]);
 
         // Build available fields list
@@ -111,10 +110,9 @@ class DocumentTemplateRepository extends Repository
         // Extract translation data
         $locale = $data['locale'] ?? app()->getLocale();
         $templateContent = $data['template_content'] ?? '';
-        $footerText = $data['footer_text'] ?? null;
         
         // Remove translation fields from main data
-        unset($data['locale'], $data['template_content'], $data['footer_text']);
+        unset($data['locale'], $data['template_content']);
         
         // Update main template data
         $template->update($data);
@@ -127,7 +125,6 @@ class DocumentTemplateRepository extends Repository
             ],
             [
                 'template_content' => $templateContent,
-                'footer_text'      => $footerText,
             ]
         );
 
@@ -206,6 +203,7 @@ class DocumentTemplateRepository extends Repository
                 'translations', // Load pivot translations for custom_name
                 'attributeGroup.translations',
                 'fields.translations', // Load custom service fields with translations
+                'fields.attributeType', // Load attribute type
                 'fields.attributeType.translations',
                 'fields.options.translations', // Load field options translations as well
             ])->whereIn('id', $pivotIds)->get()->keyBy('id');
@@ -268,6 +266,28 @@ class DocumentTemplateRepository extends Repository
             foreach ($fieldsToUse as $field) {
                 // Skip if field code is empty
                 if (empty($field->code)) {
+                    continue;
+                }
+                
+                // Get field type - prefer direct 'type' attribute, fallback to attributeType->code
+                $fieldType = null;
+                
+                // First try direct 'type' attribute (for ServiceAttributeGroupServiceField)
+                if (isset($field->type) && !empty($field->type)) {
+                    $fieldType = $field->type;
+                } else {
+                    // Fallback to attributeType relationship
+                    if (! $field->relationLoaded('attributeType')) {
+                        $field->load('attributeType');
+                    }
+                    
+                    if ($field->attributeType) {
+                        $fieldType = $field->attributeType->code;
+                    }
+                }
+                
+                // Skip file and image fields
+                if ($fieldType && in_array($fieldType, ['file', 'image'])) {
                     continue;
                 }
                 

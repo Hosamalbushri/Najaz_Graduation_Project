@@ -69,30 +69,11 @@ class WordDocumentService
                 'marginRight' => 1000,
             ]);
 
-            // Add header if exists
-            if ($template->header_image) {
-                $header = $section->addHeader();
-                $imagePath = Storage::path($template->header_image);
-                if (file_exists($imagePath)) {
-                    $header->addImage($imagePath, [
-                        'width' => 150,
-                        'height' => 50,
-                        'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER,
-                    ]);
-                }
-            }
-
             // Replace placeholders and convert HTML to Word content
             $content = $this->replacePlaceholders($template->template_content, $fieldValues, $serviceRequest);
             
             // Add content to section
             $this->addHtmlContent($section, $content);
-
-            // Add footer if exists
-            if ($template->footer_text) {
-                $footer = $section->addFooter();
-                $footer->addText($template->footer_text, ['size' => 10], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
-            }
 
             // Generate filename and path
             $filename = 'editable-'.$serviceRequest->increment_id.'.docx';
@@ -137,13 +118,6 @@ class WordDocumentService
         $values = [];
 
         // Citizen basic fields
-        // Applicant full name
-        $values['citizen_full_name'] = trim(
-            ($serviceRequest->citizen_first_name ?? '') . ' ' .
-            ($serviceRequest->citizen_middle_name ?? '') . ' ' .
-            ($serviceRequest->citizen_last_name ?? '')
-        );
-        // Keep old fields for backward compatibility
         $values['citizen_first_name'] = $serviceRequest->citizen_first_name ?? '';
         $values['citizen_middle_name'] = $serviceRequest->citizen_middle_name ?? '';
         $values['citizen_last_name'] = $serviceRequest->citizen_last_name ?? '';

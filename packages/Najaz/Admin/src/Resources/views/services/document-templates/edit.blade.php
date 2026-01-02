@@ -137,6 +137,25 @@
                                                         value="0"
                                                     />
                                                 </label>
+                                                
+                                                @if (isset($hasFileOrImageFields) && $hasFileOrImageFields === true)
+                                                    <label class="flex items-center gap-2.5 cursor-pointer rounded-lg px-3 py-1.5 transition-colors duration-200 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                            @lang('Admin::app.services.document-templates.edit.enable-custom-template')
+                                                        </span>
+                                                        <x-admin::form.control-group.control
+                                                            type="switch"
+                                                            name="enable_custom_template"
+                                                            value="1"
+                                                            :checked="old('enable_custom_template', $template->enable_custom_template ?? false)"
+                                                        />
+                                                        <x-admin::form.control-group.control
+                                                            type="hidden"
+                                                            name="enable_custom_template"
+                                                            value="0"
+                                                        />
+                                                    </label>
+                                                @endif
                                             </div>
                                         </div>
                                     </x-slot:header>
@@ -391,91 +410,6 @@
                                 </x-admin::accordion>
                             </div>
                         </div>
-
-                        <!-- Second Row: Footer Text and Header Image (Side by Side) -->
-                        <div class="mt-6 flex gap-4 max-xl:flex-wrap">
-                            <!-- Footer Text Accordion -->
-                            <div class="flex flex-1 flex-col gap-2 max-xl:flex-auto">
-                                <div class="box-shadow rounded-xl border border-gray-200 bg-white shadow-sm transition-shadow duration-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
-                                    <x-admin::accordion>
-                                        <x-slot:header>
-                                            <div class="flex items-center gap-3 px-1">
-                                                <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-900/30">
-                                                    <svg class="h-5 w-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                                    </svg>
-                                                </div>
-                                                <p class="text-base font-semibold text-gray-900 dark:text-white">
-                                                @lang('Admin::app.services.document-templates.edit.footer-text')
-                                            </p>
-                                            </div>
-                                        </x-slot:header>
-
-                                        <x-slot:content>
-                                            <div class="px-1 pb-1">
-                                            <x-admin::form.control-group class="!mb-0">
-                                                    <x-admin::form.control-group.label class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                                    @lang('Admin::app.services.document-templates.edit.footer-text')
-                                                </x-admin::form.control-group.label>
-
-                                                <x-admin::form.control-group.control
-                                                    type="textarea"
-                                                    id="footer_text"
-                                                    name="footer_text"
-                                                    v-model="footerText"
-                                                    :value="old('footer_text', $template->footer_text ?? '')"
-                                                    :label="trans('Admin::app.services.document-templates.edit.footer-text')"
-                                                    :placeholder="trans('Admin::app.services.document-templates.edit.footer-text')"
-                                                    :tinymce="true"
-                                                />
-
-                                                <x-admin::form.control-group.error control-name="footer_text" />
-                                            </x-admin::form.control-group>
-                                            </div>
-                                        </x-slot:content>
-                                    </x-admin::accordion>
-                                </div>
-                            </div>
-
-                            <!-- Header Image Accordion -->
-                            <div class="flex w-[360px] max-w-full flex-col gap-2 max-xl:flex-auto max-xl:w-full">
-                                <div class="box-shadow rounded-xl border border-gray-200 bg-white shadow-sm transition-shadow duration-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
-                                    <x-admin::accordion>
-                                        <x-slot:header>
-                                            <div class="flex items-center gap-3 px-1">
-                                                <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-900/30">
-                                                    <svg class="h-5 w-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                                    </svg>
-                                                </div>
-                                                <p class="text-base font-semibold text-gray-900 dark:text-white">
-                                                @lang('Admin::app.services.document-templates.edit.header-image')
-                                            </p>
-                                            </div>
-                                        </x-slot:header>
-
-                                        <x-slot:content>
-                                            <div class="px-1 pb-1">
-                                            <x-admin::form.control-group class="!mb-0">
-                                                    <x-admin::form.control-group.label class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                                    @lang('Admin::app.services.document-templates.edit.header-image')
-                                                </x-admin::form.control-group.label>
-
-                                                <x-admin::form.control-group.control
-                                                    type="image"
-                                                    name="header_image"
-                                                    :value="old('header_image', $template->header_image ?? '')"
-                                                    :label="trans('Admin::app.services.document-templates.edit.header-image')"
-                                                />
-
-                                                <x-admin::form.control-group.error control-name="header_image" />
-                                            </x-admin::form.control-group>
-                                            </div>
-                                        </x-slot:content>
-                                    </x-admin::accordion>
-                                </div>
-                            </div>
-                        </div>
                     </form>
                 </x-admin::form>
             </div>
@@ -519,7 +453,6 @@
                     
                     return {
                         templateContent: currentTranslation.template_content || '',
-                        footerText: currentTranslation.footer_text || '',
                         selectedField: '',
                         fieldSearchQuery: '',
                         activeFieldTab: null,
@@ -720,13 +653,6 @@
                             return editor;
                         }
                         return null;
-                    },
-                    
-                    /**
-                     * Get TinyMCE editor instance for footer text
-                     */
-                    getFooterTextTinyMCEEditor() {
-                        return tinymce.get('footer_text');
                     },
                     
                     /**
@@ -1396,22 +1322,11 @@
                     },
                     
                     /**
-                     * Sync footer text from TinyMCE editor to Vue data model
-                     */
-                    syncFooterTextFromTinyMCE() {
-                        const footerEditor = this.getFooterTextTinyMCEEditor();
-                        if (footerEditor) {
-                            this.footerText = footerEditor.getContent();
-                        }
-                    },
-
-                    /**
                      * Save the document template
                      * Collects all used fields and submits the form
                      */
                     saveTemplate(params, { resetForm, setErrors }) {
                         this.syncContentFromTinyMCE();
-                        this.syncFooterTextFromTinyMCE();
                         
                         this.isSaving = true;
 
@@ -1439,7 +1354,6 @@
                         });
                         
                         formData.append('template_content', this.templateContent);
-                        formData.append('footer_text', this.footerText);
                         formData.append('locale', this.currentLocale.code);
 
                         const url = this.templateId 

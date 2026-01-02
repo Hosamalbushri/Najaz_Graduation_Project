@@ -2,17 +2,23 @@
     <x-slot:title>
         @lang('Admin::app.services.document-templates.index.title')
     </x-slot>
-
     <div>
         <div class="flex items-center justify-between gap-4 max-sm:flex-wrap">
             <p class="text-xl font-bold text-gray-800 dark:text-white">
                 @lang('Admin::app.services.document-templates.index.title')
             </p>
-            
-            @include('admin::services.document-templates.create', ['services' => $services])
+            @include('admin::services.document-templates.create')
+            <v-document-template-create
+                ref="createTemplateComponent"
+                :services="{{ json_encode($services) }}"
+                @template-created="$refs.templateDatagrid.get()"
+            ></v-document-template-create>
         </div>
 
-        <x-admin::datagrid :src="route('admin.services.document-templates.index')" />
+        <x-admin::datagrid
+            :src="route('admin.services.document-templates.index')"
+            ref="templateDatagrid"
+        />
     </div>
 </x-admin::layouts>
 

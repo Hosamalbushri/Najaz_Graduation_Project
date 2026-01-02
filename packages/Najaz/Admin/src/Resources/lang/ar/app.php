@@ -491,6 +491,7 @@ return [
                 'create-success'               => 'تم إنشاء القالب بنجاح',
                 'service'                      => 'الخدمة',
                 'select-service'               => 'اختر الخدمة',
+                'error'                        => 'حدث خطأ أثناء إنشاء القالب',
             ],
             'edit' => [
                 'title'                           => 'تعديل قالب الوثيقة - :service',
@@ -516,6 +517,7 @@ return [
                 'header-image'                    => 'صورة الرأس',
                 'footer-text'                     => 'نص التذييل',
                 'is-active'                       => 'القالب نشط',
+                'enable-custom-template'           => 'تفعيل القالب المخصص',
                 'header-footer-settings'          => 'إعدادات الرأس والتذييل',
                 'click-to-delete'                 => 'انقر نقرتين لحذف الحقل ":field"',
                 'confirm-delete-field'            => 'هل أنت متأكد من رغبتك في حذف حقل ":field" من القالب؟',
@@ -973,7 +975,13 @@ return [
             'file-not-found'                 => 'الملف غير موجود',
             'no-file-uploaded'               => 'لم يتم رفع ملف',
             'no-attachments'                 => 'لا توجد مرفقات متاحة',
+            'no-attachments-description'    => 'لم يتم رفع أي ملفات أو صور لهذا الطلب',
             'document-preview'               => 'معاينة الوثيقة',
+            'click-to-preview'               => 'انقر للمعاينة',
+            'image-load-error'               => 'فشل تحميل الصورة',
+            'open-in-new-tab'                => 'فتح في تبويب جديد',
+            'view'                           => 'عرض',
+            'download'                       => 'تحميل',
         ],
 
         'word-document' => [

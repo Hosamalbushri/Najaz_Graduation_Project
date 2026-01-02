@@ -8,6 +8,7 @@ use Najaz\Admin\DataGrids\Services\DocumentTemplateDataGrid;
 use Najaz\Admin\Http\Controllers\Controller;
 use Najaz\Service\Repositories\DocumentTemplateRepository;
 use Najaz\Service\Repositories\ServiceRepository;
+use Najaz\Service\Services\DocumentTemplateService;
 
 class DocumentTemplateController extends Controller
 {
@@ -102,9 +103,55 @@ class DocumentTemplateController extends Controller
             }
         }
 
+        // Check if service has file or image fields
+        $hasFileOrImageFields = false;
+        
+        // Check if the service has any file/image fields
+        $pivotRelations = \Najaz\Service\Models\ServiceAttributeGroupService::with([
+            'fields',
+            'fields.attributeType',
+        ])->where('service_id', $service->id)->get();
+        
+        foreach ($pivotRelations as $pivot) {
+            // Ensure fields are loaded
+            if (!$pivot->relationLoaded('fields')) {
+                $pivot->load('fields.attributeType');
+            }
+            
+            if (!$pivot->fields || $pivot->fields->isEmpty()) {
+                continue;
+            }
+            
+            foreach ($pivot->fields as $field) {
+                // Get field type - prefer direct 'type' attribute, fallback to attributeType->code
+                $fieldType = null;
+                
+                // First try direct 'type' attribute (for ServiceAttributeGroupServiceField)
+                if (isset($field->type) && !empty($field->type)) {
+                    $fieldType = $field->type;
+                } else {
+                    // Fallback to attributeType relationship
+                    if (!$field->relationLoaded('attributeType')) {
+                        $field->load('attributeType');
+                    }
+                    
+                    if ($field->attributeType) {
+                        $fieldType = $field->attributeType->code;
+                    }
+                }
+                
+                // Check if it's a file or image field
+                if ($fieldType && in_array($fieldType, ['file', 'image'])) {
+                    $hasFileOrImageFields = true;
+                    break 2;
+                }
+            }
+        }
+
         return view('admin::services.document-templates.edit', [
             'template' => $template,
             'service'  => $service,
+            'hasFileOrImageFields' => $hasFileOrImageFields,
         ]);
     }
 
@@ -116,9 +163,8 @@ class DocumentTemplateController extends Controller
         $this->validate(request(), [
             'template_content' => 'required|string',
             'used_fields'     => 'nullable|array',
-            'header_image'    => 'nullable',
-            'footer_text'     => 'nullable|string',
             'is_active'       => 'nullable|boolean',
+            'enable_custom_template' => 'nullable|boolean',
             'locale'          => 'required|string',
         ]);
 
@@ -137,9 +183,8 @@ class DocumentTemplateController extends Controller
         $data = request()->only([
             'template_content',
             'used_fields' => $usedFields,
-            'header_image',
-            'footer_text',
             'is_active',
+            'enable_custom_template',
         ]);
 
         $data['locale'] = $locale;

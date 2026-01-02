@@ -132,7 +132,7 @@ class ServiceDataGrid extends DataGrid
             'index'      => 'description',
             'label'      => trans('Admin::app.services.services.index.datagrid.description'),
             'type'       => 'string',
-            'searchable' => true,
+//            'searchable' => true,
             'filterable' => false,
             'sortable'   => false,
         ]);

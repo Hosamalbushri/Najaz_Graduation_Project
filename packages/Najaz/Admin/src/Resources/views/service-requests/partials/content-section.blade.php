@@ -63,13 +63,15 @@
         </x-admin::tabs.item>
 
         <!-- Attachments Tab -->
-        <x-admin::tabs.item
-            :title="trans('Admin::app.service-requests.view.attachments') . ' (' . (isset($allFileImageFields) && is_array($allFileImageFields) ? count($allFileImageFields) : 0) . ')'"
-            class="!p-4"
-            :isSelected="false"
-        >
-{{--            @include('admin::service-requests.partials.attachments')--}}
-        </x-admin::tabs.item>
+        @if (isset($allFileImageFields) && is_array($allFileImageFields) && count($allFileImageFields) > 0)
+            <x-admin::tabs.item
+                :title="trans('Admin::app.service-requests.view.attachments') . ' (' . count($allFileImageFields) . ')'"
+                class="!p-4"
+                :isSelected="false"
+            >
+                @include('admin::service-requests.partials.attachments')
+            </x-admin::tabs.item>
+        @endif
 
         @if ($template && $template->is_active && $documentContent)
             <!-- Document Content Tab -->
@@ -101,13 +103,22 @@
             @endif
 
             <!-- Custom Template Tab -->
-            <x-admin::tabs.item
-                :title="trans('Admin::app.service-requests.custom-template.tab-title')"
-                class="!p-4"
-                :isSelected="false"
-            >
-                @include('admin::service-requests.custom-template-edit')
-            </x-admin::tabs.item>
+            @php
+                $canShowCustomTemplate = false;
+                if ($template && isset($template->enable_custom_template)) {
+                    $enableCustomTemplate = (bool) $template->enable_custom_template;
+                    $canShowCustomTemplate = $enableCustomTemplate === true && bouncer()->hasPermission('service-requests.custom-template.edit');
+                }
+            @endphp
+            @if ($canShowCustomTemplate)
+                <x-admin::tabs.item
+                    :title="trans('Admin::app.service-requests.custom-template.tab-title')"
+                    class="!p-4"
+                    :isSelected="false"
+                >
+                    @include('admin::service-requests.custom-template-edit')
+                </x-admin::tabs.item>
+            @endif
         @endif
     </x-admin::tabs.custom-tabs>
 </div>

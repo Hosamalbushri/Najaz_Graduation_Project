@@ -33,7 +33,6 @@ class ServiceDocumentTemplate extends TranslatableModel implements ServiceDocume
      */
     public $translatedAttributes = [
         'template_content',
-        'footer_text',
     ];
 
     /**
@@ -44,8 +43,8 @@ class ServiceDocumentTemplate extends TranslatableModel implements ServiceDocume
     protected $fillable = [
         'service_id',
         'available_fields',
-        'header_image',
         'is_active',
+        'enable_custom_template',
     ];
 
     /**
@@ -57,6 +56,7 @@ class ServiceDocumentTemplate extends TranslatableModel implements ServiceDocume
         'available_fields' => 'array',
         'used_fields'      => 'array',
         'is_active'        => 'boolean',
+        'enable_custom_template' => 'boolean',
     ];
 
     /**

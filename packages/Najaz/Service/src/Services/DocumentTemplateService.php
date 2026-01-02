@@ -3,11 +3,11 @@
 namespace Najaz\Service\Services;
 
 use Carbon\Carbon;
-use Najaz\Admin\Traits\PDFHandler;
 use Najaz\Request\Models\ServiceRequest;
 use Najaz\Request\Models\ServiceRequestFormData;
 use Najaz\Service\Models\ServiceAttributeGroupService;
 use Najaz\Service\Models\ServiceDocumentTemplate;
+use Webkul\Core\Traits\PDFHandler;
 
 class DocumentTemplateService
 {
@@ -426,7 +426,7 @@ class DocumentTemplateService
     }
 
     /**
-     * Build full HTML document with header and footer.
+     * Build full HTML document.
      *
      * @param  string  $content
      * @param  ServiceDocumentTemplate  $template
@@ -442,30 +442,6 @@ class DocumentTemplateService
         $localeModel = core()->getAllLocales()->firstWhere('code', $locale);
         $direction = $localeModel->direction ?? (in_array($locale, ['ar', 'he', 'fa']) ? 'rtl' : 'ltr');
 
-        // Get channel code for config data
-        $channelCode = core()->getRequestedChannelCode();
-
-        // Get header settings from system config
-        $headerLeft = core()->getConfigData('documents.official.header.header_left', $channelCode, $locale) ?? '';
-        $headerCenter = core()->getConfigData('documents.official.header.header_center', $channelCode, $locale) ?? '';
-        $headerRight = core()->getConfigData('documents.official.header.header_right', $channelCode, $locale) ?? '';
-
-        // Build header HTML
-        $headerHtml = $this->buildHeaderHtml($headerLeft, $headerCenter, $headerRight, $template, $direction, $locale);
-
-        // Get footer text from system config (fallback to template footer_text)
-        $footerText = core()->getConfigData('documents.official.footer.footer_text', $channelCode, $locale);
-        
-        // Fallback to template footer_text if system config is empty
-        if (empty($footerText)) {
-            $templateTranslation = $template->translate($locale);
-            $footerText = $templateTranslation?->footer_text ?? $template->footer_text ?? '';
-        }
-
-        $footerHtml = $footerText 
-            ? '<div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; font-size: 12px; color: #666;">' . $footerText . '</div>'
-            : '';
-
         return <<<HTML
 <!DOCTYPE html>
 <html lang="{$locale}" dir="{$direction}">
@@ -480,49 +456,8 @@ class DocumentTemplateService
             padding: 40px;
             line-height: 1.6;
         }
-        .header {
-            margin-bottom: 30px;
-            border-bottom: 2px solid #ddd;
-            padding-bottom: 20px;
-        }
-        .header-row {
-            display: table;
-            width: 100%;
-            table-layout: fixed;
-        }
-        .header-left, .header-center, .header-right {
-            display: table-cell;
-            vertical-align: top;
-            padding: 0 10px;
-        }
-        .header-left {
-            text-align: left;
-            width: 33.33%;
-        }
-        .header-center {
-            text-align: center;
-            width: 33.33%;
-        }
-        .header-right {
-            text-align: right;
-            width: 33.33%;
-        }
-        .header-logo {
-            max-width: 200px;
-            max-height: 100px;
-            margin: 0 auto;
-            display: block;
-        }
         .content {
             margin: 20px 0;
-        }
-        .footer {
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid #ddd;
-            text-align: center;
-            font-size: 12px;
-            color: #666;
         }
         /* Field placeholder styling - for display before replacement */
         code.field-placeholder {
@@ -562,153 +497,12 @@ class DocumentTemplateService
     </style>
 </head>
 <body>
-    <div class="header">
-        {$headerHtml}
-    </div>
     <div class="content">
         {$content}
     </div>
-    {$footerHtml}
 </body>
 </html>
 HTML;
-    }
-
-    /**
-     * Build header HTML with three parts (left, center, right).
-     *
-     * @param  string  $headerLeft
-     * @param  string  $headerCenter
-     * @param  string  $headerRight
-     * @param  ServiceDocumentTemplate  $template
-     * @param  string  $direction
-     * @param  string  $locale
-     * @return string
-     */
-    protected function buildHeaderHtml(string $headerLeft, string $headerCenter, string $headerRight, ServiceDocumentTemplate $template, string $direction, string $locale): string
-    {
-        // If no system config values, fallback to template header_image
-        if (empty($headerLeft) && empty($headerCenter) && empty($headerRight)) {
-            if ($template->header_image) {
-                $headerImage = $this->buildImageHtml($template->header_image, '', false);
-                return '<div style="text-align: center;">' . $headerImage . '</div>';
-            }
-            
-            return '';
-        }
-
-        // Get translated placeholders
-        $originalLocale = app()->getLocale();
-        app()->setLocale($locale);
-        
-        $leftPlaceholder = trans('Admin::app.configuration.index.documents.official.header.header-left-placeholder');
-        $centerPlaceholder = trans('Admin::app.configuration.index.documents.official.header.header-center-placeholder');
-        $rightPlaceholder = trans('Admin::app.configuration.index.documents.official.header.header-right-placeholder');
-        
-        // Restore original locale
-        app()->setLocale($originalLocale);
-
-        // Build left part
-        $leftHtml = '';
-        if (!empty($headerLeft)) {
-            $leftHtml = '<div class="header-left">' . $headerLeft . '</div>';
-        } else {
-            // Show translated placeholder if empty
-            $leftHtml = '<div class="header-left" style="color: #999; font-style: italic;">' . e($leftPlaceholder) . '</div>';
-        }
-
-        // Build center part (logo/image)
-        $centerHtml = '';
-        if (!empty($headerCenter)) {
-            $centerHtml = $this->buildImageHtml($headerCenter, 'header-center');
-        } elseif ($template->header_image) {
-            // Fallback to template header_image
-            $centerHtml = $this->buildImageHtml($template->header_image, 'header-center');
-        } else {
-            // Show translated placeholder if empty
-            $centerHtml = '<div class="header-center" style="color: #999; font-style: italic; text-align: center;">' . e($centerPlaceholder) . '</div>';
-        }
-
-        // Build right part
-        $rightHtml = '';
-        if (!empty($headerRight)) {
-            $rightHtml = '<div class="header-right">' . $headerRight . '</div>';
-        } else {
-            // Show translated placeholder if empty
-            $rightHtml = '<div class="header-right" style="color: #999; font-style: italic;">' . e($rightPlaceholder) . '</div>';
-        }
-
-        // Build header row
-        return '<div class="header-row">' . $leftHtml . $centerHtml . $rightHtml . '</div>';
-    }
-
-    /**
-     * Build image HTML with base64 encoding (similar to invoice PDF).
-     *
-     * @param  string  $imagePath
-     * @param  string  $cssClass
-     * @param  bool  $wrapInDiv
-     * @return string
-     */
-    protected function buildImageHtml(string $imagePath, string $cssClass = '', bool $wrapInDiv = true): string
-    {
-        try {
-            $imgTag = '';
-            
-            // Check if it's a full URL
-            if (filter_var($imagePath, FILTER_VALIDATE_URL)) {
-                // For external URLs, use direct src
-                $imgTag = '<img src="' . e($imagePath) . '" class="header-logo" />';
-            } else {
-                // Try to get the file path
-                $filePath = null;
-                
-                // Check if it's an absolute path starting with /
-                if (substr($imagePath, 0, 1) === '/') {
-                    $filePath = public_path($imagePath);
-                } else {
-                    // Try storage path
-                    $storagePath = storage_path('app/public/' . $imagePath);
-                    if (file_exists($storagePath)) {
-                        $filePath = $storagePath;
-                    } else {
-                        // Try public path
-                        $publicPath = public_path('storage/' . $imagePath);
-                        if (file_exists($publicPath)) {
-                            $filePath = $publicPath;
-                        }
-                    }
-                }
-
-                // If file exists, use base64 encoding (like invoice PDF)
-                if ($filePath && file_exists($filePath)) {
-                    $imageData = base64_encode(file_get_contents($filePath));
-                    $imageInfo = getimagesize($filePath);
-                    $mimeType = $imageInfo ? $imageInfo['mime'] : 'image/png';
-                    
-                    $imgTag = '<img src="data:' . $mimeType . ';base64,' . $imageData . '" class="header-logo" />';
-                } else {
-                    // Fallback to asset URL
-                    $imgTag = '<img src="' . asset($imagePath) . '" class="header-logo" />';
-                }
-            }
-
-            // Wrap in div if requested
-            if ($wrapInDiv && !empty($cssClass)) {
-                return '<div class="' . $cssClass . '">' . $imgTag . '</div>';
-            }
-
-            return $imgTag;
-        } catch (\Exception $e) {
-            // If anything fails, use asset URL as fallback
-            $imgTag = '<img src="' . asset($imagePath) . '" class="header-logo" />';
-            
-            if ($wrapInDiv && !empty($cssClass)) {
-                return '<div class="' . $cssClass . '">' . $imgTag . '</div>';
-            }
-
-            return $imgTag;
-        }
     }
 
     /**
@@ -789,16 +583,12 @@ HTML;
             // Get field values and replace placeholders (same as PDF)
             $fieldValues = $this->getFieldValues($serviceRequest);
             $content = $this->replacePlaceholders($templateContent, $fieldValues);
-
-            // Get footer text for the specified locale
-            $templateTranslation = $template->translate($requestLocale);
-            $footerText = $templateTranslation?->footer_text ?? $template->footer_text;
             
             // Get locale model for direction
             $localeModel = core()->getAllLocales()->firstWhere('code', $requestLocale);
             
             // Generate HTML using view (same as PDF)
-            $html = view('admin::service-requests.word', compact('serviceRequest', 'template', 'content', 'requestLocale', 'footerText', 'localeModel'))->render();
+            $html = view('admin::service-requests.word', compact('serviceRequest', 'template', 'content', 'requestLocale', 'localeModel'))->render();
             
             // Generate temp file
             $fileName = 'document-' . $serviceRequest->increment_id . '-' . now()->format('Y-m-d') . '.doc';
