@@ -76,7 +76,8 @@ module.exports = {
                     info: "var(--status-info)",
                     danger: "var(--status-danger)",
                 },
-                navyBlue: '#060C3B'
+                navyBlue: '#060C3B',
+                darkPink: '#F85156'
 
             },
 

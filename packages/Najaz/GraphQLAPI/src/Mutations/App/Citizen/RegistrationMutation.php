@@ -31,11 +31,13 @@ class RegistrationMutation extends Controller
             'phone'                  => 'required|string|unique:citizens,phone',
             'national_id'            => 'required|string|unique:citizens,national_id',
             'date_of_birth'          => 'required|date|before:today',
-            'citizen_type_id'        => 'required|integer|exists:citizen_types,id',
             'password'               => 'required|string|min:6|confirmed',
             'device_token'           => 'nullable|string',
             'remember'               => 'nullable|boolean',
         ]);
+
+        // Use first citizen type (id = 1) as default
+        $citizenTypeId = 1;
 
         $citizen = $this->citizenRepository->create([
             'first_name'                  => $args['first_name'],
@@ -46,7 +48,7 @@ class RegistrationMutation extends Controller
             'phone'                       => $args['phone'],
             'national_id'                 => $args['national_id'],
             'date_of_birth'               => $args['date_of_birth'],
-            'citizen_type_id'             => $args['citizen_type_id'],
+            'citizen_type_id'             => $citizenTypeId,
             'password'                    => bcrypt($args['password']),
             'api_token'                   => Str::random(80),
             'token'                       => Str::random(40),

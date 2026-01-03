@@ -168,7 +168,7 @@
                                     name="phone"
                                     ::value="citizen.phone"
                                     id="phone"
-                                    rules="phone|required"
+                                    rules="phone-number|required"
                                     :label="trans('Admin::app.citizens.citizens.view.edit.contact-number')"
                                     :placeholder="trans('Admin::app.citizens.citizens.view.edit.contact-number')"
                                 />

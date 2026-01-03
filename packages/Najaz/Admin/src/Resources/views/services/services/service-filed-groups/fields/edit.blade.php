@@ -109,14 +109,14 @@
                         <template v-if="canShowValidationControls">
                             <x-admin::form.control-group>
                                 <x-admin::form.control-group.label>
-                                    @lang('Admin::app.services.attribute-groups.attribute-group-fields.validation')
+                                    @lang('Admin::app.services.attribute-groups.attribute-group-fields.validation-for-field-type')
                                 </x-admin::form.control-group.label>
 
                                 <x-admin::form.control-group.control
                                     type="select"
                                     name="validation_option"
                                     v-model="fieldData.validation_option"
-                                    :label="trans('Admin::app.services.attribute-groups.attribute-group-fields.validation')"
+                                    :label="trans('Admin::app.services.attribute-groups.attribute-group-fields.validation-for-field-type')"
                                 >
                                     <option value="">
                                         @lang('Admin::app.services.attribute-groups.attribute-group-fields.select-validation')
@@ -208,6 +208,7 @@
                                         v-for="ext in availableExtensions"
                                         :key="ext.value"
                                         :value="ext.value"
+                                        :selected="allowedExtensions && allowedExtensions.includes(ext.value)"
                                     >
                                         @{{ ext.label }}
                                     </option>
@@ -621,12 +622,23 @@
                     };
 
                     // Set file/image specific fields
-                    this.allowedExtensions = Array.isArray(parsedValidation.allowed_extensions) 
+                    const extensions = Array.isArray(parsedValidation.allowed_extensions) 
                         ? parsedValidation.allowed_extensions 
                         : (parsedValidation.allowed_extensions ? [parsedValidation.allowed_extensions] : []);
+                    
+                    // Ensure extensions are strings and match availableExtensions values
+                    this.allowedExtensions = extensions.map(ext => String(ext).trim()).filter(ext => ext);
                     this.maxFileSize = parsedValidation.max_file_size || '';
 
                     this.selectedAttributeType = this.getAttributeTypeInfo(this.fieldData.service_attribute_type_id);
+                    
+                    // Force update to ensure multiselect reflects the selected values
+                    this.$nextTick(() => {
+                        // Ensure multiselect is updated
+                        if (this.$refs.editFieldModal && this.$refs.editFieldModal.isOpen) {
+                            this.$forceUpdate();
+                        }
+                    });
                 },
 
 
@@ -731,6 +743,11 @@
                     if (field && field.id) {
                         this.loadFieldData(field);
                         this.$refs.editFieldModal.open();
+                        // Ensure multiselect is updated after modal opens
+                        this.$nextTick(() => {
+                            // Force update to ensure multiselect reflects selected values
+                            this.$forceUpdate();
+                        });
                     } else {
                         this.$emitter.emit('add-flash', {
                             type: 'error',

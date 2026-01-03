@@ -199,6 +199,11 @@ class DocumentTemplateRepository extends Repository
         $pivotIds = $service->attributeGroups->pluck('pivot.id')->filter();
         $pivotRelations = collect();
         if ($pivotIds->isNotEmpty()) {
+            // Check if pivot relations are already loaded with fields
+            $firstPivot = $service->attributeGroups->first()?->pivot;
+            $needsLoading = ! $firstPivot || ! $firstPivot->relationLoaded('fields');
+
+            if ($needsLoading) {
             $pivotRelations = \Najaz\Service\Models\ServiceAttributeGroupService::with([
                 'translations', // Load pivot translations for custom_name
                 'attributeGroup.translations',
@@ -207,6 +212,23 @@ class DocumentTemplateRepository extends Repository
                 'fields.attributeType.translations',
                 'fields.options.translations', // Load field options translations as well
             ])->whereIn('id', $pivotIds)->get()->keyBy('id');
+
+                // Attach loaded pivot relations to groups
+                foreach ($service->attributeGroups as $group) {
+                    $pivotId = $group->pivot->id ?? null;
+                    if ($pivotId && isset($pivotRelations[$pivotId])) {
+                        $group->setRelation('pivot', $pivotRelations[$pivotId]);
+                    }
+                }
+            } else {
+                // Use already loaded pivot relations
+                foreach ($service->attributeGroups as $group) {
+                    $pivotId = $group->pivot->id ?? null;
+                    if ($pivotId) {
+                        $pivotRelations[$pivotId] = $group->pivot;
+                    }
+                }
+            }
         }
 
         foreach ($service->attributeGroups as $group) {

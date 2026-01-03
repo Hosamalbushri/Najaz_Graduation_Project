@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use Najaz\Admin\DataGrids\Services\AttributeGroupDataGrid;
 use Najaz\Admin\Http\Controllers\Controller;
+use Najaz\Admin\Rules\Code;
 use Najaz\Service\Repositories\ServiceAttributeFieldRepository;
 use Najaz\Service\Repositories\ServiceAttributeGroupRepository;
 use Webkul\Attribute\Enums\ValidationEnum;
@@ -40,7 +41,7 @@ class AttributeGroupController extends Controller
     {
         $rules = [
             'default_name' => 'required|string|max:255',
-            'code'         => 'required|string|max:255|unique:service_attribute_groups,code',
+            'code'         => ['required', 'string', 'max:255', 'unique:service_attribute_groups,code', new Code],
             'group_type'   => 'required|in:general,citizen',
             'sort_order'   => 'nullable|integer',
         ];
@@ -232,7 +233,7 @@ class AttributeGroupController extends Controller
 
         $rules = [
             'default_name'                       => 'required|string|max:255',
-            'code'                               => 'required|string|max:255|unique:service_attribute_groups,code,'.$id,
+            'code'                               => ['required', 'string', 'max:255', 'unique:service_attribute_groups,code,'.$id, new Code],
             'group_type'                         => 'required|in:general,citizen',
             'sort_order'                         => 'nullable|integer',
             "{$locale}.name"                     => 'required|string|max:255',

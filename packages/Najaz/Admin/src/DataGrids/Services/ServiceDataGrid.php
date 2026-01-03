@@ -30,6 +30,8 @@ class ServiceDataGrid extends DataGrid
      */
     public function prepareQueryBuilder()
     {
+        $tablePrefix = DB::getTablePrefix();
+
         $queryBuilder = DB::table('services')
             ->leftJoin('service_translations', function ($join) {
                 $join->on('services.id', '=', 'service_translations.service_id')
@@ -40,18 +42,20 @@ class ServiceDataGrid extends DataGrid
                 $join->on('service_categories.id', '=', 'service_category_translations.service_category_id')
                     ->where('service_category_translations.locale', '=', app()->getLocale());
             })
+            ->leftJoin('service_images', 'services.id', '=', 'service_images.service_id')
             ->select(
                 'services.id as service_id',
                 'services.service_number',
                 'service_translations.name',
                 'service_translations.description',
                 'services.status',
-                'services.image',
+                'service_images.path as base_image',
                 'services.sort_order',
                 'services.created_at',
                 'services.updated_at',
                 'service_category_translations.name as category_name'
             )
+            ->addSelect(DB::raw('COUNT(DISTINCT '.$tablePrefix.'service_images.id) as images_count'))
             ->groupBy('services.id');
 
         $this->addFilter('service_id', 'services.id');
@@ -120,11 +124,11 @@ class ServiceDataGrid extends DataGrid
             'type'       => 'string',
             'exportable' => false,
             'closure'    => function ($row) {
-                if (! $row->image) {
+                if (! $row->base_image) {
                     return;
                 }
 
-                return Storage::url($row->image);
+                return Storage::url($row->base_image);
             },
         ]);
 

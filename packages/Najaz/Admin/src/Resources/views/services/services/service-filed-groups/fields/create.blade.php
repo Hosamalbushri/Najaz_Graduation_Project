@@ -109,14 +109,14 @@
                     <template v-if="canShowValidationControls">
                         <x-admin::form.control-group>
                             <x-admin::form.control-group.label>
-                                @lang('Admin::app.services.attribute-groups.attribute-group-fields.validation')
+                                @lang('Admin::app.services.attribute-groups.attribute-group-fields.validation-for-field-type')
                             </x-admin::form.control-group.label>
 
                                 <x-admin::form.control-group.control
                                     type="select"
                                     name="validation_option"
                                     v-model="validationOption"
-                                    :label="trans('Admin::app.services.attribute-groups.attribute-group-fields.validation')"
+                                    :label="trans('Admin::app.services.attribute-groups.attribute-group-fields.validation-for-field-type')"
                                 >
                                 <option value="">
                                     @lang('Admin::app.services.attribute-groups.attribute-group-fields.select-validation')
@@ -452,7 +452,8 @@
                 getAttributeTypeInfo(attributeTypeId) {
                     if (!attributeTypeId) return null;
                     if (!this.attributeTypes || !Array.isArray(this.attributeTypes)) return null;
-                    return this.attributeTypes.find(at => at && at.id === attributeTypeId) || null;
+                    const id = parseInt(attributeTypeId) || attributeTypeId;
+                    return this.attributeTypes.find(at => at && (at.id == id || at.id === id)) || null;
                 },
 
                 getAttributeTypeName(attributeType) {

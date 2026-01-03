@@ -6,6 +6,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Najaz\Admin\Http\Controllers\Controller;
+use Najaz\Admin\Rules\Code;
 use Najaz\Service\Models\ServiceAttributeGroupProxy;
 use Najaz\Service\Models\ServiceAttributeGroupService;
 use Najaz\Service\Repositories\ServiceAttributeGroupServiceFieldRepository;
@@ -30,7 +31,7 @@ class ServiceGroupController extends Controller
 
         $rules = [
             'template_id'     => 'required|exists:service_attribute_groups,id',
-            'code'            => 'required|string|max:255',
+            'code'            => ['required', 'string', 'max:255', new Code],
             'name'            => 'required|string|max:255',
             'locale'          => 'required|string',
             'description'     => 'nullable|string',

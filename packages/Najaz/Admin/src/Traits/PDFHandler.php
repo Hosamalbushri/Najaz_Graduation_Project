@@ -23,7 +23,7 @@ trait PDFHandler
 
         $direction = core()->getCurrentLocale()->direction;
 
-        if ($direction === 'rtl') {
+        if ($direction == 'rtl') {
             // RTL: نبني صفحة كاملة بـ mPDF (هيدر + فوتر + ختم + محتوى)
             $fullHtml = $this->buildRtlLayout($contentHtml);
             $fullHtml = mb_convert_encoding($fullHtml, 'HTML-ENTITIES', 'UTF-8');
@@ -354,7 +354,7 @@ HTML;
 
             $filePath = null;
 
-            if (substr($headerCenter, 0, 1) === '/') {
+            if (substr($headerCenter, 0, 1) == '/') {
                 $filePath = public_path($headerCenter);
             } else {
                 $storagePath = storage_path('app/public/' . $headerCenter);
@@ -398,7 +398,7 @@ HTML;
 
             $filePath = null;
 
-            if (substr($stampImageConfig, 0, 1) === '/') {
+            if (substr($stampImageConfig, 0, 1) == '/') {
                 $filePath = public_path($stampImageConfig);
             } else {
                 $storagePath = storage_path('app/public/' . $stampImageConfig);

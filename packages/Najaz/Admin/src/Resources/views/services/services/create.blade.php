@@ -307,18 +307,17 @@
                                 @lang('Admin::app.services.services.create.image')
                             </x-admin::form.control-group.label>
 
-                            <x-admin::form.control-group.control
-                                type="image"
-                                name="image"
-                                rules="nullable"
-                                :is-multiple="false"
+                            <x-admin::media.images
+                                name="images[files]"
+                                allow-multiple="true"
+                                show-placeholders="true"
                             />
 
                             <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
                                 @lang('Admin::app.services.services.create.image-help')
                             </p>
 
-                            <x-admin::form.control-group.error control-name="image" />
+                            <x-admin::form.control-group.error control-name='images.files[0]' />
                         </x-admin::form.control-group>
                     </x-slot:content>
                 </x-admin::accordion>

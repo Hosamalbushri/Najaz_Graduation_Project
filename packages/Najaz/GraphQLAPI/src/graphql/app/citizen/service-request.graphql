@@ -1,7 +1,7 @@
-#Shop\Citizen\ServiceRequest Related APIs
+# Citizen ServiceRequest Related APIs
 extend type Query @guard(with: ["citizen-api"]) {
     """
-    جميع طلبات الخدمات التي أرسلها المواطن الحالي.
+    Get all service requests submitted by the authenticated citizen.
     """
     myServiceRequests(
         serviceId: Int
@@ -10,7 +10,7 @@ extend type Query @guard(with: ["citizen-api"]) {
         @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ServiceRequestQuery@list")
 
     """
-    طلب خدمة محدد للمواطن الحالي.
+    Get a specific service request for the authenticated citizen.
     """
     myServiceRequest(id: ID!): ServiceRequest
         @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ServiceRequestQuery@show")
@@ -18,7 +18,7 @@ extend type Query @guard(with: ["citizen-api"]) {
 
 extend type Mutation @guard(with: ["citizen-api"]) {
     """
-    إنشاء طلب خدمة جديد للمواطن الحالي.
+    Create a new service request for the authenticated citizen.
     """
     createServiceRequest(
         input: CreateServiceRequestInput! @spread
@@ -27,7 +27,7 @@ extend type Mutation @guard(with: ["citizen-api"]) {
         @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\App\\Citizen\\ServiceRequestMutation@store")
 
     """
-    تحديث طلب خدمة (للمواطن: فقط notes و form_data).
+    Update a service request (for citizens: only notes and form_data).
     """
     updateServiceRequest(
         id: ID!,
@@ -37,7 +37,7 @@ extend type Mutation @guard(with: ["citizen-api"]) {
         @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\App\\Citizen\\ServiceRequestMutation@update")
 
     """
-    إلغاء طلب خدمة.
+    Cancel a service request.
     """
     cancelServiceRequest(id: ID!): StatusResponse
         @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\App\\Citizen\\ServiceRequestMutation@cancel")

@@ -4,15 +4,11 @@ namespace Najaz\Admin\Http\Controllers\Admin\Services;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Collection;
 use Illuminate\View\View;
 use Najaz\Admin\DataGrids\Services\ServiceDataGrid;
 use Najaz\Admin\Http\Controllers\Controller;
 use Najaz\Admin\Http\Requests\ServiceForm;
-use Najaz\Citizen\Models\CitizenTypeProxy;
 use Najaz\Service\Models\Service;
-use Najaz\Service\Models\ServiceAttributeGroupProxy;
-use Najaz\Service\Models\ServiceAttributeGroupService;
 use Najaz\Service\Models\ServiceDocumentTemplateProxy;
 use Najaz\Service\Repositories\ServiceRepository;
 
@@ -52,21 +48,8 @@ class ServiceController extends Controller
     {
         $locale = core()->getRequestedLocaleCode();
 
-        $data = $serviceForm->only([
-            'service_number',
-            'category_id',
-            'status',
-            'sort_order',
-            'citizen_type_ids',
-        ]);
-
-        // Handle image if present (x-admin::form.control-group.control type="image" sends as image)
-        if ($serviceForm->has('image')) {
-            $data['image'] = $serviceForm->input('image');
-        }
-
+        $data = $serviceForm->all();
         $data['locale'] = $locale;
-        $data[$locale] = $serviceForm->input($locale, []);
 
         // If no locale-specific data, use direct input
         if (empty($data[$locale])) {
@@ -116,21 +99,8 @@ class ServiceController extends Controller
     {
         $locale = core()->getRequestedLocaleCode();
 
-        $data = $serviceForm->only([
-            'service_number',
-            'category_id',
-            'status',
-            'sort_order',
-            'citizen_type_ids',
-        ]);
-
-        // Handle image if present (x-admin::form.control-group.control type="image" sends as image)
-        if ($serviceForm->has('image')) {
-            $data['image'] = $serviceForm->input('image');
-        }
-
+        $data = $serviceForm->all();
         $data['locale'] = $locale;
-        $data[$locale] = $serviceForm->input($locale, []);
 
         $service = $this->serviceRepository->update($data, $id);
 
@@ -154,9 +124,6 @@ class ServiceController extends Controller
             'message' => trans('Admin::app.services.services.delete-success'),
         ]);
     }
-
-
-
 
     /**
      * Mass delete services.
@@ -193,7 +160,6 @@ class ServiceController extends Controller
         ]);
     }
 
-
     /**
      * Store or update document template for a service.
      */
@@ -201,25 +167,25 @@ class ServiceController extends Controller
     {
         $this->validate(request(), [
             'template_content' => 'required|string',
-            'used_fields'     => 'nullable|array',
-            'header_image'    => 'nullable|string|max:2048',
-            'footer_text'     => 'nullable|string|max:500',
-            'is_active'       => 'nullable|boolean',
+            'used_fields'      => 'nullable|array',
+            'header_image'     => 'nullable|string|max:2048',
+            'footer_text'      => 'nullable|string|max:500',
+            'is_active'        => 'nullable|boolean',
         ]);
 
         $service = $this->serviceRepository->findOrFail($id);
 
         // Get used_fields and ensure it's an array
         $usedFields = request()->input('used_fields', []);
-        
+
         // Debug: Log the received data
         \Log::info('Received used_fields:', ['used_fields' => $usedFields, 'type' => gettype($usedFields)]);
-        
+
         // Handle JSON string if sent as string
         if (is_string($usedFields)) {
             $usedFields = json_decode($usedFields, true) ?? [];
         }
-        
+
         if (! is_array($usedFields)) {
             $usedFields = [];
         }
@@ -295,5 +261,4 @@ class ServiceController extends Controller
 
         return response()->json($services);
     }
-
 }

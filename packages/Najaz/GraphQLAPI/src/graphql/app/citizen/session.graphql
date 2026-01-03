@@ -1,4 +1,4 @@
-#Shop\Citizen\Session Related APIs
+# Citizen Session Related APIs
 extend type Mutation {
     citizenLogin(
         input: CitizenLoginInput! @spread

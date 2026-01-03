@@ -64,13 +64,13 @@
 
         <!-- Attachments Tab -->
         @if (isset($allFileImageFields) && is_array($allFileImageFields) && count($allFileImageFields) > 0)
-            <x-admin::tabs.item
+        <x-admin::tabs.item
                 :title="trans('Admin::app.service-requests.view.attachments') . ' (' . count($allFileImageFields) . ')'"
-                class="!p-4"
-                :isSelected="false"
-            >
+            class="!p-4"
+            :isSelected="false"
+        >
                 @include('admin::service-requests.partials.attachments')
-            </x-admin::tabs.item>
+        </x-admin::tabs.item>
         @endif
 
         @if ($template && $template->is_active && $documentContent)
@@ -111,13 +111,13 @@
                 }
             @endphp
             @if ($canShowCustomTemplate)
-                <x-admin::tabs.item
-                    :title="trans('Admin::app.service-requests.custom-template.tab-title')"
-                    class="!p-4"
-                    :isSelected="false"
-                >
-                    @include('admin::service-requests.custom-template-edit')
-                </x-admin::tabs.item>
+            <x-admin::tabs.item
+                :title="trans('Admin::app.service-requests.custom-template.tab-title')"
+                class="!p-4"
+                :isSelected="false"
+            >
+                @include('admin::service-requests.custom-template-edit')
+            </x-admin::tabs.item>
             @endif
         @endif
     </x-admin::tabs.custom-tabs>

@@ -185,7 +185,7 @@
                                 type="text"
                                 id="phone"
                                 name="phone"
-                                rules="phone|required"
+                                rules="phone-number|required"
                                 :label="trans('Admin::app.citizens.citizens.index.create.contact-number')"
                                 :placeholder="trans('Admin::app.citizens.citizens.index.create.contact-number')"
                             />

@@ -29,9 +29,10 @@ class ServiceForm extends FormRequest
         $id = $this->route('id');
 
         $rules = [
-            'status'      => 'nullable|boolean',
-            'image'       => 'nullable|string|max:2048',
-            'sort_order'  => 'nullable|integer|min:0',
+            'status'             => 'nullable|boolean',
+            'images.files'       => 'nullable|array',
+            'images.files.*'     => 'nullable|file|image|max:2048',
+            'sort_order'         => 'nullable|integer|min:0',
             'citizen_type_ids'   => 'nullable|array',
             'citizen_type_ids.*' => 'integer|exists:citizen_types,id',
         ];
@@ -60,4 +61,3 @@ class ServiceForm extends FormRequest
         return $rules;
     }
 }
-

@@ -220,13 +220,16 @@
                     {{-- Column 2: Image / ID / Sort Order / Status / Actions --}}
                     <div class="flex items-start justify-between gap-4">
                         <div class="flex gap-4 flex-1 min-w-0">
-                            <div class="service-image-container relative flex-shrink-0">
+                            <div class="relative flex-shrink-0">
                                 <template v-if="record.base_image">
                                     <img
                                         class="h-20 w-20 rounded-lg object-cover border-2 border-gray-200 shadow-sm dark:border-gray-700"
                                         :src='record.base_image'
                                         alt="Service image"
                                     />
+                                    <span class="absolute -bottom-1 -right-1 flex min-w-[18px] items-center justify-center rounded-full bg-darkPink px-1.5 py-0.5 text-[10px] font-bold leading-tight text-white shadow-md ring-2 ring-white dark:ring-gray-900">
+                                        @{{ record.images_count }}
+                                    </span>
                                 </template>
 
                                 <template v-else>

@@ -31,5 +31,6 @@ class ModuleServiceProvider extends BaseModuleServiceProvider
         \Najaz\Service\Models\ServiceAttributeGroupServiceFieldTranslation::class,
         \Najaz\Service\Models\ServiceAttributeGroupServiceFieldOption::class,
         \Najaz\Service\Models\ServiceAttributeGroupServiceFieldOptionTranslation::class,
+        \Najaz\Service\Models\ServiceImage::class,
     ];
 }

@@ -16,9 +16,9 @@
                 </template>
             </x-slot>
 
-            <div class="grid">
-                <div class="flex items-center justify-between gap-4 max-sm:flex-wrap">
-                    <div class="flex items-center gap-2.5">
+            <!-- Page Header -->
+            <div class="mb-6 flex items-center justify-between gap-4 rounded-lg border-b border-gray-200 bg-white px-6 py-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 max-sm:flex-wrap max-sm:px-4">
+                <div class="flex items-center gap-3">
                         <template
                             v-if="! request"
                             class="flex gap-5"
@@ -28,9 +28,9 @@
                         </template>
 
                         <template v-else>
-                            <p class="text-xl font-bold leading-6 text-gray-800 dark:text-white">
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
                                 @lang('Admin::app.service-requests.view.title', ['request_id' => ''])@{{ request.increment_id }}
-                            </p>
+                        </h1>
 
                             <!-- Request Status -->
                             <span 
@@ -40,6 +40,7 @@
                         </template>
                     </div>
 
+                <div class="flex items-center gap-x-3">
                     <!-- Back Button -->
                     <a
                         href="{{ route('admin.service-requests.index') }}"
@@ -144,6 +145,14 @@
                             </template>
                         </template>
                     </div>
+                </div>
+            </template>
+
+            <!-- Action Buttons Shimmer -->
+            <template v-if="!request">
+                <div class="mt-5 flex gap-1.5">
+                    <div class="shimmer w-32 h-10"></div>
+                    <div class="shimmer w-24 h-10"></div>
                 </div>
             </template>
 
@@ -381,6 +390,86 @@
                                 </x-slot>
                             </x-admin::accordion>
                         </template>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Shimmer for Request details -->
+            <template v-else>
+                <div class="mt-3.5 flex gap-2.5 max-xl:flex-wrap">
+                    <!-- Left Component Shimmer -->
+                    <div class="flex flex-1 flex-col gap-2 max-xl:flex-auto">
+                        <!-- Content Section Shimmer -->
+                        <div class="box-shadow rounded bg-white dark:bg-gray-900">
+                            <div class="p-4">
+                                <div class="shimmer w-32 h-6 mb-4"></div>
+                                <div class="shimmer w-full h-4 mb-2"></div>
+                                <div class="shimmer w-full h-4 mb-2"></div>
+                                <div class="shimmer w-3/4 h-4"></div>
+                            </div>
+                        </div>
+
+                        <!-- Admin Notes Shimmer -->
+                        <div class="box-shadow rounded bg-white dark:bg-gray-900">
+                            <div class="p-4 pb-0">
+                                <div class="shimmer w-32 h-6 mb-4"></div>
+                            </div>
+                            <div class="p-4">
+                                <div class="shimmer w-full h-20 mb-4"></div>
+                                <div class="flex items-center justify-between">
+                                    <div class="shimmer w-40 h-6"></div>
+                                    <div class="shimmer w-24 h-10"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Component Shimmer -->
+                    <div class="flex w-[360px] max-w-full flex-col gap-2 max-sm:w-full">
+                        <!-- Citizen Information Shimmer -->
+                        <div class="box-shadow rounded bg-white dark:bg-gray-900">
+                            <div class="p-2.5 border-b border-gray-200 dark:border-gray-700">
+                                <div class="shimmer w-24 h-6"></div>
+                            </div>
+                            <div class="p-4 flex flex-col gap-1.5">
+                                <div class="shimmer w-32 h-5"></div>
+                                <div class="shimmer w-40 h-4"></div>
+                                <div class="shimmer w-36 h-4"></div>
+                                <div class="shimmer w-28 h-4"></div>
+                            </div>
+                        </div>
+
+                        <!-- Service Information Shimmer -->
+                        <div class="box-shadow rounded bg-white dark:bg-gray-900">
+                            <div class="p-2.5 border-b border-gray-200 dark:border-gray-700">
+                                <div class="shimmer w-24 h-6"></div>
+                            </div>
+                            <div class="p-4 flex flex-col gap-1.5">
+                                <div class="shimmer w-40 h-5"></div>
+                                <div class="shimmer w-32 h-4"></div>
+                            </div>
+                        </div>
+
+                        <!-- Request Information Shimmer -->
+                        <div class="box-shadow rounded bg-white dark:bg-gray-900">
+                            <div class="p-2.5 border-b border-gray-200 dark:border-gray-700">
+                                <div class="shimmer w-32 h-6"></div>
+                            </div>
+                            <div class="p-4">
+                                <div class="flex gap-5">
+                                    <div class="flex flex-col gap-y-1.5">
+                                        <div class="shimmer w-24 h-4"></div>
+                                        <div class="shimmer w-28 h-4"></div>
+                                        <div class="shimmer w-20 h-4"></div>
+                                    </div>
+                                    <div class="flex flex-col gap-y-1.5">
+                                        <div class="shimmer w-32 h-4"></div>
+                                        <div class="shimmer w-24 h-4"></div>
+                                        <div class="shimmer w-28 h-4"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </template>

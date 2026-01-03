@@ -73,7 +73,7 @@ class IdentityVerificationRepository extends Repository
                     if ($data['status'] == 'approved') {
                         // If approved, set identity_verification_status to true (verified)
                     $citizen->identity_verification_status = 1;
-                    } elseif ($data['status'] === 'rejected') {
+                    } elseif ($data['status'] == 'rejected') {
                         // If rejected or needs more info, set identity_verification_status to false (not verified)
                     $citizen->identity_verification_status = 0;
                     }

@@ -1,4 +1,4 @@
-#Shop\Citizen\Registration Related APIs
+# Citizen Registration Related APIs
 extend type Mutation {
     citizenSignUp(
         input: CitizenSignUpInput! @spread
@@ -14,7 +14,6 @@ input CitizenSignUpInput {
     phone: String! @rules(apply: ["required"])
     nationalId: String! @rename(attribute: "national_id")
     dateOfBirth: String! @rename(attribute: "date_of_birth")
-    citizenTypeId: Int! @rename(attribute: "citizen_type_id")
     password: String!
     passwordConfirmation: String! @rename(attribute: "password_confirmation")
     remember: Boolean

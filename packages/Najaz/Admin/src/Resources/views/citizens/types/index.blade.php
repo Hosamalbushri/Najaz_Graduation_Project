@@ -139,7 +139,7 @@
                                             type="text"
                                             id="code"
                                             name="code"
-                                            rules="required"
+                                            rules="required|code"
                                             :label="trans('Admin::app.citizens.types.index.create.code')"
                                             :placeholder="trans('Admin::app.citizens.types.index.create.code')"
                                             ::disabled="selectedCitizenType"
@@ -147,6 +147,13 @@
                                         />
 
                                         <x-admin::form.control-group.error control-name="code" />
+
+                                        <div v-if="!selectedCitizenType" class="mt-2 flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
+                                            <span class="icon-info text-lg text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0"></span>
+                                            <p class="text-xs leading-relaxed text-blue-700 dark:text-blue-300">
+                                                @lang('Admin::app.citizens.types.index.create.code-help')
+                                            </p>
+                                        </div>
                                     </x-admin::form.control-group>
 
                                     <!-- Name -->

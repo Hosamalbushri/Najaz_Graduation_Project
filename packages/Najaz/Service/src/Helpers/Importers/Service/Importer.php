@@ -5,13 +5,14 @@ namespace Najaz\Service\Helpers\Importers\Service;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Storage as StorageFacade;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Intervention\Image\ImageManager;
-use Najaz\Service\Helpers\Importers\Service\Storage;
+use Najaz\Service\Helpers\Importers\Service\Storage as ServiceStorage;
 use Najaz\Service\Repositories\ServiceCategoryRepository;
 use Najaz\Service\Repositories\ServiceRepository;
+use Najaz\Service\Repositories\ServiceImageRepository;
 use Webkul\DataTransfer\Contracts\ImportBatch as ImportBatchContract;
 use Webkul\DataTransfer\Helpers\Import;
 use Webkul\DataTransfer\Helpers\Importers\AbstractImporter;
@@ -470,25 +471,27 @@ class Importer extends AbstractImporter
 
             $path = 'import/'.$this->import->images_directory_path.'/'.$imageName;
 
-            if (! StorageFacade::disk('local')->has($path)) {
+            if (! Storage::disk('local')->has($path)) {
                 return;
             }
 
             $imagesData[$serviceNumber] = [
                 'name' => $imageName,
-                'path' => StorageFacade::disk('local')->path($path),
+                'path' => Storage::disk('local')->path($path),
             ];
         }
     }
 
     /**
-     * Save service image from current batch.
+     * Save service images from current batch.
      */
     public function saveImages(array $imagesData): void
     {
         if (empty($imagesData)) {
             return;
         }
+
+        $serviceImages = [];
 
         foreach ($imagesData as $serviceNumber => $imageData) {
             // Get service id by service number
@@ -511,22 +514,29 @@ class Importer extends AbstractImporter
                 }
             }
 
-            // Process the single image
+            // Process the image
             if (! empty($imageData)) {
                 $file = new UploadedFile($imageData['path'], $imageData['name']);
 
                 $image = (new ImageManager)->make($file)->encode('webp');
 
-                $imageDirectory = 'services/'.$serviceId;
+                $imageDirectory = $this->serviceImageRepository->getServiceDirectory((object) ['id' => $serviceId]);
+
                 $path = $imageDirectory.'/'.Str::random(40).'.webp';
 
-                StorageFacade::disk('public')->put($path, $image);
+                $serviceImages[] = [
+                    'type'       => 'images',
+                    'path'       => $path,
+                    'service_id' => $serviceId,
+                    'position'   => 1,
+                ];
 
-                // Update service with image path
-                $this->serviceRepository->update([
-                    'image' => $path,
-                ], $serviceId);
+                Storage::put($path, $image);
             }
+        }
+
+        if (! empty($serviceImages)) {
+            $this->serviceImageRepository->insert($serviceImages);
         }
     }
 }

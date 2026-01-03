@@ -5,10 +5,11 @@ namespace Najaz\Service\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Support\Facades\Storage;
 use Najaz\Citizen\Models\CitizenTypeProxy;
 use Najaz\Service\Contracts\Service as ServiceContract;
+use Najaz\Service\Models\ServiceImageProxy;
 use Webkul\Core\Eloquent\TranslatableModel;
 
 class Service extends TranslatableModel implements ServiceContract
@@ -48,7 +49,6 @@ class Service extends TranslatableModel implements ServiceContract
         'service_number',
         'category_id',
         'status',
-        'image',
         'sort_order',
     ];
 
@@ -68,6 +68,7 @@ class Service extends TranslatableModel implements ServiceContract
      * @var array
      */
     protected $with = ['translations', 'category'];
+
 
     /**
      * Get the category that the service belongs to.
@@ -104,6 +105,15 @@ class Service extends TranslatableModel implements ServiceContract
             'service_id',
             'citizen_type_id'
         )->withTimestamps();
+    }
+
+    /**
+     * The images that belong to the service.
+     */
+    public function images(): HasMany
+    {
+        return $this->hasMany(ServiceImageProxy::modelClass(), 'service_id')
+            ->orderBy('position');
     }
 
     /**
@@ -293,26 +303,4 @@ class Service extends TranslatableModel implements ServiceContract
         return $repository::getCitizenTypeTree();
     }
 
-    /**
-     * Get service images in the same format as Product images.
-     * Since services have only one image, we convert it to a collection format with a single item.
-     *
-     * @return \Illuminate\Support\Collection
-     */
-    public function getImagesAttribute()
-    {
-        if (empty($this->image)) {
-            return collect([]);
-        }
-
-        // Return only one image (services support single image only)
-        // Use hash of path as id to ensure uniqueness for the media component
-        return collect([
-            (object) [
-                'id'   => md5($this->image), // Unique ID based on image path
-                'path' => $this->image,
-                'url'  => Storage::url($this->image),
-            ],
-        ])->take(1); // Ensure only one image is returned
-    }
 }

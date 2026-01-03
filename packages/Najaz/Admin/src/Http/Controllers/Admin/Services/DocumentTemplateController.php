@@ -205,6 +205,32 @@ class DocumentTemplateController extends Controller
         $template = $this->documentTemplateRepository->with('service')->findOrFail($id);
         $service = $template->service;
 
+        // Load service with attribute groups (required for buildAvailableFieldsForTemplate)
+        $service = $this->serviceRepository
+            ->withAttributeGroupsForEdit()
+            ->with(['translations'])
+            ->findOrFail($service->id);
+
+        // Load pivot relations with translations and fields (eager loading)
+        $pivotIds = $service->attributeGroups->pluck('pivot.id')->filter();
+        if ($pivotIds->isNotEmpty()) {
+            $pivotRelations = \Najaz\Service\Models\ServiceAttributeGroupService::with([
+                'translations',
+                'fields.translations',
+                'fields.attributeType.translations',
+                'fields.options.translations',
+            ])->whereIn('id', $pivotIds)->get()->keyBy('id');
+
+            // Attach loaded pivot relations to groups
+            foreach ($service->attributeGroups as $group) {
+                $pivotId = $group->pivot->id ?? null;
+                if ($pivotId && isset($pivotRelations[$pivotId])) {
+                    // Replace pivot with loaded relation
+                    $group->setRelation('pivot', $pivotRelations[$pivotId]);
+                }
+            }
+        }
+
         // Get locale from request or use default
         $localeCode = request()->input('locale', app()->getLocale());
         $locale = core()->getAllLocales()->firstWhere('code', $localeCode) 

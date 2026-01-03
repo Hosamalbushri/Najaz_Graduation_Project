@@ -25,6 +25,7 @@ class ServiceRepository extends Repository
 
     public function __construct(
         protected ServiceAttributeGroupServiceFieldRepository $groupServiceFieldRepository,
+        protected ServiceImageRepository $serviceImageRepository,
         \Illuminate\Container\Container $container
     ) {
         parent::__construct($container);
@@ -253,7 +254,7 @@ class ServiceRepository extends Repository
     public function syncCitizenTypes($citizenTypeIds, $service): void
     {
         $ids = collect($citizenTypeIds)
-            ->filter(fn ($id) => $id !== null && $id !== '')
+            ->filter(fn ($id) => $id != null && $id != '')
             ->map(fn ($id) => (int) $id)
             ->unique()
             ->values()
@@ -269,20 +270,12 @@ class ServiceRepository extends Repository
      */
     public function create(array $data)
     {
-        // Handle image upload if present
-        $image = $data['image'] ?? null;
-        if ($image) {
-            unset($data['image']);
-        }
-
         // TranslatableModel will handle translations automatically
         // The data should come with locale structure like: ['ar' => ['name' => '...'], 'en' => ['name' => '...']]
         $service = parent::create($data);
 
-        // Upload image after service is created
-        if ($image) {
-            $this->uploadSingleImage($image, $service);
-        }
+        // Upload images (handles both upload and deletion)
+        $this->serviceImageRepository->upload($data, $service, 'images');
 
         return $service;
     }
@@ -297,23 +290,18 @@ class ServiceRepository extends Repository
     {
         $service = $this->findOrFail($id);
 
-        // Handle image upload/delete if present
-        // x-admin::media.images sends image[] array which can contain:
-        // - UploadedFile instances (new files)
-        // - Numeric IDs (existing images to keep)
-        // - Empty array (delete all images)
-        if (isset($data['image'])) {
-            $image = $data['image'];
-            unset($data['image']);
-            $this->uploadSingleImage($image, $service);
-        }
-
         // TranslatableModel will handle translations automatically
-        return parent::update($data, $id);
+        $service = parent::update($data, $id);
+
+        // Upload images (handles both upload and deletion)
+        $this->serviceImageRepository->upload($data, $service, 'images');
+
+        return $service;
     }
 
     /**
      * Get service directory for images.
+     * @deprecated Use ServiceMediaRepository::getServiceDirectory() instead
      *
      * @param  \Najaz\Service\Contracts\Service  $service
      * @return string
@@ -321,96 +309,6 @@ class ServiceRepository extends Repository
     public function getServiceDirectory($service): string
     {
         return 'services/'.$service->id;
-    }
-
-    /**
-     * Upload single service image.
-     * Handles image upload/delete from x-admin::form.control-group.control type="image"
-     * which sends data as image[] array (when name="image").
-     * x-admin::media.images sends data as name[] array directly.
-     *
-     * @param  mixed  $imageData
-     * @param  \Najaz\Service\Contracts\Service  $service
-     * @return void
-     */
-    public function uploadSingleImage($imageData, $service): void
-    {
-        $uploadedFile = null;
-        $hasExistingImage = false;
-
-        // x-admin::form.control-group.control type="image" with name="image" sends data as image[] array
-        // It can be either:
-        // 1. image[] - direct array containing:
-        //    - UploadedFile instances (new files to upload)
-        //    - String/Numeric IDs (existing images to keep - hash of path)
-        //    - Empty array (delete all images)
-        // 2. image[files] - nested array (if sent differently)
-        // 3. UploadedFile - direct file
-        if (is_array($imageData)) {
-            // Check for nested 'files' key first
-            if (isset($imageData['files']) && is_array($imageData['files'])) {
-                foreach ($imageData['files'] as $indexOrFile) {
-                    if ($indexOrFile instanceof UploadedFile) {
-                        $uploadedFile = $indexOrFile;
-                        break;
-                    } elseif (is_string($indexOrFile) || is_numeric($indexOrFile)) {
-                        // Existing image ID to keep (can be hash string or numeric)
-                        // Check if it matches current image hash
-                        if ($service->image && md5($service->image) === (string) $indexOrFile) {
-                            $hasExistingImage = true;
-                        }
-                    }
-                }
-            } else {
-                // Direct array (image[] format from x-admin::media.images)
-                foreach ($imageData as $indexOrFile) {
-                    if ($indexOrFile instanceof UploadedFile) {
-                        $uploadedFile = $indexOrFile;
-                        break; // Only process the first file
-                    } elseif (is_string($indexOrFile) || is_numeric($indexOrFile)) {
-                        // Existing image ID to keep (can be hash string or numeric)
-                        // Check if it matches current image hash
-                        if ($service->image && md5($service->image) === (string) $indexOrFile) {
-                            $hasExistingImage = true;
-                        }
-                    }
-                }
-            }
-        } elseif ($imageData instanceof UploadedFile) {
-            // Direct UploadedFile (fallback)
-            $uploadedFile = $imageData;
-        }
-
-        // If array is empty, delete existing image
-        if (is_array($imageData) && empty($imageData)) {
-            if ($service->image) {
-                Storage::disk('public')->delete($service->image);
-                parent::update(['image' => null], $service->id);
-            }
-            return;
-        }
-
-        // If new file uploaded, replace existing image
-        if ($uploadedFile instanceof UploadedFile) {
-            // Delete old image if exists (services have only one image)
-            if ($service->image) {
-                Storage::disk('public')->delete($service->image);
-            }
-
-            // Process and save image
-            if (Str::contains($uploadedFile->getMimeType(), 'image')) {
-                $manager = new ImageManager;
-                $image = $manager->make($uploadedFile)->encode('webp');
-
-                $path = $this->getServiceDirectory($service).'/'.Str::random(40).'.webp';
-
-                Storage::disk('public')->put($path, $image);
-
-                // Update service with image path (skip image handling to avoid recursion)
-                parent::update(['image' => $path], $service->id);
-            }
-        }
-        // If no new file and no existing image ID, keep current image (do nothing)
     }
 
     protected function toBoolean($value): bool
@@ -700,9 +598,10 @@ class ServiceRepository extends Repository
             $groupName = $group->pivot->custom_name ?? ($groupTranslation?->name ?? $group->code);
 
             // Get custom service fields from pivot relation if available, otherwise use template fields
+            // If pivotRelation exists, always use pivotRelation.fields (even if empty), never fall back to template fields
             $pivotRelation = $pivotId ? ($pivotRelations[$pivotId] ?? null) : null;
-            $fieldsToUse = $pivotRelation && $pivotRelation->fields->isNotEmpty()
-                ? $pivotRelation->fields
+            $fieldsToUse = $pivotRelation
+                ? ($pivotRelation->fields ?? collect())
                 : ($group->fields ?? collect());
 
             foreach ($fieldsToUse as $field) {
@@ -839,8 +738,9 @@ class ServiceRepository extends Repository
                 $pivotRelation = $pivotId ? ($pivotRelations[$pivotId] ?? null) : null;
 
                 // Get fields to use
-                $fieldsToUse = $pivotRelation && $pivotRelation->fields->isNotEmpty()
-                    ? $pivotRelation->fields
+                // If pivotRelation exists, always use pivotRelation.fields (even if empty), never fall back to template fields
+                $fieldsToUse = $pivotRelation
+                    ? ($pivotRelation->fields ?? collect())
                     : ($group->fields ?? collect());
 
                 // Get translations for group
@@ -958,7 +858,7 @@ class ServiceRepository extends Repository
 
         $type = (strtolower($group->group_type ?? 'general'));
 
-        if ($type !== 'citizen') {
+        if ($type != 'citizen') {
             return false;
         }
 
@@ -968,7 +868,7 @@ class ServiceRepository extends Repository
             $code = strtolower($field->code ?? '');
 
             // Check for exact match or if code contains 'national_id_card'
-            return $code === 'national_id_card' || str_contains($code, 'national_id_card');
+            return $code == 'national_id_card' || str_contains($code, 'national_id_card');
         });
     }
 }

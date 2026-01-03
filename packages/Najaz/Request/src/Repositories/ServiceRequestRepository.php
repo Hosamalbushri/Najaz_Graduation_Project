@@ -320,9 +320,10 @@ class ServiceRequestRepository extends Repository
             $pivotId = $group->pivot->id ?? null;
             
             // Get custom fields from pivot relation if available, otherwise use template fields
+            // If pivotRelation exists, always use pivotRelation.fields (even if empty), never fall back to template fields
             $pivotRelation = $pivotId ? ($pivotRelations[$pivotId] ?? null) : null;
-            $fieldsToUse = $pivotRelation && $pivotRelation->fields->isNotEmpty() 
-                ? $pivotRelation->fields 
+            $fieldsToUse = $pivotRelation
+                ? ($pivotRelation->fields ?? collect())
                 : ($group->fields ?? collect());
 
             // Check if there's data for this group in formData
@@ -460,9 +461,10 @@ class ServiceRequestRepository extends Repository
             $pivotId = $group->pivot->id ?? null;
             
             // Get custom service fields from pivot relation if available, otherwise use template fields
+            // If pivotRelation exists, always use pivotRelation.fields (even if empty), never fall back to template fields
             $pivotRelation = $pivotId ? ($pivotRelations[$pivotId] ?? null) : null;
-            $groupFields = $pivotRelation && $pivotRelation->fields->isNotEmpty() 
-                ? $pivotRelation->fields 
+            $groupFields = $pivotRelation
+                ? ($pivotRelation->fields ?? collect())
                 : ($group->fields ?? collect());
 
             if (! $groupFields || $groupFields->isEmpty()) {
@@ -653,9 +655,10 @@ class ServiceRequestRepository extends Repository
             $pivotId = $group->pivot->id ?? null;
 
             // Get custom service fields from pivot relation if available, otherwise use template fields
+            // If pivotRelation exists, always use pivotRelation.fields (even if empty), never fall back to template fields
             $pivotRelation = $pivotId ? ($pivotRelations[$pivotId] ?? null) : null;
-            $fieldsToUse = $pivotRelation && $pivotRelation->fields->isNotEmpty() 
-                ? $pivotRelation->fields 
+            $fieldsToUse = $pivotRelation
+                ? ($pivotRelation->fields ?? collect())
                 : ($group->fields ?? collect());
 
             foreach ($fieldsToUse as $field) {
@@ -870,9 +873,10 @@ class ServiceRequestRepository extends Repository
             $pivotId = $group->pivot->id ?? null;
 
             // Get custom service fields from pivot relation if available, otherwise use template fields
+            // If pivotRelation exists, always use pivotRelation.fields (even if empty), never fall back to template fields
             $pivotRelation = $pivotId ? ($pivotRelations[$pivotId] ?? null) : null;
-            $fieldsToUse = $pivotRelation && $pivotRelation->fields->isNotEmpty() 
-                ? $pivotRelation->fields 
+            $fieldsToUse = $pivotRelation
+                ? ($pivotRelation->fields ?? collect())
                 : ($group->fields ?? collect());
 
             $groupFields = [];

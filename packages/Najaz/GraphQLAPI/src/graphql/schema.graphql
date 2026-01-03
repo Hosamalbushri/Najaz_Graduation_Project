@@ -1,8 +1,4 @@
-# Najaz-specific schema extensions
+# Najaz-specific schema extensions (App only)
 #import ./common.graphql
-#import ./admin/citizen/citizen.graphql
-#import ./admin/citizen/citizen-type.graphql
-#import ./admin/citizen/identity-verification.graphql
-#import ./admin/service/*.graphql
 #import ./app/citizen/*.graphql
 

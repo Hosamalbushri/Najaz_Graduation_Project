@@ -118,6 +118,41 @@ export default {
             return true;
         });
 
+        /**
+         * This regular expression validates code with the following conditions:
+         * - The code must start with an English letter.
+         * - After the first letter, it can contain English letters, numbers, and underscores.
+         * - It cannot contain spaces or Arabic characters.
+         */
+        defineRule("code", (value) => {
+            if (! value || ! value.length) {
+                return true;
+            }
+
+            if (! /^[a-zA-Z]+[a-zA-Z0-9_]+$/.test(value)) {
+                return false;
+            }
+
+            return true;
+        });
+
+        /**
+         * This regular expression validates Jordanian mobile phone numbers with the following conditions:
+         * - The phone number must be exactly 9 digits.
+         * - The phone number must start with 73, 77, 78, or 71.
+         */
+        defineRule("phone-number", (value) => {
+            if (! value || ! value.length) {
+                return true;
+            }
+
+            if (! /^(73|77|78|71)\d{7}$/.test(value)) {
+                return false;
+            }
+
+            return true;
+        });
+
         defineRule("", () => true);
 
         configure({
@@ -132,6 +167,8 @@ export default {
                         ...ar.messages,
                         decimal: "يجب أن يكون هذا {field} رقمًا عشريًا صالحًا",
                         phone: "يجب أن يكون هذا {field} رقم هاتف صالحًا",
+                        code: "يجب أن تحتوي السمة {field} على حروف إنجليزية وأرقام وشرطة سفلية فقط. لا يمكن أن تحتوي على فراغات أو حروف عربية.",
+                        "phone-number": "يجب أن تكون السمة {field} رقم هاتف صالحًا مكون من 9 أرقام ويبدأ بـ 73 أو 77 أو 78 أو 71.",
                     },
                 },
 
@@ -168,6 +205,8 @@ export default {
                         ...en.messages,
                         decimal: "This {field} must be a valid decimal number.",
                         phone: "This {field} must be a valid phone number",
+                        code: "The {field} must contain only English letters, numbers, and underscores. It cannot contain spaces or Arabic characters.",
+                        "phone-number": "The {field} must be a valid 9-digit phone number starting with 73, 77, 78, or 71.",
                     },
                 },
 

@@ -18,7 +18,7 @@ class PhoneNumber implements ValidationRule
          * - The phone number must start with 73, 77, 78, or 71.
          */
         if (! preg_match('/^(73|77|78|71)\d{7}$/', $value)) {
-            $fail('Admin::validation.phone-number')->translate();
+            $fail('Admin::app.validation.phone-number')->translate();
         }
     }
 }

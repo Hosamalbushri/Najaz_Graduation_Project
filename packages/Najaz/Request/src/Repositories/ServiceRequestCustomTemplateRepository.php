@@ -133,8 +133,9 @@ class ServiceRequestCustomTemplateRepository extends Repository
             $pivotRelation = $pivotId ? $pivotRelations->get($pivotId) : null;
 
             // Use custom service fields if available, otherwise fall back to template fields
-            $fieldsToUse = $pivotRelation && $pivotRelation->fields && $pivotRelation->fields->isNotEmpty()
-                ? $pivotRelation->fields
+            // If pivotRelation exists, always use pivotRelation.fields (even if empty), never fall back to template fields
+            $fieldsToUse = $pivotRelation
+                ? ($pivotRelation->fields ?? collect())
                 : ($group->fields ?? collect());
 
             foreach ($formData->fields_data as $fieldCode => $fieldValue) {

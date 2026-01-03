@@ -278,13 +278,20 @@
                                 <x-admin::form.control-group.control
                                     type="text"
                                     name="code"
-                                    rules="required"
+                                    rules="required|code"
                                     :value="old('code')"
                                     :label="trans('Admin::app.services.attribute-types.create.code')"
                                     :placeholder="trans('Admin::app.services.attribute-types.create.code')"
                                 />
 
                                 <x-admin::form.control-group.error control-name="code" />
+
+                                <div class="mt-2 flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
+                                    <span class="icon-info text-lg text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0"></span>
+                                    <p class="text-xs leading-relaxed text-blue-700 dark:text-blue-300">
+                                        @lang('Admin::app.services.attribute-types.create.code-help')
+                                    </p>
+                                </div>
                             </x-admin::form.control-group>
 
                             <x-admin::form.control-group>

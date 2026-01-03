@@ -9,7 +9,7 @@
         <div>
             <div class="space-y-2">
                 <div
-                        v-if="sortedFields.length"
+                        v-if="fields && fields.length"
                         class="grid gap-3"
                 >
                     <draggable
@@ -178,10 +178,9 @@
                             v-if="pivotId"
                             button-type="button"
                             class="secondary-button text-sm"
+                            :title="trans('Admin::app.services.services.groups.fields.edit.add-field-btn')"
                             @click="openCreateFieldModal"
-                    >
-                        @lang('Admin::app.services.services.groups.fields.edit.add-field-btn')
-                    </x-admin::button>
+                    />
                 </div>
             </div>
 
@@ -282,25 +281,6 @@
             computed: {
                 fileExtensionsComputed() {
                     return Array.isArray(this.fileExtensions) ? this.fileExtensions : [];
-                },
-                sortedFields() {
-                    const fieldsArray = Array.isArray(this.fields) ? this.fields : [];
-                    if (fieldsArray.length === 0) {
-                        return [];
-                    }
-
-                    // Check if already sorted
-                    let isSorted = true;
-                    for (let i = 1; i < fieldsArray.length; i++) {
-                        if ((fieldsArray[i - 1].sort_order || 0) > (fieldsArray[i].sort_order || 0)) {
-                            isSorted = false;
-                            break;
-                        }
-                    }
-                    if (!isSorted) {
-                        fieldsArray.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-                    }
-                    return fieldsArray;
                 },
             },
 

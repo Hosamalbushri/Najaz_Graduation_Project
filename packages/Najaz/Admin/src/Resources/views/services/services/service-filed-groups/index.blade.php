@@ -273,30 +273,25 @@
 
                     const selected = this.service.attribute_groups
                         .filter(group => {
-                            // Check if group has saved fields or template fields
+                            // If group has pivot relation, always include it (even if fields are empty)
+                            // Otherwise, only include if template fields exist
                             const pivotId = group.pivot?.id;
                             if (pivotId) {
-                                // Check if pivot has fields loaded
-                                const pivotRelation = group.pivot;
-                                if (pivotRelation && pivotRelation.fields && pivotRelation.fields.length > 0) {
+                                // Group has pivot relation, always include it
                                     return true;
                                 }
-                            }
-                            // Fallback to template fields
+                            // Fallback to template fields - only include if fields exist
                             return group.fields && group.fields.length > 0;
                         })
                         .map((group, index) => {
                             const pivotId = group.pivot?.id;
                             const pivotRelation = pivotId ? group.pivot : null;
                             
-                            // Use saved fields if available, otherwise use template fields
-                            const fieldsToUse = pivotRelation && pivotRelation.fields && pivotRelation.fields.length > 0
-                                ? pivotRelation.fields
+                            // Use saved fields from pivot if pivot exists, otherwise use template fields
+                            // If pivot exists, always use pivot fields (even if empty), never fall back to template fields
+                            const fieldsToUse = pivotRelation
+                                ? (pivotRelation.fields || [])
                                 : (group.fields || []);
-
-                            if (fieldsToUse.length === 0) {
-                                return null;
-                            }
 
                             // Get base from catalog
                             const base = catalogMap.get(group.id);
@@ -415,10 +410,6 @@
 
                             // Sort fields
                             clone.fields.sort((a, b) => a.sort_order - b.sort_order);
-
-                            if (!clone.fields.length) {
-                                return null;
-                            }
 
                             clone.supports_notification = this.groupSupportsNotification(clone);
 
@@ -1079,12 +1070,12 @@
 
                         this.$emitter.emit('add-flash', {
                             type: 'success',
-                            message: "@lang('Admin::app.services.services.attribute-groups.reorder-success')",
+                            message: "@lang('Admin::app.services.services.groups.reorder-success')",
                         });
                     } catch (error) {
                         const message = error.response?.data?.message || 
                             error.message || 
-                            "@lang('Admin::app.services.services.attribute-groups.reorder-error')";
+                            "@lang('Admin::app.services.services.groups.reorder-error')";
 
                         this.$emitter.emit('add-flash', {
                             type: 'error',

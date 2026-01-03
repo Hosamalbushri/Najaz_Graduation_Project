@@ -13,7 +13,7 @@ class Code implements ValidationRule
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
         if (! preg_match('/^[a-zA-Z]+[a-zA-Z0-9_]+$/', $value)) {
-            $fail('Admin::validation.code')->translate();
+            $fail('Admin::app.validation.code')->translate();
         }
     }
 }
