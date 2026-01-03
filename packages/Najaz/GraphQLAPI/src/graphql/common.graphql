@@ -124,6 +124,61 @@ extend type Service {
     form: ServiceForm @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ServiceFormQuery@form")
 }
 
+# Base Citizen type definition
+type Citizen {
+    id: ID!
+    firstName: String! @rename(attribute: "first_name")
+    middleName: String! @rename(attribute: "middle_name")
+    lastName: String! @rename(attribute: "last_name")
+    gender: String
+    email: String
+    phone: String
+    nationalId: String @rename(attribute: "national_id")
+    dateOfBirth: String @rename(attribute: "date_of_birth")
+    status: Boolean
+    isVerified: Boolean @rename(attribute: "is_verified")
+    identityVerificationStatus: Boolean @rename(attribute: "identity_verification_status")
+    citizenTypeId: Int @rename(attribute: "citizen_type_id")
+    createdAt: DateTime @rename(attribute: "created_at")
+    updatedAt: DateTime @rename(attribute: "updated_at")
+    identityVerification: IdentityVerification @hasOne(relation: "identityVerification")
+}
+
+# Citizen response type
+type CitizenResponse {
+    success: Boolean
+    message: String
+    citizen: Citizen
+}
+
+# Identity verification types
+type IdentityVerification {
+    id: ID!
+    citizenId: Int! @rename(attribute: "citizen_id")
+    status: String!
+    notes: String
+    documents: [String]
+    face_video: String
+    reviewedBy: Int @rename(attribute: "reviewed_by")
+    reviewedAt: DateTime @rename(attribute: "reviewed_at")
+    createdAt: DateTime @rename(attribute: "created_at")
+    updatedAt: DateTime @rename(attribute: "updated_at")
+    citizen: Citizen @belongsTo
+}
+
+type IdentityVerificationResponse {
+    success: Boolean
+    message: String
+    verification: IdentityVerification
+}
+
+enum IdentityVerificationStatus {
+    PENDING
+    APPROVED
+    REJECTED
+    NEEDS_MORE_INFO
+}
+
 extend type Citizen {
     services: [Service] @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\CitizenQuery@services")
 }
