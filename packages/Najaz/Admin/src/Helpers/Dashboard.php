@@ -279,12 +279,21 @@ class Dashboard
             ->orderByDesc('requests_count')
             ->orderByDesc('services.created_at')
             ->limit($limit)
+            ->with(['images' => function ($query) {
+                $query->orderBy('position')->limit(1);
+            }])
             ->get()
             ->map(function ($service) {
+                $imageUrl = null;
+                $firstImage = $service->images->first();
+                if ($firstImage && $firstImage->path) {
+                    $imageUrl = \Storage::url($firstImage->path);
+                }
+                
                 return [
                     'id' => $service->id,
                     'name' => $service->name,
-                    'image' => $service->image,
+                    'image' => $imageUrl,
                     'requests_count' => (int) ($service->requests_count ?? 0),
                 ];
             })
