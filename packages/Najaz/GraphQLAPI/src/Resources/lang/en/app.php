@@ -57,6 +57,13 @@ return [
             'available_file_fields'  => 'Available file/image fields are: :fields',
             'no_file_fields_available' => 'No file/image fields are available for this service.',
         ],
+
+        'notifications' => [
+            'not_found'              => 'Notification not found.',
+            'marked_as_read'          => 'Notification marked as read.',
+            'all_marked_as_read'      => 'All notifications marked as read (:count notifications).',
+            'deleted'                 => 'Notification deleted successfully.',
+        ],
     ],
 ];
 

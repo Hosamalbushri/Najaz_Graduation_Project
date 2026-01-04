@@ -14,12 +14,12 @@ class DocumentTemplateService
     use PDFHandler;
 
     /**
-     * Generate document from template for a service request.
+     * Generate document content from template for a service request (content only, no HTML wrapper).
      *
      * @param  ServiceRequest  $serviceRequest
-     * @return string HTML content
+     * @return string HTML content (without HTML document structure)
      */
-    public function generateDocument(ServiceRequest $serviceRequest): string
+    public function generateDocumentContent(ServiceRequest $serviceRequest): string
     {
         $service = $serviceRequest->service;
         $template = $service->documentTemplate;
@@ -38,22 +38,35 @@ class DocumentTemplateService
         // Get all field values
         $fieldValues = $this->getFieldValues($serviceRequest);
 
-        // Debug: Log field values
-        \Log::info('DocumentTemplateService - Field Values:', [
-            'field_values' => $fieldValues,
-            'template_content' => $templateContent,
-            'request_locale' => $requestLocale,
-        ]);
-
         // Replace placeholders in template
         $content = $this->replacePlaceholders($templateContent, $fieldValues);
 
         // Merge custom template content if available
         $content = $this->mergeCustomContent($serviceRequest, $content);
 
-        \Log::info('DocumentTemplateService - After Replacement:', [
-            'content' => $content,
-        ]);
+        return $content;
+    }
+
+    /**
+     * Generate document from template for a service request.
+     *
+     * @param  ServiceRequest  $serviceRequest
+     * @return string HTML document (full HTML with structure)
+     */
+    public function generateDocument(ServiceRequest $serviceRequest): string
+    {
+        $service = $serviceRequest->service;
+        $template = $service->documentTemplate;
+
+        if (! $template || ! $template->is_active) {
+            throw new \Exception('Template not found or inactive');
+        }
+
+        // Get request locale (fallback to app locale)
+        $requestLocale = $serviceRequest->locale ?? app()->getLocale();
+        
+        // Get content only (without HTML wrapper)
+        $content = $this->generateDocumentContent($serviceRequest);
 
         // Build full HTML document with request locale
         return $this->buildHtmlDocument($content, $template, $requestLocale);

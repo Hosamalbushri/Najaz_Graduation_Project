@@ -98,7 +98,7 @@ class Importer extends AbstractImporter
         protected ImportBatchRepository $importBatchRepository,
         protected ServiceRepository $serviceRepository,
         protected ServiceCategoryRepository $serviceCategoryRepository,
-        protected Storage $serviceStorage
+        protected ServiceStorage $serviceStorage
     ) {
         $this->initServiceCategories();
         $this->initLocales();

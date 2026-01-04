@@ -187,3 +187,11 @@ enum Gender {
     MALE @enum(value: "Male")
     FEMALE @enum(value: "Female")
 }
+
+type PaginatorInfo {
+    count: Int!
+    currentPage: Int!
+    lastPage: Int!
+    total: Int!
+    hasMorePages: Boolean!
+}

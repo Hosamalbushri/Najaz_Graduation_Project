@@ -25,6 +25,8 @@ class NotificationServiceProvider extends ServiceProvider
     {
         $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
 
+        $this->loadTranslationsFrom(__DIR__.'/../Resources/lang', 'najaz_notification');
+
         $this->app->register(EventServiceProvider::class);
     }
 }

@@ -5,13 +5,13 @@ namespace Najaz\Admin\Http\Controllers\Admin\ServiceRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
 use Najaz\Admin\Http\Controllers\Controller;
+use Najaz\Admin\Traits\PDFHandler;
 use Najaz\Citizen\Repositories\CitizenRepository;
 use Najaz\Request\Models\ServiceRequestProxy;
 use Najaz\Request\Repositories\ServiceRequestAdminNoteRepository;
 use Najaz\Request\Repositories\ServiceRequestCustomTemplateRepository;
 use Najaz\Request\Repositories\ServiceRequestRepository;
 use Najaz\Service\Services\DocumentTemplateService;
-use Webkul\Core\Traits\PDFHandler;
 
 class ServiceRequestController extends Controller
 {
@@ -466,11 +466,11 @@ class ServiceRequestController extends Controller
             // Generate document content using DocumentTemplateService
             $documentService = new DocumentTemplateService;
             
-            // Generate document with request locale
-            $html = $documentService->generateDocument($serviceRequest);
+            // Generate document content only (without HTML wrapper)
+            $content = $documentService->generateDocumentContent($serviceRequest);
 
             return $this->downloadPDF(
-                $html,
+                view('admin::service-requests.pdf', compact('serviceRequest', 'content'))->render(),
                 'document-'.$serviceRequest->increment_id.'-'.$serviceRequest->created_at->format('d-m-Y')
             );
         } catch (\Exception $e) {

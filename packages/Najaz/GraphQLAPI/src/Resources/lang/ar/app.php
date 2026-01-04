@@ -57,6 +57,13 @@ return [
             'available_file_fields'  => 'الحقول المتاحة من نوع ملف/صورة هي: :fields',
             'no_file_fields_available' => 'لا توجد حقول من نوع ملف/صورة في هذه الخدمة.',
         ],
+
+        'notifications' => [
+            'not_found'              => 'الإشعار غير موجود.',
+            'marked_as_read'          => 'تم تحديد الإشعار كمقروء.',
+            'all_marked_as_read'      => 'تم تحديد جميع الإشعارات كمقروءة (:count إشعار).',
+            'deleted'                 => 'تم حذف الإشعار بنجاح.',
+        ],
     ],
 ];
 

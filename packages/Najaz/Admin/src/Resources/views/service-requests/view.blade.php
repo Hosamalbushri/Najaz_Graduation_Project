@@ -57,10 +57,24 @@
                     <div class="flex gap-1.5">
                         <template v-if="request.status === 'pending'">
                             <!-- Pending: Show "In Progress" and "Reject" buttons -->
+                            <form
+                                method="POST"
+                                ref="inProgressForm"
+                                :action="`{{ route('admin.service-requests.update-status', '') }}/${request.id}`"
+                            >
+                                @csrf
+                                <input type="hidden" name="status" value="in_progress">
+                            </form>
+
                             <button
                                 type="button"
                                 class="inline-flex w-full max-w-max cursor-pointer items-center justify-between gap-x-2 px-1 py-1.5 text-center font-semibold text-gray-600 transition-all hover:rounded-md hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-800"
-                                @click="openStatusUpdateModal('in_progress', '@lang('Admin::app.service-requests.view.in-progress')')"
+                                @click="$emitter.emit('open-confirm-modal', {
+                                    message: '@lang('Admin::app.service-requests.view.confirm-status-update', ['status' => trans('Admin::app.service-requests.view.in-progress')])',
+                                    agree: () => {
+                                        $refs.inProgressForm.submit()
+                                    }
+                                })"
                             >
                                 <span class="icon-checkmark text-2xl"></span>
                                 @lang('Admin::app.service-requests.view.in-progress')
@@ -78,10 +92,24 @@
 
                         <template v-else-if="request.status === 'in_progress'">
                             <!-- In Progress: Show "Complete" and "Reject" buttons -->
+                            <form
+                                method="POST"
+                                ref="completeForm"
+                                :action="`{{ route('admin.service-requests.update-status', '') }}/${request.id}`"
+                            >
+                                @csrf
+                                <input type="hidden" name="status" value="completed">
+                            </form>
+
                             <button
                                 type="button"
                                 class="inline-flex w-full max-w-max cursor-pointer items-center justify-between gap-x-2 px-1 py-1.5 text-center font-semibold text-gray-600 transition-all hover:rounded-md hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-800"
-                                @click="openStatusUpdateModal('completed', '@lang('Admin::app.service-requests.view.completed')')"
+                                @click="$emitter.emit('open-confirm-modal', {
+                                    message: '@lang('Admin::app.service-requests.view.confirm-status-update', ['status' => trans('Admin::app.service-requests.view.completed')])',
+                                    agree: () => {
+                                        $refs.completeForm.submit()
+                                    }
+                                })"
                             >
                                 <span class="icon-checkmark text-2xl"></span>
                                 @lang('Admin::app.service-requests.view.complete')
@@ -97,7 +125,7 @@
                             </button>
 
                             <!-- Word Document Download Button -->
-                            <template v-if="request.service && request.service.document_template && request.service.document_template.is_active">
+                            <template v-if="hasDocumentTemplate">
                                 <a
                                     :href="`{{ route('admin.service-requests.download-word', '') }}/${request.id}`"
                                     class="inline-flex w-full max-w-max cursor-pointer items-center justify-between gap-x-2 px-1 py-1.5 text-center font-semibold text-gray-600 transition-all hover:rounded-md hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-800"
@@ -110,9 +138,10 @@
 
                         <template v-else-if="request.status === 'completed'">
                             <!-- Completed: Show "Print" and "Cancel" buttons -->
-                            <template v-if="request.service && request.service.document_template && request.service.document_template.is_active">
+                            <template v-if="hasDocumentTemplate">
                                 <a
                                     :href="`{{ route('admin.service-requests.print', '') }}/${request.id}`"
+                                    target="_blank"
                                     class="inline-flex w-full max-w-max cursor-pointer items-center justify-between gap-x-2 px-1 py-1.5 text-center font-semibold text-gray-600 transition-all hover:rounded-md hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-800"
                                 >
                                     <span class="icon-printer text-2xl"></span>
@@ -529,46 +558,6 @@
                     </x-admin::form>
                 </x-slot>
             </x-admin::modal>
-
-            <!-- Status Update Confirmation Modal -->
-            <x-admin::modal ref="statusUpdateModal">
-                <x-slot:header>
-                    <p class="text-lg font-bold text-gray-800 dark:text-white">
-                        @lang('Admin::app.service-requests.view.update-status')
-                    </p>
-                </x-slot>
-
-                <x-slot:content>
-                    <x-admin::form ::action="`{{ route('admin.service-requests.update-status', '') }}/${request ? request.id : ''}`" ref="statusUpdateForm">
-                        @csrf
-                        <input type="hidden" name="status" ref="statusInput" :value="statusUpdateStatus">
-
-                        <div class="flex flex-col gap-4">
-                            <p class="text-base text-gray-600 dark:text-gray-300" v-text="statusUpdateMessage"></p>
-                        </div>
-                    </x-admin::form>
-                </x-slot>
-
-                <x-slot:footer>
-                    <div class="flex items-center gap-x-2.5">
-                        <button
-                            type="button"
-                            @click="$refs.statusUpdateModal.close()"
-                            class="transparent-button hover:bg-gray-200 dark:text-white dark:hover:bg-gray-800"
-                        >
-                            @lang('admin::app.components.modal.confirm.disagree-btn')
-                        </button>
-
-                        <button
-                            type="button"
-                            @click="$refs.statusUpdateForm.submit()"
-                            class="primary-button"
-                        >
-                            @lang('Admin::app.service-requests.view.update-status')
-                        </button>
-                    </div>
-                </x-slot>
-            </x-admin::modal>
         </script>
 
         <script type="module">
@@ -593,13 +582,37 @@
                         uploadedFiles: [],
                         fileImageFieldsMap: {},
                         allFileImageFields: [],
-                        statusUpdateStatus: '',
-                        statusUpdateMessage: '',
                     };
                 },
 
                 mounted() {
                     this.getRequest();
+                },
+
+                computed: {
+                    hasDocumentTemplate() {
+                        // Check template from response first (more reliable)
+                        if (this.template && this.template.is_active) {
+                            const isActive = this.template.is_active;
+                            if (isActive === true || isActive === 1 || isActive === "1") {
+                                return true;
+                            }
+                        }
+                        
+                        // Fallback: check from request.service
+                        if (!this.request || !this.request.service) {
+                            return false;
+                        }
+                        
+                        const docTemplate = this.request.service.document_template || this.request.service.documentTemplate;
+                        if (!docTemplate) {
+                            return false;
+                        }
+                        
+                        // Check is_active - it might be boolean true, integer 1, or string "1"
+                        const isActive = docTemplate.is_active;
+                        return isActive === true || isActive === 1 || isActive === "1";
+                    },
                 },
 
                 methods: {
@@ -616,6 +629,14 @@
                                     this.uploadedFiles = response.data.data.uploadedFiles || [];
                                     this.fileImageFieldsMap = response.data.data.fileImageFieldsMap || {};
                                     this.allFileImageFields = response.data.data.allFileImageFields || [];
+                                    
+                                    // Debug: Log service and document template data
+                                    if (this.request && this.request.service) {
+                                        console.log('Service data:', this.request.service);
+                                        console.log('Document template (snake_case):', this.request.service.document_template);
+                                        console.log('Document template (camelCase):', this.request.service.documentTemplate);
+                                        console.log('Has document template computed:', this.hasDocumentTemplate);
+                                    }
                                 }
                             })
                             .catch(error => {
@@ -650,12 +671,6 @@
                             month: 'long',
                             day: 'numeric'
                         });
-                    },
-
-                    openStatusUpdateModal(status, statusLabel) {
-                        this.statusUpdateStatus = status;
-                        this.statusUpdateMessage = '@lang('Admin::app.service-requests.view.confirm-status-update', ['status' => ''])'.replace(':status', statusLabel);
-                        this.$refs.statusUpdateModal.toggle();
                     },
 
                     hasPermission(permission) {

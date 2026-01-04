@@ -5,6 +5,7 @@ namespace Najaz\Citizen\Helpers\Importers\Citizen;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Validator;
+use Najaz\Citizen\Helpers\Importers\Citizen\Storage as CitizenStorage;
 use Najaz\Citizen\Repositories\CitizenRepository;
 use Najaz\Citizen\Repositories\CitizenTypeRepository;
 use Webkul\DataTransfer\Contracts\ImportBatch as ImportBatchContract;
@@ -107,7 +108,7 @@ class Importer extends AbstractImporter
         protected ImportBatchRepository $importBatchRepository,
         protected CitizenRepository $citizenRepository,
         protected CitizenTypeRepository $citizenTypeRepository,
-        protected Storage $citizenStorage
+        protected CitizenStorage $citizenStorage
     ) {
         parent::__construct($importBatchRepository);
     }

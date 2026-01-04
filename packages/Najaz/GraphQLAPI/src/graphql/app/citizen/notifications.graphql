@@ -1,0 +1,83 @@
+# Citizen Notifications Related APIs
+extend type Query @guard(with: ["citizen-api"]) {
+    """
+    Get all notifications for the authenticated citizen.
+    """
+    citizenNotifications(
+        read: Boolean
+        type: NotificationType
+        entityType: EntityType
+        limit: Int @rules(apply: ["min:1", "max:50"])
+        page: Int @rules(apply: ["min:1"])
+    ): CitizenNotificationPaginator
+        @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\NotificationQuery@list")
+
+    """
+    Get a specific notification for the authenticated citizen.
+    """
+    citizenNotification(id: ID!): CitizenNotification
+        @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\NotificationQuery@show")
+
+    """
+    Get unread notifications count for the authenticated citizen.
+    """
+    unreadNotificationsCount: Int!
+        @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\NotificationQuery@unreadCount")
+}
+
+extend type Mutation @guard(with: ["citizen-api"]) {
+    """
+    Mark a notification as read.
+    """
+    markNotificationAsRead(id: ID!): StatusResponse
+        @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\App\\Citizen\\NotificationMutation@markAsRead")
+
+    """
+    Mark all notifications as read for the authenticated citizen.
+    """
+    markAllNotificationsAsRead: StatusResponse
+        @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\App\\Citizen\\NotificationMutation@markAllAsRead")
+
+    """
+    Delete a notification.
+    """
+    deleteNotification(id: ID!): StatusResponse
+        @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\App\\Citizen\\NotificationMutation@delete")
+}
+
+enum NotificationType {
+    SERVICE_REQUEST_CREATED @enum(value: "service_request_created")
+    SERVICE_REQUEST_STATUS_CHANGED @enum(value: "service_request_status_changed")
+    IDENTITY_VERIFICATION_SUBMITTED @enum(value: "identity_verification_submitted")
+    IDENTITY_VERIFICATION_STATUS_CHANGED @enum(value: "identity_verification_status_changed")
+}
+
+enum EntityType {
+    SERVICE_REQUEST @enum(value: "service_request")
+    IDENTITY_VERIFICATION @enum(value: "identity_verification")
+}
+
+type CitizenNotification {
+    id: ID!
+    citizenId: Int! @rename(attribute: "citizen_id")
+    type: String!
+    entityType: String! @rename(attribute: "entity_type")
+    entityId: Int! @rename(attribute: "entity_id")
+    title: String @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\NotificationQuery@translatedTitle")
+    message: String @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\NotificationQuery@translatedMessage")
+    actionUrl: String @rename(attribute: "action_url")
+    metadata: JSON
+    readAt: DateTime @rename(attribute: "read_at")
+    isRead: Boolean! @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\NotificationQuery@isRead")
+    createdAt: DateTime! @rename(attribute: "created_at")
+    updatedAt: DateTime! @rename(attribute: "updated_at")
+    citizen: Citizen @belongsTo
+    serviceRequest: ServiceRequest @belongsTo(relation: "serviceRequest")
+    identityVerification: IdentityVerification @belongsTo(relation: "identityVerification")
+}
+
+type CitizenNotificationPaginator {
+    data: [CitizenNotification!]! @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\NotificationQuery@data")
+    paginatorInfo: PaginatorInfo! @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\NotificationQuery@paginatorInfo")
+}
+

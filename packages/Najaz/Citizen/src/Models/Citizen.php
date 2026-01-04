@@ -115,4 +115,20 @@ class Citizen extends Model implements CitizenContract
     {
         return $this->hasMany(\Najaz\Citizen\Models\CitizenNoteProxy::modelClass(), 'citizen_id');
     }
+
+    /**
+     * Get notifications for this citizen.
+     */
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(\Najaz\Notification\Models\CitizenNotificationProxy::modelClass(), 'citizen_id');
+    }
+
+    /**
+     * Get unread notifications for this citizen.
+     */
+    public function unreadNotifications(): HasMany
+    {
+        return $this->notifications()->whereNull('read_at');
+    }
 }

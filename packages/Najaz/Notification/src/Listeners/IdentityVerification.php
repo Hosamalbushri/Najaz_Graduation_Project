@@ -5,6 +5,7 @@ namespace Najaz\Notification\Listeners;
 use Najaz\Notification\Events\CreateServiceNotification;
 use Najaz\Notification\Events\UpdateServiceNotification;
 use Najaz\Notification\Repositories\NotificationRepository;
+use Najaz\Notification\Repositories\CitizenNotificationRepository;
 
 class IdentityVerification
 {
@@ -13,7 +14,10 @@ class IdentityVerification
      *
      * @return void
      */
-    public function __construct(protected NotificationRepository $notificationRepository) {}
+    public function __construct(
+        protected NotificationRepository $notificationRepository,
+        protected CitizenNotificationRepository $citizenNotificationRepository
+    ) {}
 
     /**
      * Create a new notification when identity verification is created.
@@ -23,11 +27,15 @@ class IdentityVerification
      */
     public function createIdentityVerification($identityVerification)
     {
+        // Create admin notification (existing functionality)
         $this->notificationRepository->create([
             'type' => 'identity_verification',
             'entity_id' => $identityVerification->id,
             'read' => 0,
         ]);
+
+        // Create citizen notification
+        $this->citizenNotificationRepository->notifyIdentityVerificationSubmitted($identityVerification);
 
         event(new CreateServiceNotification);
     }
@@ -40,7 +48,10 @@ class IdentityVerification
      */
     public function updateIdentityVerification($identityVerification)
     {
-        // Create or update notification
+        // Get old status from original attributes
+        $oldStatus = $identityVerification->getOriginal('status') ?? $identityVerification->status;
+
+        // Create or update admin notification (existing functionality)
         $notification = $this->notificationRepository->firstOrCreate(
             [
                 'type' => 'identity_verification',
@@ -53,6 +64,12 @@ class IdentityVerification
         if (! $notification->wasRecentlyCreated) {
             $notification->read = 0;
             $notification->save();
+        }
+
+        // Create citizen notification for status change
+        // Only if status actually changed
+        if ($oldStatus !== $identityVerification->status) {
+            $this->citizenNotificationRepository->notifyIdentityVerificationStatusChanged($identityVerification, $oldStatus);
         }
 
         event(new UpdateServiceNotification([

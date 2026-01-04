@@ -13,6 +13,7 @@ class ModuleServiceProvider extends BaseModuleServiceProvider
      */
     protected $models = [
         \Najaz\Notification\Models\Notification::class,
+        \Najaz\Notification\Models\CitizenNotification::class,
     ];
 }
 
