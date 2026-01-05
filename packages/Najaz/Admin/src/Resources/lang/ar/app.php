@@ -353,6 +353,11 @@ return [
                 ],
             ],
 
+            'status' => [
+                'active'   => 'نشط',
+                'inactive' => 'غير نشط',
+            ],
+
             'create-success'       => 'تم إنشاء الخدمة بنجاح.',
             'update-success'       => 'تم تحديث الخدمة بنجاح.',
             'delete-success'       => 'تم حذف الخدمة بنجاح.',
@@ -977,6 +982,7 @@ return [
             'beneficiaries'                  => 'الأطراف المتعلقة بالطلب',
             'group'                          => 'المجموعة',
             'print'                          => 'طباعة',
+            'preview-document'               => 'معاينة الوثيقة',
             'document'                       => 'الوثيقة',
             'document-content'               => 'محتوى الوثيقة',
             'template-not-found'             => 'القالب غير موجود أو غير نشط',
@@ -985,6 +991,12 @@ return [
             'no'                             => 'لا',
             'reject'                         => 'رفض',
             'complete'                       => 'إكمال',
+            'needs-revision'                 => 'يحتاج تعديل',
+            'revision-reason'                => 'سبب التعديل',
+            'send-for-revision'              => 'يحتاج تعديل',
+            'return-to-processing'           => 'إعادة للمعالجة',
+            'revision-required-msg'          => 'يرجى إدخال سبب التعديل المطلوب',
+            'revision-reason-required'       => 'سبب التعديل مطلوب',
             'rejection-reason'               => 'سبب الرفض',
             'reject-msg'                     => 'يرجى إدخال سبب الرفض',
             'rejection-reason-required'      => 'سبب الرفض مطلوب',
@@ -1068,11 +1080,19 @@ return [
 
     'notifications' => [
         'title'                      => 'الإشعارات',
+        'description-text'           => 'قائمة جميع الإشعارات',
+        'marked-success'             => 'تم وضع علامة على جميع الإشعارات كمقروءة',
+        'no-record'                  => 'لم يتم العثور على سجلات',
+        'of'                         => 'من',
+        'per-page'                   => 'في الصفحة',
         'no-notifications'           => 'لا توجد إشعارات متاحة',
         'service-request'            => 'طلب خدمة',
         'identity-verification'      => 'التحقق من الهوية',
         'view-all'                   => 'عرض الكل',
         'read-all'                   => 'تحديد الكل كمقروء',
+        'order-status-messages' => [
+            'all'                    => 'الكل',
+        ],
         'status'                     => [
             // Service Request statuses
             'pending'                => 'قيد الانتظار',

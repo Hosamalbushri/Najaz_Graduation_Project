@@ -110,7 +110,7 @@ trait PDFHandler
         $tempDir = storage_path('app/mpdf-temp');
         if (!is_dir($tempDir)) {
             @mkdir($tempDir, 0775, true);
-        }
+                    }
 
         return new Mpdf([
             'mode' => 'utf-8',

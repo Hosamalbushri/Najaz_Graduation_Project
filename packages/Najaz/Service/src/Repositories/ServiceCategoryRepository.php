@@ -325,7 +325,7 @@ class ServiceCategoryRepository extends Repository
             foreach (core()->getAllLocales() as $locale) {
                 if ($requestedLocale == $locale->code) {
                     foreach ($model->translatedAttributes as $attribute) {
-                        if ($attribute === $attributeName) {
+                        if ($attribute == $attributeName) {
                             $data[$locale->code][$attribute] = $data[$requestedLocale][$attribute] ?? $data[$data['locale']][$attribute];
                         }
                     }

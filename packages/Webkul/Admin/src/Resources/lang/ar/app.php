@@ -3293,7 +3293,7 @@ return [
                 'back-btn'               => 'رجوع',
                 'code'                   => 'الكود',
                 'currencies'             => 'العملات',
-                'currencies-and-locales' => 'العملات واللغات',
+                'currencies-and-locales' => ' اللغات',
                 'default-currency'       => 'العملة الافتراضية',
                 'default-locale'         => 'اللغة الافتراضية',
                 'description'            => 'الوصف',

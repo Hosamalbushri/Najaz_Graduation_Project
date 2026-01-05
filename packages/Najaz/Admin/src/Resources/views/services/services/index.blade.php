@@ -92,9 +92,9 @@
             </template>
 
             <template v-else>
-                <div class="row grid services-dg-grid gap-6 items-center border-b border-gray-200 bg-gray-50 px-6 py-4 dark:border-gray-700 dark:bg-gray-800">
+                <div class="row grid services-dg-grid gap-2 items-center border-b border-gray-200 bg-gray-50 px-4 py-2.5 dark:border-gray-700 dark:bg-gray-800">
                     <div
-                            class="flex min-w-0 select-none items-center gap-3"
+                            class="flex min-w-0 select-none items-center gap-2.5"
                             v-for="(columnGroup, index) in [
                             ['name', 'service_number', 'category_name', 'description'],
                             ['base_image', 'service_id', 'sort_order', 'status'],
@@ -126,14 +126,14 @@
                             </label>
                         @endif
 
-                        <p class="min-w-0 text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <p class="min-w-0 text-gray-600 dark:text-gray-300">
                             <span class="[&>*]:after:content-['_/_']">
                                 <template v-for="column in columnGroup">
                                     <span
                                             class="after:content-['/'] last:after:content-['']"
                                             :class="{
-                                            'font-semibold text-gray-900 dark:text-white': applied.sort.column == column,
-                                            'cursor-pointer hover:text-gray-900 dark:hover:text-white': available.columns.find(c => c.index === column)?.sortable,
+                                            'font-medium text-gray-800 dark:text-white': applied.sort.column == column,
+                                            'cursor-pointer hover:text-gray-800 dark:hover:text-white': available.columns.find(c => c.index === column)?.sortable,
                                         }"
                                             @click="
                                             available.columns.find(c => c.index === column)?.sortable
@@ -147,7 +147,7 @@
                             </span>
 
                             <i
-                                    class="align-text-bottom text-sm text-gray-900 dark:text-white ltr:ml-2 rtl:mr-2"
+                                    class="align-text-bottom text-base text-gray-800 dark:text-white ltr:ml-1.5 rtl:mr-1.5"
                                     :class="[applied.sort.order === 'asc' ? 'icon-down-stat': 'icon-up-stat']"
                                     v-if="columnGroup.includes(applied.sort.column)"
                             ></i>
@@ -172,11 +172,11 @@
 
             <template v-else>
                 <div
-                        class="service-row row grid services-dg-grid gap-6 border-b border-gray-100 px-6 py-4 dark:border-gray-800"
+                        class="service-row row grid services-dg-grid border-b border-gray-100 px-2 py-2.5 dark:border-gray-800 md:gap-1.5 sm:px-4"
                         v-for="record in available.records"
                 >
                     {{-- Column 1: Name / Category / Description (+ checkbox) --}}
-                    <div class="flex min-w-0 gap-4">
+                    <div class="flex min-w-0 gap-2.5">
                         @if ($hasPermission)
                             <div class="pt-0.5">
                                 <input
@@ -195,12 +195,12 @@
                             </div>
                         @endif
 
-                        <div class="flex min-w-0 flex-col gap-2.5 flex-1">
+                        <div class="flex min-w-0 flex-col gap-1.5 flex-1">
                             <div class="flex flex-col gap-1.5">
-                                <h3 class="break-words text-base font-semibold leading-6 text-gray-900 dark:text-white">
+                                <h3 class="break-words text-base font-semibold text-gray-900 dark:text-white">
                                     @{{ record.name }}
                                 </h3>
-                                <p class="text-sm text-gray-800 dark:text-gray-200">
+                                <p class="text-gray-800 dark:text-gray-200">
                                     @{{ record.service_number }}
                                 </p>
                             </div>
@@ -211,7 +211,7 @@
                                 </span>
                             </div>
 
-                            <p class="text-sm leading-5 text-gray-600 dark:text-gray-400 break-words line-clamp-2">
+                            <p class="text-gray-600 dark:text-gray-400 break-words line-clamp-2">
                                 @{{ record.description || '—' }}
                             </p>
                         </div>
@@ -219,28 +219,28 @@
 
                     {{-- Column 2: Image / ID / Sort Order / Status / Actions --}}
                     <div class="flex items-start justify-between gap-4">
-                        <div class="flex gap-4 flex-1 min-w-0">
+                        <div class="flex gap-1.5 flex-1 min-w-0">
                             <div class="relative flex-shrink-0">
                                 <template v-if="record.base_image">
                                     <img
-                                        class="h-20 w-20 rounded-lg object-cover border-2 border-gray-200 shadow-sm dark:border-gray-700"
+                                        class="max-h-[65px] min-h-[65px] min-w-[65px] max-w-[65px] rounded object-cover"
                                         :src='record.base_image'
                                         alt="Service image"
                                     />
-                                    <span class="absolute -bottom-1 -right-1 flex min-w-[18px] items-center justify-center rounded-full bg-darkPink px-1.5 py-0.5 text-[10px] font-bold leading-tight text-white shadow-md ring-2 ring-white dark:ring-gray-900">
+                                    <span class="absolute bottom-px rounded-full bg-darkPink px-1.5 text-xs font-bold leading-normal text-white ltr:left-px rtl:right-px">
                                         @{{ record.images_count }}
                                     </span>
                                 </template>
 
                                 <template v-else>
-                                    <div class="h-20 w-20 rounded-lg border-2 border-dashed border-gray-300 bg-gradient-to-br from-gray-50 to-gray-100 dark:border-gray-700 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center shadow-sm">
-                                        <img src="{{ bagisto_asset('images/product-placeholders/front.svg')}}" class="h-8 w-8 opacity-30 dark:opacity-20">
+                                    <div class="relative h-[60px] max-h-[60px] w-full max-w-[60px] rounded border border-dashed border-gray-300 dark:border-gray-800 dark:mix-blend-exclusion dark:invert">
+                                        <img src="{{ bagisto_asset('images/product-placeholders/front.svg')}}" class="h-full w-full object-cover">
                                     </div>
                                 </template>
                             </div>
 
-                            <div class="flex flex-col gap-3 flex-1 min-w-0">
-                                <div class="flex flex-col gap-2">
+                            <div class="flex flex-col gap-1.5 flex-1 min-w-0">
+                                <div class="flex flex-col gap-1.5">
                                     <div class="flex items-center gap-2">
                                         <span class="service-info-badge text-gray-700 dark:text-gray-300">
                                             <span class="ml-1 font-semibold">@{{ record.service_id }}</span>

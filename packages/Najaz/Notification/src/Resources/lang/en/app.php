@@ -32,6 +32,7 @@ return [
         'cancelled' => 'Canceled',
         'approved' => 'Approved',
         'needs_more_info' => 'Needs More Info',
+        'needs_revision' => 'Needs Revision - Please review your request and make the required modifications',
     ],
 ];
 

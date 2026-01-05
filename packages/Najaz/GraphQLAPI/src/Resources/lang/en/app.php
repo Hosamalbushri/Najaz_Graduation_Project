@@ -56,6 +56,9 @@ return [
             'file_validation_failed' => 'File validation failed for field ":field": :errors',
             'available_file_fields'  => 'Available file/image fields are: :fields',
             'no_file_fields_available' => 'No file/image fields are available for this service.',
+            'document_not_available' => 'Document is not available. Documents can only be printed for completed requests.',
+            'template_not_found'     => 'Document template not found or inactive.',
+            'print_error'            => 'Error printing document: :error',
         ],
 
         'notifications' => [

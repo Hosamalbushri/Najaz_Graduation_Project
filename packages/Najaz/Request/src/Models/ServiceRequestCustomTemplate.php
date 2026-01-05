@@ -28,9 +28,6 @@ class ServiceRequestCustomTemplate extends Model implements ServiceRequestCustom
         'service_request_id',
         'locale',
         'template_content',
-        'additional_data',
-        'header_image',
-        'footer_text',
         'created_by_admin_id',
     ];
 
@@ -40,7 +37,6 @@ class ServiceRequestCustomTemplate extends Model implements ServiceRequestCustom
      * @var array
      */
     protected $casts = [
-        'additional_data' => 'array',
     ];
 
     /**

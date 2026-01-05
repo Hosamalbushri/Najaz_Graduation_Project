@@ -4,6 +4,7 @@ namespace Najaz\Service\Services;
 
 use Carbon\Carbon;
 use Najaz\Request\Models\ServiceRequest;
+use Najaz\Request\Models\ServiceRequestCustomTemplateProxy;
 use Najaz\Request\Models\ServiceRequestFormData;
 use Najaz\Service\Models\ServiceAttributeGroupService;
 use Najaz\Service\Models\ServiceDocumentTemplate;
@@ -41,8 +42,8 @@ class DocumentTemplateService
         // Replace placeholders in template
         $content = $this->replacePlaceholders($templateContent, $fieldValues);
 
-        // Merge custom template content if available
-        $content = $this->mergeCustomContent($serviceRequest, $content);
+        // Replace with custom template content if available
+        $content = $this->replaceWithCustomContent($serviceRequest, $content, $fieldValues);
 
         return $content;
     }
@@ -73,24 +74,39 @@ class DocumentTemplateService
     }
 
     /**
-     * Merge custom template content with the original template content.
+     * Replace original content with custom template content if available.
      *
      * @param  ServiceRequest  $serviceRequest
      * @param  string  $originalContent
+     * @param  array  $fieldValues
      * @return string
      */
-    public function mergeCustomContent(ServiceRequest $serviceRequest, string $originalContent): string
+    public function replaceWithCustomContent(ServiceRequest $serviceRequest, string $originalContent, array $fieldValues): string
     {
-        // Load custom template for current locale
-        $serviceRequest->load('customTemplate');
-        $customTemplate = $serviceRequest->customTemplate;
+        // Get request locale (fallback to app locale)
+        $requestLocale = $serviceRequest->locale ?? app()->getLocale();
+        
+        // Load custom template for the request locale using the relationship
+        $customTemplate = $serviceRequest->customTemplates()
+            ->where('locale', $requestLocale)
+            ->first();
 
         if (! $customTemplate || empty($customTemplate->template_content)) {
             return $originalContent;
         }
 
-        // Simply append custom content to original content
-        return $originalContent . $customTemplate->template_content;
+        // Get custom template content
+        $customContent = $customTemplate->template_content;
+
+        if (empty($customContent)) {
+            return $originalContent;
+        }
+
+        // Replace placeholders in custom content
+        $customContent = $this->replacePlaceholders($customContent, $fieldValues);
+
+        // Replace original content with custom content
+        return $customContent;
     }
 
     /**

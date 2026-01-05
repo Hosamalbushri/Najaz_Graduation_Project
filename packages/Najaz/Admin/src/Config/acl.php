@@ -330,16 +330,6 @@ return [
         'route' => 'admin.service-requests.print',
         'sort'  => 5,
     ], [
-        'key'   => 'service-requests.download-word',
-        'name'  => 'Admin::app.acl.download-word',
-        'route' => 'admin.service-requests.download-word',
-        'sort'  => 6,
-    ], [
-        'key'   => 'service-requests.upload-pdf',
-        'name'  => 'Admin::app.acl.upload-pdf',
-        'route' => 'admin.service-requests.upload-pdf',
-        'sort'  => 7,
-    ], [
         'key'   => 'service-requests.custom-template',
         'name'  => 'Admin::app.acl.custom-template',
         'route' => 'admin.service-requests.custom-template.store',

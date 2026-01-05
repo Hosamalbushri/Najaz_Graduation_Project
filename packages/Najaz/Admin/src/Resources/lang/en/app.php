@@ -350,6 +350,11 @@ return [
             ],
         ],
 
+            'status' => [
+                'active'   => 'Active',
+                'inactive' => 'Inactive',
+            ],
+
             'create-success'       => 'Service has been created successfully.',
             'update-success'       => 'Service has been updated successfully.',
             'delete-success'       => 'Service has been deleted successfully.',
@@ -974,6 +979,7 @@ return [
             'beneficiaries'                 => 'Request Related Parties',
             'group'                         => 'Group',
             'print'                         => 'Print',
+            'preview-document'              => 'Preview Document',
             'document'                      => 'Document',
             'document-content'              => 'Document Content',
             'template-not-found'            => 'Template not found or inactive',
@@ -982,6 +988,12 @@ return [
             'no'                            => 'No',
             'reject'                        => 'Reject',
             'complete'                      => 'Complete',
+            'needs-revision'                => 'Needs Revision - Please review your request and make the required modifications',
+            'revision-reason'               => 'Revision Reason',
+            'send-for-revision'             => 'Send for Revision',
+            'return-to-processing'          => 'Return to Processing',
+            'revision-required-msg'         => 'Please enter the revision reason',
+            'revision-reason-required'      => 'Revision reason is required',
             'rejection-reason'              => 'Rejection Reason',
             'reject-msg'                    => 'Please enter the reason for rejection',
             'rejection-reason-required'     => 'Rejection reason is required',
@@ -1065,11 +1077,19 @@ return [
 
     'notifications' => [
         'title'                      => 'Notifications',
+        'description-text'           => 'List of all notifications',
+        'marked-success'             => 'All notifications marked as read',
+        'no-record'                  => 'No records found',
+        'of'                         => 'of',
+        'per-page'                   => 'per page',
         'no-notifications'           => 'No notifications available',
         'service-request'            => 'Service Request',
         'identity-verification'      => 'Identity Verification',
         'view-all'                   => 'View All',
         'read-all'                   => 'Mark All as Read',
+        'order-status-messages' => [
+            'all'                    => 'All',
+        ],
         'status'                     => [
             // Service Request statuses
             'pending'                => 'Pending',

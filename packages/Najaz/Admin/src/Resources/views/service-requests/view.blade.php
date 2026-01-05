@@ -76,7 +76,7 @@
                                     }
                                 })"
                             >
-                                <span class="icon-checkmark text-2xl"></span>
+                                <span class="icon-arrow-right text-2xl"></span>
                                 @lang('Admin::app.service-requests.view.in-progress')
                             </button>
 
@@ -85,7 +85,7 @@
                                 class="inline-flex w-full max-w-max cursor-pointer items-center justify-between gap-x-2 px-1 py-1.5 text-center font-semibold text-gray-600 transition-all hover:rounded-md hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-800"
                                 @click="$refs.rejectModal.toggle()"
                             >
-                                <span class="icon-cancel-1 text-2xl"></span>
+                                <span class="icon-cancel-1 text-3xl"></span>
                                 @lang('Admin::app.service-requests.view.reject')
                             </button>
                         </template>
@@ -111,7 +111,7 @@
                                     }
                                 })"
                             >
-                                <span class="icon-checkmark text-2xl"></span>
+                                <span class="icon-done text-3xl"></span>
                                 @lang('Admin::app.service-requests.view.complete')
                             </button>
 
@@ -120,20 +120,66 @@
                                 class="inline-flex w-full max-w-max cursor-pointer items-center justify-between gap-x-2 px-1 py-1.5 text-center font-semibold text-gray-600 transition-all hover:rounded-md hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-800"
                                 @click="$refs.rejectModal.toggle()"
                             >
-                                <span class="icon-cancel-1 text-2xl"></span>
+                                <span class="icon-cancel-1 text-3xl"></span>
                                 @lang('Admin::app.service-requests.view.reject')
                             </button>
 
-                            <!-- Word Document Download Button -->
+                            <!-- Send for Revision Button -->
+                            <button
+                                type="button"
+                                class="inline-flex w-full max-w-max cursor-pointer items-center justify-between gap-x-2 px-1 py-1.5 text-center font-semibold text-gray-600 transition-all hover:rounded-md hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-800"
+                                @click="$refs.revisionModal.toggle()"
+                            >
+                                <span class="icon-edit text-2xl"></span>
+                                @lang('Admin::app.service-requests.view.send-for-revision')
+                            </button>
+
+                            <!-- Preview Document Button -->
                             <template v-if="hasDocumentTemplate">
                                 <a
-                                    :href="`{{ route('admin.service-requests.download-word', '') }}/${request.id}`"
+                                    :href="`{{ route('admin.service-requests.preview', '') }}/${request.id}`"
+                                    target="_blank"
                                     class="inline-flex w-full max-w-max cursor-pointer items-center justify-between gap-x-2 px-1 py-1.5 text-center font-semibold text-gray-600 transition-all hover:rounded-md hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-800"
                                 >
-                                    <span class="icon-download text-2xl"></span>
-                                    @lang('Admin::app.service-requests.word-document.download-word')
+                                    <span class="icon-view text-2xl"></span>
+                                    @lang('Admin::app.service-requests.view.preview-document')
                                 </a>
                             </template>
+                        </template>
+
+                        <template v-else-if="request.status === 'needs_revision'">
+                            <!-- Needs Revision: Show "Return to Processing" and "Reject" buttons -->
+                            <form
+                                method="POST"
+                                ref="returnToProcessingForm"
+                                :action="`{{ route('admin.service-requests.update-status', '') }}/${request.id}`"
+                            >
+                                @csrf
+                                <input type="hidden" name="status" value="in_progress">
+                            </form>
+
+                            <button
+                                type="button"
+                                class="inline-flex w-full max-w-max cursor-pointer items-center justify-between gap-x-2 px-1 py-1.5 text-center font-semibold text-gray-600 transition-all hover:rounded-md hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-800"
+                                @click="$emitter.emit('open-confirm-modal', {
+                                    message: '@lang('Admin::app.service-requests.view.confirm-status-update', ['status' => trans('Admin::app.service-requests.view.in-progress')])',
+                                    agree: () => {
+                                        $refs.returnToProcessingForm.submit()
+                                    }
+                                })"
+                            >
+                                <span class="icon-arrow-left text-2xl"></span>
+                                @lang('Admin::app.service-requests.view.return-to-processing')
+                            </button>
+
+                            <button
+                                type="button"
+                                class="inline-flex w-full max-w-max cursor-pointer items-center justify-between gap-x-2 px-1 py-1.5 text-center font-semibold text-gray-600 transition-all hover:rounded-md hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-800"
+                                @click="$refs.rejectModal.toggle()"
+                            >
+                                <span class="icon-cancel-1 text-3xl"></span>
+                                @lang('Admin::app.service-requests.view.reject')
+                            </button>
                         </template>
 
                         <template v-else-if="request.status === 'completed'">
@@ -191,6 +237,23 @@
                     <!-- Left Component -->
                     <div class="flex flex-1 flex-col gap-2 max-xl:flex-auto">
                         @include('admin::service-requests.partials.content-section')
+
+                        <!-- Custom Template Section -->
+                        @php
+                            $canShowCustomTemplate = false;
+                            if ($template && isset($template->enable_custom_template)) {
+                                $enableCustomTemplate = (bool) $template->enable_custom_template;
+                                $canShowCustomTemplate = $enableCustomTemplate === true && bouncer()->hasPermission('service-requests.custom-template.edit');
+                            }
+                        @endphp
+                        @if ($canShowCustomTemplate && $template && $template->is_active && $documentContent)
+                            <div class="box-shadow rounded bg-white dark:bg-gray-900">
+                                <p class="p-4 pb-0 text-base font-semibold text-gray-800 dark:text-white">
+                                    @lang('Admin::app.service-requests.custom-template.tab-title')
+                                </p>
+                                @include('admin::service-requests.custom-template-edit')
+                            </div>
+                        @endif
 
                         <!-- Admin Notes -->
                         <div class="box-shadow rounded bg-white dark:bg-gray-900">
@@ -374,7 +437,7 @@
                         </x-admin::accordion>
 
                         <!-- Rejection Reason Display -->
-                        <template v-if="request.status === 'rejected' && request.rejection_reason">
+                        <template v-if="request.status === 'rejected' && request.status_reasons && request.status_reasons.length > 0">
                             <x-admin::accordion>
                                 <x-slot:header>
                                     <p class="p-2.5 text-base font-semibold text-gray-600 dark:text-gray-300">
@@ -384,7 +447,32 @@
 
                                 <x-slot:content>
                                     <div class="p-4">
-                                        <p class="text-base leading-6 text-gray-800 dark:text-white" v-text="request.rejection_reason"></p>
+                                        <template v-for="(reason, index) in request.status_reasons.filter(r => r.reason_type === 'rejection')" :key="index">
+                                            <template v-if="index === request.status_reasons.filter(r => r.reason_type === 'rejection').length - 1">
+                                                <p class="text-base leading-6 text-gray-800 dark:text-white" v-text="reason.reason"></p>
+                                            </template>
+                                        </template>
+                                    </div>
+                                </x-slot>
+                            </x-admin::accordion>
+                        </template>
+
+                        <!-- Revision Reason Display -->
+                        <template v-if="request.status === 'needs_revision' && request.status_reasons && request.status_reasons.length > 0">
+                            <x-admin::accordion>
+                                <x-slot:header>
+                                    <p class="p-2.5 text-base font-semibold text-gray-600 dark:text-gray-300">
+                                        @lang('Admin::app.service-requests.view.revision-reason')
+                                    </p>
+                                </x-slot>
+
+                                <x-slot:content>
+                                    <div class="p-4">
+                                        <template v-for="(reason, index) in request.status_reasons.filter(r => r.reason_type === 'revision')" :key="index">
+                                            <template v-if="index === request.status_reasons.filter(r => r.reason_type === 'revision').length - 1">
+                                                <p class="text-base leading-6 text-gray-800 dark:text-white" v-text="reason.reason"></p>
+                                            </template>
+                                        </template>
                                     </div>
                                 </x-slot>
                             </x-admin::accordion>
@@ -558,6 +646,62 @@
                     </x-admin::form>
                 </x-slot>
             </x-admin::modal>
+
+            <!-- Revision Modal -->
+            <x-admin::modal ref="revisionModal">
+                <x-slot:header>
+                    <p class="text-lg font-bold text-gray-800 dark:text-white">
+                        @lang('Admin::app.service-requests.view.send-for-revision')
+                    </p>
+                </x-slot>
+
+                <x-slot:content>
+                    <x-admin::form ::action="`{{ route('admin.service-requests.update-status', '') }}/${request ? request.id : ''}`">
+                        @csrf
+                        <input type="hidden" name="status" value="needs_revision">
+
+                        <div class="flex flex-col gap-4">
+                            <p class="text-base text-gray-600 dark:text-gray-300">
+                                @lang('Admin::app.service-requests.view.revision-required-msg')
+                            </p>
+
+                            <x-admin::form.control-group>
+                                <x-admin::form.control-group.label class="required">
+                                    @lang('Admin::app.service-requests.view.revision-reason')
+                                </x-admin::form.control-group.label>
+
+                                <x-admin::form.control-group.control
+                                    type="textarea"
+                                    name="revision_reason"
+                                    rules="required"
+                                    :label="trans('Admin::app.service-requests.view.revision-reason')"
+                                    :placeholder="trans('Admin::app.service-requests.view.revision-reason-required')"
+                                    rows="4"
+                                />
+
+                                <x-admin::form.control-group.error control-name="revision_reason" />
+                            </x-admin::form.control-group>
+
+                            <div class="flex items-center gap-x-2.5 justify-end">
+                                <button
+                                    type="button"
+                                    @click="$refs.revisionModal.close()"
+                                    class="transparent-button hover:bg-gray-200 dark:text-white dark:hover:bg-gray-800"
+                                >
+                                    @lang('admin::app.components.modal.confirm.disagree-btn')
+                                </button>
+
+                                <button
+                                    type="submit"
+                                    class="primary-button"
+                                >
+                                    @lang('Admin::app.service-requests.view.send-for-revision')
+                                </button>
+                            </div>
+                        </div>
+                    </x-admin::form>
+                </x-slot>
+            </x-admin::modal>
         </script>
 
         <script type="module">
@@ -651,6 +795,7 @@
                             'completed': '@lang('Admin::app.service-requests.view.completed')',
                             'rejected': '@lang('Admin::app.service-requests.view.rejected')',
                             'canceled': '@lang('Admin::app.service-requests.view.canceled')',
+                            'needs_revision': '@lang('Admin::app.service-requests.view.needs-revision')',
                         };
                         return statusLabels[status] || status;
                     },

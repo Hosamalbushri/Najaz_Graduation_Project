@@ -6,9 +6,14 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Najaz\Request\Models\ServiceRequestProxy;
 use Najaz\Request\Repositories\ServiceRequestRepository;
 use Najaz\Service\Models\ServiceAttributeGroupService;
 use Najaz\Service\Models\ServiceProxy;
+use Najaz\Service\Services\DocumentTemplateService;
+use Mpdf\Mpdf;
+use Mpdf\Config\ConfigVariables;
+use Mpdf\Config\FontVariables;
 use Webkul\GraphQLAPI\Validators\CustomException;
 
 class ServiceRequestMutation extends Controller
@@ -367,5 +372,185 @@ class ServiceRequestMutation extends Controller
                 break;
             }
         }
+    }
+
+    /**
+     * Print service request document (PDF) for citizen.
+     * Only available for completed requests.
+     */
+    public function printDocument($rootValue, array $args): array
+    {
+        $citizen = najaz_graphql()->authorize('citizen-api');
+
+        $serviceRequest = ServiceRequestProxy::modelClass()::with(['service.documentTemplate', 'beneficiaries'])
+            ->findOrFail($args['id']);
+
+        // Check if citizen has access (requester or beneficiary)
+        if (! $this->serviceRequestRepository->canCitizenAccess($serviceRequest, $citizen)) {
+            throw new CustomException(
+                trans('najaz_graphql::app.citizens.service_request.not_found')
+            );
+        }
+
+        // Check if request is completed
+        if ($serviceRequest->status !== 'completed' || ! $serviceRequest->completed_at) {
+            throw new CustomException(
+                trans('najaz_graphql::app.citizens.service_request.document_not_available')
+            );
+        }
+
+        // Check if template exists and is active
+        $template = $serviceRequest->service->documentTemplate;
+        if (! $template || ! $template->is_active) {
+            throw new CustomException(
+                trans('najaz_graphql::app.citizens.service_request.template_not_found')
+            );
+        }
+
+        try {
+            // Generate document content using DocumentTemplateService
+            $documentService = new DocumentTemplateService;
+            $content = $documentService->generateDocumentContent($serviceRequest);
+
+            // Generate PDF HTML content
+            $pdfHtml = view('admin::service-requests.pdf', compact('serviceRequest', 'content'))->render();
+
+            // Generate PDF as string
+            $direction = core()->getCurrentLocale()->direction ?? 'ltr';
+            $pdfContent = '';
+
+            if ($direction === 'rtl') {
+                $mPDF = $this->makeMpdfForRtl();
+                $mPDF->SetDirectionality('rtl');
+                $mPDF->SetDisplayMode('fullpage');
+                $mPDF->WriteHTML($pdfHtml);
+                $pdfContent = $mPDF->Output('', 'S');
+            } else {
+                // For LTR, use DomPDF
+                $html = mb_convert_encoding($pdfHtml, 'HTML-ENTITIES', 'UTF-8');
+                $html = $this->adjustArabicAndPersianContent($html);
+                
+                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html)
+                    ->setPaper('A4', 'portrait')
+                    ->set_option('defaultFont', 'DejaVu Sans');
+                
+                $pdfContent = $pdf->output();
+            }
+
+            // Convert PDF to base64
+            $base64Content = base64_encode($pdfContent);
+
+            $filename = 'document-'.$serviceRequest->increment_id.'-'.$serviceRequest->created_at->format('d-m-Y').'.pdf';
+
+            return [
+                'success' => true,
+                'filename' => $filename,
+                'base64_content' => $base64Content,
+                'mime_type' => 'application/pdf',
+            ];
+        } catch (\Exception $e) {
+            throw new CustomException(
+                trans('najaz_graphql::app.citizens.service_request.print_error', ['error' => $e->getMessage()])
+            );
+        }
+    }
+
+    /**
+     * Make mPDF instance for RTL documents.
+     */
+    protected function makeMpdfForRtl(): Mpdf
+    {
+        $defaultConfig = (new ConfigVariables())->getDefaults();
+        $fontDirs      = $defaultConfig['fontDir'];
+
+        $defaultFontConfig = (new FontVariables())->getDefaults();
+        $fontData          = $defaultFontConfig['fontdata'];
+
+        $customFontDir = public_path('fonts');
+
+        $hasXBRiyaz = file_exists($customFontDir . '/XB Riyaz.ttf')
+            && file_exists($customFontDir . '/XB RiyazBd.ttf');
+
+        $hasXBZar = file_exists($customFontDir . '/XB Zar.ttf')
+            && file_exists($customFontDir . '/XB ZarBd.ttf');
+
+        $hasAmiri = file_exists($customFontDir . '/Amiri-Regular.ttf')
+            && file_exists($customFontDir . '/Amiri-Bold.ttf');
+
+        $hasNoto = file_exists($customFontDir . '/NotoNaskhArabic-Regular.ttf')
+            && file_exists($customFontDir . '/NotoNaskhArabic-Bold.ttf');
+
+        $extraFontData = [];
+        $defaultFont   = 'dejavusans';
+
+        if ($hasXBRiyaz) {
+            $defaultFont = 'xbriyaz';
+            $extraFontData['xbriyaz'] = [
+                'R' => 'XB Riyaz.ttf',
+                'B' => 'XB RiyazBd.ttf',
+                'useOTL' => 0xFF,
+                'useKashida' => 75,
+            ];
+        } elseif ($hasXBZar) {
+            $defaultFont = 'xbzar';
+            $extraFontData['xbzar'] = [
+                'R' => 'XB Zar.ttf',
+                'B' => 'XB ZarBd.ttf',
+                'useOTL' => 0xFF,
+                'useKashida' => 75,
+            ];
+        } elseif ($hasAmiri) {
+            $defaultFont = 'amiri';
+            $extraFontData['amiri'] = [
+                'R' => 'Amiri-Regular.ttf',
+                'B' => 'Amiri-Bold.ttf',
+                'useOTL' => 0xFF,
+                'useKashida' => 75,
+            ];
+        } elseif ($hasNoto) {
+            $defaultFont = 'notonaskharabic';
+            $extraFontData['notonaskharabic'] = [
+                'R' => 'NotoNaskhArabic-Regular.ttf',
+                'B' => 'NotoNaskhArabic-Bold.ttf',
+                'useOTL' => 0xFF,
+                'useKashida' => 75,
+            ];
+        }
+
+        $tempDir = storage_path('app/mpdf-temp');
+        if (!is_dir($tempDir)) {
+            @mkdir($tempDir, 0775, true);
+        }
+
+        return new Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A4',
+            'margin_left'   => 0,
+            'margin_right'  => 0,
+            'margin_top'    => 0,
+            'margin_bottom' => 0,
+            'tempDir' => $tempDir,
+            'fontDir'  => array_merge($fontDirs, [$customFontDir]),
+            'fontdata' => $fontData + $extraFontData,
+            'default_font' => $defaultFont,
+            'autoScriptToLang' => true,
+            'autoLangToFont'   => true,
+        ]);
+    }
+
+    /**
+     * Adjust arabic and persian content for DomPDF.
+     */
+    protected function adjustArabicAndPersianContent(string $html): string
+    {
+        $arabic = new \ArPHP\I18N\Arabic;
+        $p = $arabic->arIdentify($html);
+
+        for ($i = count($p) - 1; $i >= 0; $i -= 2) {
+            $utf8ar = $arabic->utf8Glyphs(substr($html, $p[$i - 1], $p[$i] - $p[$i - 1]));
+            $html = substr_replace($html, $utf8ar, $p[$i - 1], $p[$i] - $p[$i - 1]);
+        }
+
+        return $html;
     }
 }

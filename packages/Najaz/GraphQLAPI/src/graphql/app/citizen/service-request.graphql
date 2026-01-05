@@ -41,6 +41,13 @@ extend type Mutation @guard(with: ["citizen-api"]) {
     """
     cancelServiceRequest(id: ID!): StatusResponse
         @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\App\\Citizen\\ServiceRequestMutation@cancel")
+
+    """
+    Print service request document (PDF) for completed requests.
+    Available for requesters and beneficiaries.
+    """
+    printServiceRequestDocument(id: ID!): FileResponse
+        @field(resolver: "Najaz\\GraphQLAPI\\Mutations\\App\\Citizen\\ServiceRequestMutation@printDocument")
 }
 
 input CreateServiceRequestInput {
@@ -86,5 +93,12 @@ type ServiceRequest {
     service: Service @belongsTo
     citizen: Citizen @belongsTo
     beneficiaries: [Citizen!]! @belongsToMany
+}
+
+type FileResponse {
+    success: Boolean
+    filename: String
+    base64_content: String
+    mime_type: String
 }
 

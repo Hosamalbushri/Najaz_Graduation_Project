@@ -99,7 +99,7 @@
             :isSelected="false"
         >
                 @include('admin::service-requests.partials.attachments')
-        </x-admin::tabs.item>
+            </x-admin::tabs.item>
         @endif
 
         @if ($template && $template->is_active && $documentContent)
@@ -113,41 +113,6 @@
                     {!! $documentContent !!}
                 </div>
             </x-admin::tabs.item>
-
-            <!-- Word Document Processing Tab -->
-            @if ($request->service && $request->service->documentTemplate && $request->service->documentTemplate->is_active)
-                @php
-                    $documentService = new \Najaz\Service\Services\DocumentTemplateService();
-                    $hasFileFields = $documentService->hasFileOrImageFields($request);
-                @endphp
-                @if ($hasFileFields)
-                    <x-admin::tabs.item
-                        :title="trans('Admin::app.service-requests.word-document.document-processing')"
-                        class="!p-4"
-                        :isSelected="false"
-                    >
-                        @include('admin::service-requests.partials.word-document-processing')
-                    </x-admin::tabs.item>
-                @endif
-            @endif
-
-            <!-- Custom Template Tab -->
-            @php
-                $canShowCustomTemplate = false;
-                if ($template && isset($template->enable_custom_template)) {
-                    $enableCustomTemplate = (bool) $template->enable_custom_template;
-                    $canShowCustomTemplate = $enableCustomTemplate === true && bouncer()->hasPermission('service-requests.custom-template.edit');
-                }
-            @endphp
-            @if ($canShowCustomTemplate)
-            <x-admin::tabs.item
-                :title="trans('Admin::app.service-requests.custom-template.tab-title')"
-                class="!p-4"
-                :isSelected="false"
-            >
-                @include('admin::service-requests.custom-template-edit')
-            </x-admin::tabs.item>
-            @endif
         @endif
     </x-admin::tabs.custom-tabs>
 </div>

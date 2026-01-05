@@ -98,7 +98,7 @@
             <x-slot:content class="!p-0">
                 <div class="flex items-center gap-1.5 border border-b-border-muted px-4 py-2 dark:border-border-default sm:px-5 sm:py-2.5">
                     <img
-                        src="{{ url('cache/logo/bagisto.png') }}"
+                        src="{{ bagisto_asset('images/favicon.ico')}}"
                         class="sm:h-6 sm:w-6"
                         width="20"
                         height="20"
@@ -308,16 +308,36 @@
                         <div class="grid max-h-[300px] overflow-y-auto sm:max-h-[400px]">
                             <a
                                 :href="'{{ route('admin.service-requests.view', ':id') }}'.replace(':id', request.id)"
-                                class="grid cursor-pointer place-content-start gap-1 border-b border-border-muted p-3 last:border-b-0 hover:bg-bg-mutedLight dark:border-border-default dark:hover:bg-surface-inverse sm:gap-1.5 sm:p-4"
+                                class="flex cursor-pointer items-center gap-3 border-b border-border-muted p-3 last:border-b-0 hover:bg-bg-mutedLight dark:border-border-default dark:hover:bg-surface-inverse sm:gap-4 sm:p-4"
                                 v-for="request in searchedResults.service_requests.data"
                             >
-                                <p class="text-sm font-semibold text-text-secondary dark:text-text-secondary sm:text-base">
-                                    #@{{ request.increment_id }}
-                                </p>
+                                <!-- Service Image -->
+                                <div class="flex-shrink-0">
+                                    <template v-if="request.service_base_image">
+                                        <img
+                                            class="h-12 w-12 rounded object-cover"
+                                            :src="request.service_base_image"
+                                            alt="Service image"
+                                        />
+                                    </template>
 
-                                <p class="text-xs text-text-muted dark:text-text-secondary sm:text-sm">
-                                    @{{ request.formatted_created_at + ', ' + request.status + ', ' + request.citizen_full_name }}
-                                </p>
+                                    <template v-else>
+                                        <div class="flex h-12 w-12 items-center justify-center rounded border border-dashed border-border-default dark:border-border-default">
+                                            <img src="{{ bagisto_asset('images/product-placeholders/front.svg') }}" class="h-8 w-8 dark:mix-blend-exclusion dark:invert" alt="Placeholder">
+                                        </div>
+                                    </template>
+                                </div>
+
+                                <!-- Request Info -->
+                                <div class="grid flex-1 gap-1 min-w-0">
+                                    <p class="text-sm font-semibold text-text-secondary dark:text-text-secondary sm:text-base">
+                                        #@{{ request.increment_id }}
+                                    </p>
+
+                                    <p class="text-xs text-text-muted dark:text-text-secondary sm:text-sm">
+                                        @{{ request.formatted_created_at + ', ' + getStatusLabel(request.status) + ', ' + request.citizen_full_name }}
+                                    </p>
+                                </div>
                             </a>
                         </div>
 
@@ -519,6 +539,20 @@
                         this.isDropdownOpen = false;
                     }
                 },
+
+                getStatusLabel(status) {
+                    const statusLabels = {
+                        'pending': "@lang('Admin::app.components.layouts.header.mega-search.status.pending')",
+                        'in_progress': "@lang('Admin::app.components.layouts.header.mega-search.status.in-progress')",
+                        'in-progress': "@lang('Admin::app.components.layouts.header.mega-search.status.in-progress')",
+                        'completed': "@lang('Admin::app.components.layouts.header.mega-search.status.completed')",
+                        'rejected': "@lang('Admin::app.components.layouts.header.mega-search.status.rejected')",
+                        'cancelled': "@lang('Admin::app.components.layouts.header.mega-search.status.cancelled')",
+                        'canceled': "@lang('Admin::app.components.layouts.header.mega-search.status.cancelled')",
+                        'needs_revision': "@lang('Admin::app.service-requests.view.needs-revision')",
+                    };
+                    return statusLabels[status] || status;
+                },
             }
         });
     </script>
@@ -532,7 +566,7 @@
             <x-slot:toggle>
                 <span class="relative flex">
                     <span
-                        class="icon-notification text-status-danger cursor-pointer rounded-md p-1.5 text-2xl transition-all hover:bg-bg-mutedLight dark:hover:bg-surface-inverse"
+                        class="icon-notification text-secondary cursor-pointer rounded-md p-1.5 text-2xl transition-all hover:bg-bg-mutedLight dark:hover:bg-surface-inverse"
                         title="@lang('admin::app.components.layouts.header.notifications')"
                     >
                     </span>

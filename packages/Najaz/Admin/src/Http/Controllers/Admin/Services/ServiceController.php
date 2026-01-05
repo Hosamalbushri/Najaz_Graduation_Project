@@ -251,12 +251,15 @@ class ServiceController extends Controller
             })->orderBy('created_at', 'desc');
         })->with(['translations' => function ($q) use ($locale) {
             $q->where('locale', $locale);
-        }])->paginate(10);
+        }, 'images'])->paginate(10);
 
         foreach ($services as $key => $service) {
             $translation = $service->translate($locale);
             $services[$key]['name'] = $translation?->name ?? '';
-            $services[$key]['image_url'] = $service->image ? \Storage::url($service->image) : null;
+            
+            // Get base_image from first service image
+            $baseImage = $service->images->first()?->path;
+            $services[$key]['image_url'] = $baseImage ? \Storage::url($baseImage) : null;
         }
 
         return response()->json($services);

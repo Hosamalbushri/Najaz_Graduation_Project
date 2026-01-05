@@ -56,6 +56,9 @@ return [
             'file_validation_failed' => 'فشل التحقق من الملف في الحقل ":field": :errors',
             'available_file_fields'  => 'الحقول المتاحة من نوع ملف/صورة هي: :fields',
             'no_file_fields_available' => 'لا توجد حقول من نوع ملف/صورة في هذه الخدمة.',
+            'document_not_available' => 'الوثيقة غير متاحة. يمكن طباعة الوثيقة فقط للطلبات المكتملة.',
+            'template_not_found'     => 'قالب الوثيقة غير موجود أو غير نشط.',
+            'print_error'            => 'حدث خطأ أثناء طباعة الوثيقة: :error',
         ],
 
         'notifications' => [

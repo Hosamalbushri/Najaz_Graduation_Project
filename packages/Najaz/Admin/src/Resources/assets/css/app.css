@@ -519,12 +519,14 @@
     .label-completed,
     .label-in_progress,
     .label-rejected,
+    .label-needs_revision,
     .label-active {
         @apply text-[12px] text-white font-semibold py-px px-1.5 max-w-max rounded-[35px];
     }
 
     .label-pending,
-    .label-pending_payment {
+    .label-pending_payment ,
+    .label-needs_revision {
         background-color: var(--status-warning);
     }
 

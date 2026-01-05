@@ -8,6 +8,7 @@ use Najaz\Admin\Http\Controllers\Controller;
 use Najaz\Admin\Traits\PDFHandler;
 use Najaz\Citizen\Repositories\CitizenRepository;
 use Najaz\Request\Models\ServiceRequestProxy;
+use Najaz\Request\Models\ServiceRequestStatusReason;
 use Najaz\Request\Repositories\ServiceRequestAdminNoteRepository;
 use Najaz\Request\Repositories\ServiceRequestCustomTemplateRepository;
 use Najaz\Request\Repositories\ServiceRequestRepository;
@@ -44,7 +45,7 @@ class ServiceRequestController extends Controller
     /**
      * Show the view for the specified resource.
      */
-    public function view(int $id): View|JsonResponse
+    public function view(int $id)
     {
         $request = $this->serviceRequestRepository->with([
             'service.documentTemplate',
@@ -54,6 +55,7 @@ class ServiceRequestController extends Controller
             'formData',
             'adminNotes.admin',
             'customTemplate',
+            'statusReasons',
         ])->findOrFail($id);
 
         // Generate document content if template exists and is active
@@ -63,14 +65,9 @@ class ServiceRequestController extends Controller
         if ($template && $template->is_active) {
             try {
                 $documentService = new DocumentTemplateService;
-                $fieldValues = $documentService->getFieldValues($request);
                 
-                // Get template content for request locale
-                $requestLocale = $request->locale ?? app()->getLocale();
-                $templateTranslation = $template->translate($requestLocale);
-                $templateContent = $templateTranslation?->template_content ?? $template->template_content;
-                
-                $documentContent = $documentService->replacePlaceholders($templateContent, $fieldValues);
+                // Use generateDocumentContent to get content (which handles custom template replacement)
+                $documentContent = $documentService->generateDocumentContent($request);
             } catch (\Exception $e) {
                 \Log::error('Error generating document content in view: '.$e->getMessage());
             }
@@ -320,19 +317,30 @@ class ServiceRequestController extends Controller
     public function updateStatus(int $id)
     {
         $validatedData = $this->validate(request(), [
-            'status'           => 'required|string|in:pending,in_progress,completed,rejected,canceled',
+            'status'           => 'required|string|in:pending,in_progress,completed,rejected,canceled,needs_revision',
             'rejection_reason' => 'required_if:status,rejected|nullable|string',
+            'revision_reason'  => 'required_if:status,needs_revision|nullable|string',
         ]);
 
         try {
             $updateData = ['status' => $validatedData['status']];
 
-            // Add rejection reason if status is rejected
-            if ($validatedData['status'] === 'rejected') {
-                $updateData['rejection_reason'] = $validatedData['rejection_reason'] ?? null;
-            } else {
-                // Clear rejection reason if status is not rejected
-                $updateData['rejection_reason'] = null;
+            // Save rejection reason to the new table (preserve history)
+            if ($validatedData['status'] === 'rejected' && !empty($validatedData['rejection_reason'])) {
+                ServiceRequestStatusReason::create([
+                    'service_request_id' => $id,
+                    'reason_type' => 'rejection',
+                    'reason' => $validatedData['rejection_reason'],
+                ]);
+            }
+
+            // Save revision reason to the new table (preserve history)
+            if ($validatedData['status'] === 'needs_revision' && !empty($validatedData['revision_reason'])) {
+                ServiceRequestStatusReason::create([
+                    'service_request_id' => $id,
+                    'reason_type' => 'revision',
+                    'reason' => $validatedData['revision_reason'],
+                ]);
             }
 
             // Set completed_at if status is completed
@@ -419,7 +427,7 @@ class ServiceRequestController extends Controller
      */
     public function search(): JsonResponse
     {
-        $requests = $this->serviceRequestRepository->scopeQuery(function ($query) {
+        $requests = $this->serviceRequestRepository->with('service')->scopeQuery(function ($query) {
             return $query->where('increment_id', 'like', '%'.urldecode(request()->input('query')).'%')
                 ->orWhere('status', 'like', '%'.urldecode(request()->input('query')).'%')
                 ->orWhere('citizen_first_name', 'like', '%'.urldecode(request()->input('query')).'%')
@@ -432,6 +440,11 @@ class ServiceRequestController extends Controller
         foreach ($requests as $key => $request) {
             $requests[$key]['formatted_created_at'] = core()->formatDate($request->created_at, 'd M Y');
             $requests[$key]['citizen_full_name'] = trim($request->citizen_first_name.' '.$request->citizen_middle_name.' '.$request->citizen_last_name);
+            
+            // Add service base_image if service exists
+            if ($request->service && $request->service->base_image) {
+                $requests[$key]['service_base_image'] = $request->service->base_image;
+            }
         }
 
         return response()->json($requests);
@@ -447,13 +460,6 @@ class ServiceRequestController extends Controller
         try {
             $serviceRequest = ServiceRequestProxy::modelClass()::with(['service.documentTemplate'])
                 ->findOrFail($id);
-
-            // Check if there's a final PDF uploaded by admin
-            if ($serviceRequest->final_pdf_path && \Storage::exists($serviceRequest->final_pdf_path)) {
-                $fileName = 'document-'.$serviceRequest->increment_id.'-'.now()->format('d-m-Y').'.pdf';
-                
-                return \Storage::download($serviceRequest->final_pdf_path, $fileName);
-            }
 
             $template = $serviceRequest->service->documentTemplate;
 
@@ -481,11 +487,11 @@ class ServiceRequestController extends Controller
     }
 
     /**
-     * Download editable Word document for the specified resource.
+     * Preview and download the document without stamp for the specified resource.
      *
-     * @return \Symfony\Component\HttpFoundation\StreamedResponse|\Illuminate\Http\RedirectResponse
+     * @return \Illuminate\Http\Response
      */
-    public function downloadEditableWord(int $id)
+    public function previewDocument(int $id)
     {
         try {
             $serviceRequest = ServiceRequestProxy::modelClass()::with(['service.documentTemplate'])
@@ -494,95 +500,23 @@ class ServiceRequestController extends Controller
             $template = $serviceRequest->service->documentTemplate;
 
             if (! $template || ! $template->is_active) {
-                session()->flash('error', trans('Admin::app.service-requests.word-document.template-not-found'));
+                session()->flash('error', trans('Admin::app.service-requests.view.template-not-found'));
 
                 return redirect()->back();
             }
 
-            // Generate and download Word document directly (same as PDF)
+            // Generate document content using DocumentTemplateService
             $documentService = new DocumentTemplateService;
             
-            return $documentService->generateAndDownloadWord($serviceRequest);
+            // Generate document content only (without HTML wrapper)
+            $content = $documentService->generateDocumentContent($serviceRequest);
+
+            return $this->downloadPDF(
+                view('admin::service-requests.pdf-preview', compact('serviceRequest', 'content'))->render(),
+                'document-preview-'.$serviceRequest->increment_id.'-'.$serviceRequest->created_at->format('d-m-Y')
+            );
         } catch (\Exception $e) {
-            \Log::error('Failed to download Word document', [
-                'service_request_id' => $id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            session()->flash('error', trans('Admin::app.service-requests.word-document.download-failed'));
-
-            return redirect()->back();
-        }
-    }
-
-    /**
-     * Upload filled PDF document for the specified resource.
-     *
-     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
-     */
-    public function uploadFilledPDF(int $id)
-    {
-        try {
-            $this->validate(request(), [
-                'filled_pdf' => 'required|file|mimes:pdf|max:10240', // 10MB max
-            ]);
-
-            $serviceRequest = $this->serviceRequestRepository->findOrFail($id);
-
-            // Delete old PDF if exists
-            if ($serviceRequest->final_pdf_path && \Storage::exists($serviceRequest->final_pdf_path)) {
-                \Storage::delete($serviceRequest->final_pdf_path);
-            }
-
-            // Store the new PDF
-            $file = request()->file('filled_pdf');
-            $directory = 'service_requests/'.$serviceRequest->id;
-            $filename = 'final-'.$serviceRequest->increment_id.'.pdf';
-            $path = $file->storeAs($directory, $filename);
-
-            // Update service request
-            $serviceRequest->final_pdf_path = $path;
-            $serviceRequest->filled_by_admin_id = auth()->guard('admin')->id();
-            $serviceRequest->filled_at = now();
-            $serviceRequest->save();
-
-            if (request()->expectsJson()) {
-                return new JsonResponse([
-                    'message' => trans('Admin::app.service-requests.word-document.upload-success'),
-                    'data' => [
-                        'path' => $path,
-                        'filled_at' => $serviceRequest->filled_at->format('Y-m-d H:i:s'),
-                        'filled_by' => auth()->guard('admin')->user()->name ?? '',
-                    ],
-                ]);
-            }
-
-            session()->flash('success', trans('Admin::app.service-requests.word-document.upload-success'));
-
-            return redirect()->back();
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            if (request()->expectsJson()) {
-                return new JsonResponse([
-                    'message' => $e->getMessage(),
-                    'errors' => $e->errors(),
-                ], 422);
-            }
-
-            return redirect()->back()->withErrors($e->errors())->withInput();
-        } catch (\Exception $e) {
-            \Log::error('Failed to upload PDF document', [
-                'service_request_id' => $id,
-                'error' => $e->getMessage(),
-            ]);
-
-            if (request()->expectsJson()) {
-                return new JsonResponse([
-                    'message' => trans('Admin::app.service-requests.word-document.upload-failed'),
-                ], 500);
-            }
-
-            session()->flash('error', trans('Admin::app.service-requests.word-document.upload-failed'));
+            session()->flash('error', $e->getMessage());
 
             return redirect()->back();
         }
@@ -609,27 +543,12 @@ class ServiceRequestController extends Controller
                 ], 404);
             }
 
+            // Generate document content using DocumentTemplateService (which handles custom template replacement)
+            $documentService = new DocumentTemplateService;
+            $documentContent = $documentService->generateDocumentContent($serviceRequest);
+            
             // Get locale from request or use request's locale
             $locale = request()->input('locale', $serviceRequest->locale ?? app()->getLocale());
-
-            // Generate document content
-            $documentService = new DocumentTemplateService;
-            $fieldValues = $documentService->getFieldValues($serviceRequest);
-            
-            // Get template content for the specified locale
-            $templateTranslation = $template->translate($locale);
-            $templateContent = $templateTranslation?->template_content ?? $template->template_content;
-            
-            $documentContent = $documentService->replacePlaceholders($templateContent, $fieldValues);
-
-            // Merge custom template content if available
-            if ($serviceRequest->customTemplate) {
-                $customTemplateTranslation = $serviceRequest->customTemplate->translate($locale);
-                $customContent = $customTemplateTranslation?->template_content ?? $serviceRequest->customTemplate->template_content;
-                if ($customContent) {
-                    $documentContent = $customContent;
-                }
-            }
 
             return new JsonResponse([
                 'success' => true,

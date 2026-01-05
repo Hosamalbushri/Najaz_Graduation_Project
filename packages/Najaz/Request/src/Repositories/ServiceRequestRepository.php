@@ -1135,4 +1135,27 @@ class ServiceRequestRepository extends Repository
             return $optionMap[$valStr] ?? $value;
         }
     }
+
+    /**
+     * Check if a citizen can access a service request (as requester or beneficiary).
+     *
+     * @param  \Najaz\Request\Models\ServiceRequest  $serviceRequest
+     * @param  \Najaz\Citizen\Models\Citizen  $citizen
+     * @return bool
+     */
+    public function canCitizenAccess($serviceRequest, $citizen): bool
+    {
+        // Check if citizen is the requester
+        if ($serviceRequest->citizen_id === $citizen->id) {
+            return true;
+        }
+
+        // Load beneficiaries if not loaded
+        if (! $serviceRequest->relationLoaded('beneficiaries')) {
+            $serviceRequest->load('beneficiaries');
+        }
+
+        // Check if citizen is a beneficiary
+        return $serviceRequest->beneficiaries->contains('id', $citizen->id);
+    }
 }

@@ -11,7 +11,6 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Najaz\Citizen\Models\CitizenProxy;
 use Najaz\Request\Contracts\ServiceRequest as ServiceRequestContract;
 use Najaz\Service\Models\ServiceProxy;
-use Webkul\User\Models\Admin;
 
 class ServiceRequest extends Model implements ServiceRequestContract
 {
@@ -34,7 +33,6 @@ class ServiceRequest extends Model implements ServiceRequestContract
         'service_id',
         'citizen_id',
         'status',
-        'rejection_reason',
         'citizen_first_name',
         'citizen_middle_name',
         'citizen_last_name',
@@ -42,10 +40,6 @@ class ServiceRequest extends Model implements ServiceRequestContract
         'citizen_type_name',
         'locale',
         'completed_at',
-        'editable_word_path',
-        'final_pdf_path',
-        'filled_by_admin_id',
-        'filled_at',
     ];
 
     /**
@@ -55,7 +49,6 @@ class ServiceRequest extends Model implements ServiceRequestContract
      */
     protected $casts = [
         'completed_at' => 'datetime',
-        'filled_at' => 'datetime',
     ];
 
     /**
@@ -105,14 +98,6 @@ class ServiceRequest extends Model implements ServiceRequestContract
     }
 
     /**
-     * Get the admin who filled the document.
-     */
-    public function filledByAdmin(): BelongsTo
-    {
-        return $this->belongsTo(Admin::class, 'filled_by_admin_id');
-    }
-
-    /**
      * Get all custom templates for this service request.
      */
     public function customTemplates(): HasMany
@@ -127,6 +112,34 @@ class ServiceRequest extends Model implements ServiceRequestContract
     {
         return $this->hasOne(ServiceRequestCustomTemplateProxy::modelClass(), 'service_request_id')
             ->where('locale', app()->getLocale());
+    }
+
+    /**
+     * Get the status reasons for this service request.
+     */
+    public function statusReasons(): HasMany
+    {
+        return $this->hasMany(ServiceRequestStatusReason::class, 'service_request_id');
+    }
+
+    /**
+     * Get the latest rejection reason.
+     */
+    public function latestRejectionReason()
+    {
+        return $this->hasOne(ServiceRequestStatusReason::class, 'service_request_id')
+            ->where('reason_type', 'rejection')
+            ->latestOfMany();
+    }
+
+    /**
+     * Get the latest revision reason.
+     */
+    public function latestRevisionReason()
+    {
+        return $this->hasOne(ServiceRequestStatusReason::class, 'service_request_id')
+            ->where('reason_type', 'revision')
+            ->latestOfMany();
     }
 }
 

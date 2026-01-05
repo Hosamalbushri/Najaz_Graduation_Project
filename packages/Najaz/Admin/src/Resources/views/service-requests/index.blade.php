@@ -69,23 +69,23 @@
             </template>
 
             <template v-else>
-                <div class="row grid service-requests-dg-grid gap-6 items-center border-b border-gray-200 bg-gray-50 px-6 py-4 dark:border-gray-700 dark:bg-gray-800">
+                <div class="row grid service-requests-dg-grid gap-2 items-center border-b border-gray-200 bg-gray-50 px-4 py-2.5 dark:border-gray-700 dark:bg-gray-800">
                     <div
-                            class="flex min-w-0 select-none items-center gap-3"
+                            class="flex min-w-0 select-none items-center gap-2.5"
                             v-for="(columnGroup, index) in [
                             ['service_name', 'increment_id', 'status', 'created_at'],
                             ['citizen_full_name', 'citizen_national_id', 'citizen_type_name'],
                             [],
                         ]"
                     >
-                        <p class="min-w-0 text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <p class="min-w-0 text-gray-600 dark:text-gray-300">
                             <span class="[&>*]:after:content-['_/_']">
                                 <template v-for="column in columnGroup">
                                     <span
                                             class="after:content-['/'] last:after:content-['']"
                                             :class="{
-                                            'font-semibold text-gray-900 dark:text-white': applied.sort.column == column,
-                                            'cursor-pointer hover:text-gray-900 dark:hover:text-white': available.columns.find(c => c.index === column)?.sortable,
+                                            'font-medium text-gray-800 dark:text-white': applied.sort.column == column,
+                                            'cursor-pointer hover:text-gray-800 dark:hover:text-white': available.columns.find(c => c.index === column)?.sortable,
                                         }"
                                             @click="
                                             available.columns.find(c => c.index === column)?.sortable
@@ -99,7 +99,7 @@
                             </span>
 
                             <i
-                                    class="align-text-bottom text-sm text-gray-900 dark:text-white ltr:ml-2 rtl:mr-2"
+                                    class="align-text-bottom text-base text-gray-800 dark:text-white ltr:ml-1.5 rtl:mr-1.5"
                                     :class="[applied.sort.order === 'asc' ? 'icon-down-stat': 'icon-up-stat']"
                                     v-if="columnGroup.includes(applied.sort.column)"
                             ></i>
@@ -124,25 +124,25 @@
 
             <template v-else>
                 <div
-                        class="service-request-row row grid service-requests-dg-grid gap-6 border-b border-gray-100 px-6 py-4 dark:border-gray-800"
+                        class="service-request-row row grid service-requests-dg-grid border-b border-gray-100 px-2 py-2.5 dark:border-gray-800 md:gap-1.5 sm:px-4"
                         v-for="record in available.records"
                 >
                     {{-- Column 1: Service Name / Order ID / Status / Date --}}
-                    <div class="flex min-w-0 gap-4">
-                        <div class="flex min-w-0 flex-col gap-2.5 flex-1">
+                    <div class="flex min-w-0 gap-2.5">
+                        <div class="flex min-w-0 flex-col gap-1.5 flex-1">
                             <div class="flex flex-col gap-1.5">
-                                <h3 class="break-words text-lg font-semibold leading-6 text-gray-900 dark:text-white">
+                                <h3 class="break-words text-base font-semibold text-gray-900 dark:text-white">
                                     @{{ record.service_name ?? 'N/A' }}
                                 </h3>
-                                <p class="text-base font-semibold text-gray-900 dark:text-white">
+                                <p class="text-gray-800 dark:text-gray-200">
                                     #@{{ record.increment_id }}
                                 </p>
                             </div>
 
-                            <div class="flex flex-col gap-2">
+                            <div class="flex flex-col gap-1.5">
                                 <div class="flex items-center" v-html="record.status"></div>
 
-                                <p class="text-sm text-gray-600 dark:text-gray-300">
+                                <p class="text-gray-600 dark:text-gray-300">
                                     @{{ record.created_at || '—' }}
                                 </p>
                             </div>
@@ -150,16 +150,16 @@
                     </div>
 
                     {{-- Column 2: Citizen Name / National ID / Citizen Type --}}
-                    <div class="flex min-w-0 gap-4">
-                        <div class="flex min-w-0 flex-col gap-2.5 flex-1">
-                            <div class="flex flex-col gap-2">
+                    <div class="flex min-w-0 gap-2.5">
+                        <div class="flex min-w-0 flex-col gap-1.5 flex-1">
+                            <div class="flex flex-col gap-1.5">
                                 <div class="flex items-center gap-2">
-                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
                                         @{{ record.citizen_full_name || '—' }}
                                     </span>
                                 </div>
 
-                                <p class="text-sm leading-5 text-gray-700 dark:text-gray-300">
+                                <p class="text-gray-600 dark:text-gray-300">
                                     @{{ record.citizen_national_id || '—' }}
                                 </p>
 

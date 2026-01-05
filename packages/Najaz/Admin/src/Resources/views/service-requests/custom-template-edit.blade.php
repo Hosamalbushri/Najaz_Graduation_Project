@@ -75,8 +75,19 @@
                     const self = this;
                     self.isSaving = true;
                     
+                    // Get content directly from TinyMCE editor if available
+                    let contentToSave = self.templateContent;
+                    try {
+                        const editor = tinymce.get('template_content');
+                        if (editor && editor.initialized) {
+                            contentToSave = editor.getContent();
+                        }
+                    } catch (e) {
+                        console.warn('Could not get content from TinyMCE editor:', e);
+                    }
+                    
                     let formData = new FormData();
-                    formData.append('template_content', self.templateContent);
+                    formData.append('template_content', contentToSave);
                     formData.append('locale', self.serviceRequest.locale || 'ar');
                     formData.append('_token', document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '');
 
