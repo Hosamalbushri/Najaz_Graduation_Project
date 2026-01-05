@@ -5,6 +5,7 @@ namespace Najaz\Citizen\Helpers\Importers\Citizen;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Validator;
+use Najaz\Admin\Rules\PhoneNumber;
 use Najaz\Citizen\Helpers\Importers\Citizen\Storage as CitizenStorage;
 use Najaz\Citizen\Repositories\CitizenRepository;
 use Najaz\Citizen\Repositories\CitizenTypeRepository;
@@ -175,17 +176,16 @@ class Importer extends AbstractImporter
         $validator = Validator::make($rowData, [
             'national_id'                => 'required|string',
             'first_name'                 => 'required|string',
-            'middle_name'                => 'nullable|string',
+            'middle_name'                => 'required|string',
             'last_name'                  => 'required|string',
-            'gender'                     => 'nullable|in:Male,Female,Other',
+            'gender'                     => 'required|in:Male,Female',
             'date_of_birth'              => [
-                'nullable',
+                'required',
                 'date_format:Y-m-d',
                 'before:today',
-                'regex:/^\d{4}-\d{2}-\d{2}$/',
             ],
             'email'                      => 'nullable|email',
-            'phone'                      => 'nullable|regex:/^(73|77|78|71)\d{7}$/',
+            'phone'                      => ['required', new PhoneNumber],
             'status'                     => 'nullable|boolean',
         ]);
 
@@ -409,12 +409,20 @@ class Importer extends AbstractImporter
     public function saveCitizens(array $citizens): void
     {
         if (! empty($citizens['update'])) {
-            $this->updatedItemsCount += count($citizens['update']);
-
+            $updatedCount = 0;
+            
             foreach ($citizens['update'] as $nationalId => $data) {
                 $citizenId = $this->citizenStorage->get($nationalId);
+                
+                if ($citizenId === null) {
+                    continue;
+                }
+                
                 $this->citizenRepository->update($data, $citizenId);
+                $updatedCount++;
             }
+            
+            $this->updatedItemsCount += $updatedCount;
         }
 
         if (! empty($citizens['insert'])) {
