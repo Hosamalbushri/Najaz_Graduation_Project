@@ -96,7 +96,7 @@
                     <div
                             class="flex min-w-0 select-none items-center gap-2.5"
                             v-for="(columnGroup, index) in [
-                            ['name', 'service_number', 'category_name', 'description'],
+                            ['name', 'service_number', 'category_name'],
                             ['base_image', 'service_id', 'sort_order', 'status'],
                         ]"
                     >
@@ -210,30 +210,23 @@
                                     @{{ record.category_name ?? 'N/A' }}
                                 </span>
                             </div>
-
-                            <p class="text-gray-600 dark:text-gray-400 break-words line-clamp-2">
-                                @{{ record.description || '—' }}
-                            </p>
                         </div>
                     </div>
 
                     {{-- Column 2: Image / ID / Sort Order / Status / Actions --}}
                     <div class="flex items-start justify-between gap-4">
                         <div class="flex gap-1.5 flex-1 min-w-0">
-                            <div class="relative flex-shrink-0">
+                            <div class="relative flex-shrink-0 w-[80px] h-[80px]">
                                 <template v-if="record.base_image">
                                     <img
-                                        class="max-h-[65px] min-h-[65px] min-w-[65px] max-w-[65px] rounded object-cover"
+                                        class="w-full h-full rounded object-cover"
                                         :src='record.base_image'
                                         alt="Service image"
                                     />
-                                    <span class="absolute bottom-px rounded-full bg-darkPink px-1.5 text-xs font-bold leading-normal text-white ltr:left-px rtl:right-px">
-                                        @{{ record.images_count }}
-                                    </span>
                                 </template>
 
                                 <template v-else>
-                                    <div class="relative h-[60px] max-h-[60px] w-full max-w-[60px] rounded border border-dashed border-gray-300 dark:border-gray-800 dark:mix-blend-exclusion dark:invert">
+                                    <div class="relative w-full h-full rounded border border-dashed border-gray-300 dark:border-gray-800 dark:mix-blend-exclusion dark:invert overflow-hidden">
                                         <img src="{{ bagisto_asset('images/product-placeholders/front.svg')}}" class="h-full w-full object-cover">
                                     </div>
                                 </template>
