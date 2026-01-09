@@ -1,7 +1,32 @@
 # Citizen service queries restricted to authenticated citizens
 extend type Query @guard(with: ["citizen-api"]) {
-    citizenServices: [Service!] @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ServiceQuery@list")
+    """
+    Get services page data - includes categories and services with search and filtering.
+    """
+    servicesPage(
+        search: String
+        categoryId: Int @rename(attribute: "category_id")
+        page: Int @rules(apply: ["min:1"])
+        limit: Int @rules(apply: ["min:1", "max:50"])
+    ): ServicesPage
+        @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ServiceQuery@servicesPage")
+
+    citizenServices(
+        page: Int @rules(apply: ["min:1"])
+        limit: Int @rules(apply: ["min:1", "max:50"])
+        categoryId: Int @rename(attribute: "category_id")
+        search: String
+    ): ServicePaginator @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ServiceQuery@listPaginated")
 
     citizenService(id: ID!): Service @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ServiceQuery@find")
 }
 
+type ServicesPage {
+    categories: [ServiceCategory!]!
+    services: ServicePaginator!
+}
+
+type ServicePaginator {
+    data: [Service!]! @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ServiceQuery@servicesData")
+    paginatorInfo: PaginatorInfo! @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ServiceQuery@servicesPaginatorInfo")
+}

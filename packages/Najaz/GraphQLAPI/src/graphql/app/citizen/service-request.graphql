@@ -6,8 +6,10 @@ extend type Query @guard(with: ["citizen-api"]) {
     myServiceRequests(
         serviceId: Int
         status: ServiceRequestStatus
-    ): [ServiceRequest!]!
-        @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ServiceRequestQuery@list")
+        page: Int @rules(apply: ["min:1"])
+        limit: Int @rules(apply: ["min:1", "max:50"])
+    ): ServiceRequestPaginator
+        @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ServiceRequestQuery@listPaginated")
 
     """
     Get a specific service request for the authenticated citizen.
@@ -82,6 +84,7 @@ type ServiceRequestResponse {
 
 type ServiceRequest {
     id: ID!
+    incrementId: String @rename(attribute: "increment_id")
     serviceId: Int! @rename(attribute: "service_id")
     citizenId: Int! @rename(attribute: "citizen_id")
     status: String!
@@ -95,10 +98,14 @@ type ServiceRequest {
     beneficiaries: [Citizen!]! @belongsToMany
 }
 
+type ServiceRequestPaginator {
+    data: [ServiceRequest!]! @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ServiceRequestQuery@serviceRequestsData")
+    paginatorInfo: PaginatorInfo! @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ServiceRequestQuery@serviceRequestsPaginatorInfo")
+}
+
 type FileResponse {
     success: Boolean
     filename: String
     base64_content: String
     mime_type: String
 }
-

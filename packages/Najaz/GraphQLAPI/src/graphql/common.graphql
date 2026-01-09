@@ -26,6 +26,15 @@ type Service {
     sortOrder: Int @rename(attribute: "sort_order")
 }
 
+type ServiceImage {
+    id: ID!
+    type: String
+    path: String!
+    url: String!
+    position: Int!
+    serviceId: Int! @rename(attribute: "service_id")
+}
+
 type ServiceAttributeGroup {
     id: ID!
     code: String!
@@ -122,6 +131,21 @@ extend type Service {
     fields, types and options.
     """
     form: ServiceForm @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ServiceFormQuery@form")
+    
+    """
+    All images for this service.
+    """
+    images: [ServiceImage!]! @hasMany
+    
+    """
+    Base image (first image) for this service.
+    """
+    baseImage: String @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ServiceResolver@baseImage")
+    
+    """
+    Category that this service belongs to.
+    """
+    category: ServiceCategory @belongsTo
 }
 
 # Base Citizen type definition

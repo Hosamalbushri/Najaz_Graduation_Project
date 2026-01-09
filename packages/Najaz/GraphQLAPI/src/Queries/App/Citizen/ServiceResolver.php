@@ -83,5 +83,31 @@ class ServiceResolver
         
         return $anyTranslation?->description;
     }
+
+    /**
+     * Resolve service base image (first image).
+     *
+     * @param  \Najaz\Service\Models\Service  $service
+     * @return string|null
+     */
+    public function baseImage(?Service $service): ?string
+    {
+        if (! $service) {
+            return null;
+        }
+
+        // Ensure images are loaded
+        if (! $service->relationLoaded('images')) {
+            $service->load('images');
+        }
+
+        $firstImage = $service->images->first();
+        
+        if ($firstImage && $firstImage->path) {
+            return \Illuminate\Support\Facades\Storage::url($firstImage->path);
+        }
+
+        return null;
+    }
 }
 

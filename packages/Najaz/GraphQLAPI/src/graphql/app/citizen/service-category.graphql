@@ -1,0 +1,37 @@
+# Citizen Service Category APIs
+extend type Query @guard(with: ["citizen-api"]) {
+    """
+    Get all service categories available for the authenticated citizen.
+    """
+    serviceCategories(
+        page: Int @rules(apply: ["min:1"])
+        limit: Int @rules(apply: ["min:1", "max:50"])
+        parentId: Int @rename(attribute: "parent_id")
+    ): ServiceCategoryPaginator
+        @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ServiceCategoryQuery@list")
+
+    """
+    Get a specific service category.
+    """
+    serviceCategory(id: ID!): ServiceCategory
+        @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ServiceCategoryQuery@find")
+}
+
+type ServiceCategory {
+    id: ID!
+    name: String! @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ServiceCategoryQuery@name")
+    description: String @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ServiceCategoryQuery@description")
+    slug: String @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ServiceCategoryQuery@slug")
+    status: Boolean!
+    position: Int!
+    parentId: Int @rename(attribute: "parent_id")
+    logoUrl: String @rename(attribute: "logo_url")
+    bannerUrl: String @rename(attribute: "banner_url")
+    url: String!
+    services: [Service!]! @hasMany
+}
+
+type ServiceCategoryPaginator {
+    data: [ServiceCategory!]! @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ServiceCategoryQuery@categoriesData")
+    paginatorInfo: PaginatorInfo! @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ServiceCategoryQuery@categoriesPaginatorInfo")
+}

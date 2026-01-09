@@ -1,0 +1,24 @@
+# Citizen Locale APIs
+extend type Query @guard(with: ["citizen-api"]) {
+    """
+    Get all available locales/languages.
+    """
+    locales: [Locale!]!
+        @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\LocaleQuery@list")
+
+    """
+    Get current locale.
+    """
+    currentLocale: Locale
+        @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\LocaleQuery@current")
+}
+
+type Locale {
+    id: ID!
+    code: String!
+    name: String!
+    direction: String
+    logoUrl: String @rename(attribute: "logo_url")
+    createdAt: DateTime @rename(attribute: "created_at")
+    updatedAt: DateTime @rename(attribute: "updated_at")
+}

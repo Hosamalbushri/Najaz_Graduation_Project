@@ -1,0 +1,31 @@
+# Citizen Home Page APIs
+extend type Query @guard(with: ["citizen-api"]) {
+    """
+    Get homePage data for the authenticated citizen.
+    Includes user info, unread notifications count, service requests, and services.
+    """
+    homePage(
+        requestsPage: Int @rules(apply: ["min:1"])
+        requestsLimit: Int @rules(apply: ["min:1", "max:50"])
+        servicesPage: Int @rules(apply: ["min:1"])
+        servicesLimit: Int @rules(apply: ["min:1", "max:50"])
+    ): Dashboard
+        @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\DashboardQuery@dashboard")
+}
+
+type Dashboard {
+    citizen: Citizen!
+    unreadNotificationsCount: Int!
+    serviceRequests: ServiceRequestPaginator!
+    services: ServicePaginator!
+}
+
+type ServiceRequestPaginator {
+    data: [ServiceRequest!]! @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\DashboardQuery@serviceRequestsData")
+    paginatorInfo: PaginatorInfo! @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\DashboardQuery@serviceRequestsPaginatorInfo")
+}
+
+type ServicePaginator {
+    data: [Service!]! @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\DashboardQuery@servicesData")
+    paginatorInfo: PaginatorInfo! @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\DashboardQuery@servicesPaginatorInfo")
+}
