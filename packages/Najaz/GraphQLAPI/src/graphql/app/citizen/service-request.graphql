@@ -74,6 +74,7 @@ enum ServiceRequestStatus {
     COMPLETED
     REJECTED
     CANCELLED
+    NEEDS_REVISION
 }
 
 type ServiceRequestResponse {
