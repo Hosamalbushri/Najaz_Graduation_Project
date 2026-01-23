@@ -1223,6 +1223,11 @@ return [
             'year'          => 'Year',
             'not-available' => 'No data available',
         ],
+
+        'empty' => [
+            'title' => 'No Data Available',
+            'info'  => 'No data available for selected interval',
+        ],
     ],
 
     'dashboard' => [

@@ -1,10 +1,18 @@
-<div class="flex flex-col items-center justify-center gap-4 py-8">
-    <div class="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
-        <span class="icon-empty-folder text-3xl text-gray-400"></span>
-    </div>
+<div class="grid justify-center justify-items-center gap-3.5 px-2.5 py-10">
+    <img
+        class="h-[120px] w-[120px] p-2 dark:mix-blend-exclusion dark:invert"
+        src="{{ bagisto_asset('images/empty-placeholders/report-empty.svg') }}"
+        alt="@lang('Admin::app.reporting.empty.title')"
+    >
 
-    <p class="text-sm font-medium text-gray-600 dark:text-gray-300">
-        @lang('Admin::app.reporting.view.not-available')
-    </p>
+    <div class="flex flex-col items-center gap-1.5">
+        <p class="text-base font-semibold text-gray-400">
+            @lang('Admin::app.reporting.empty.title')
+        </p>
+        
+        <p class="text-gray-400">
+            @lang('Admin::app.reporting.empty.info')
+        </p>
+    </div>
 </div>
 

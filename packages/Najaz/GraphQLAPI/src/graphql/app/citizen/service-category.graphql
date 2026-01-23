@@ -28,7 +28,7 @@ type ServiceCategory {
     logoUrl: String @rename(attribute: "logo_url")
     bannerUrl: String @rename(attribute: "banner_url")
     url: String!
-    services: [Service!]! @hasMany
+    services: [Service!]! @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ServiceCategoryQuery@services")
 }
 
 type ServiceCategoryPaginator {

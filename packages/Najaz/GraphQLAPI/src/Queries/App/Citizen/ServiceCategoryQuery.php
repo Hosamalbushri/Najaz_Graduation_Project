@@ -2,6 +2,7 @@
 
 namespace Najaz\GraphQLAPI\Queries\App\Citizen;
 
+use Illuminate\Support\Facades\DB;
 use Najaz\Service\Models\ServiceCategoryProxy;
 
 class ServiceCategoryQuery
@@ -13,8 +14,47 @@ class ServiceCategoryQuery
     {
         $citizen = najaz_graphql()->authorize('citizen-api');
 
+        $citizenType = $citizen->citizenType;
+
+        if (! $citizenType) {
+            $emptyPaginator = new \Illuminate\Pagination\LengthAwarePaginator(
+                collect(),
+                0,
+                10,
+                1
+            );
+            return [
+                'data' => [],
+                'paginatorInfo' => $emptyPaginator,
+            ];
+        }
+
+        // Get category IDs that have services authorized for this citizen type
+        $availableCategoryIds = DB::table('services')
+            ->join('citizen_type_service', 'services.id', '=', 'citizen_type_service.service_id')
+            ->where('citizen_type_service.citizen_type_id', $citizenType->id)
+            ->where('services.status', 1)
+            ->whereNotNull('services.category_id')
+            ->distinct()
+            ->pluck('services.category_id')
+            ->toArray();
+
+        if (empty($availableCategoryIds)) {
+            $emptyPaginator = new \Illuminate\Pagination\LengthAwarePaginator(
+                collect(),
+                0,
+                10,
+                1
+            );
+            return [
+                'data' => [],
+                'paginatorInfo' => $emptyPaginator,
+            ];
+        }
+
         $query = ServiceCategoryProxy::modelClass()::query()
             ->where('status', 1)
+            ->whereIn('id', $availableCategoryIds)
             ->with('translations');
 
         // Filter by parent_id if provided
@@ -45,12 +85,27 @@ class ServiceCategoryQuery
     {
         $citizen = najaz_graphql()->authorize('citizen-api');
 
+        $citizenType = $citizen->citizenType;
+
+        if (! $citizenType) {
+            return null;
+        }
+
+        // Check if category has any services authorized for this citizen type
+        $hasAuthorizedServices = DB::table('services')
+            ->join('citizen_type_service', 'services.id', '=', 'citizen_type_service.service_id')
+            ->where('citizen_type_service.citizen_type_id', $citizenType->id)
+            ->where('services.status', 1)
+            ->where('services.category_id', $args['id'])
+            ->exists();
+
+        if (! $hasAuthorizedServices) {
+            return null;
+        }
+
         $category = ServiceCategoryProxy::modelClass()::where('id', $args['id'])
             ->where('status', 1)
-            ->with(['translations', 'services' => function ($query) {
-                $query->where('status', 1)
-                    ->with(['translations', 'images']);
-            }])
+            ->with('translations')
             ->first();
 
         return $category;
@@ -210,5 +265,32 @@ class ServiceCategoryQuery
             'total' => $paginator->total(),
             'hasMorePages' => $paginator->hasMorePages(),
         ];
+    }
+
+    /**
+     * Get services for a category, filtered by citizen type authorization.
+     */
+    public function services($rootValue): \Illuminate\Support\Collection
+    {
+        if (! $rootValue) {
+            return collect();
+        }
+
+        $citizen = najaz_graphql()->authorize('citizen-api');
+        $citizenType = $citizen->citizenType;
+
+        if (! $citizenType) {
+            return collect();
+        }
+
+        // Get services that belong to this category and are authorized for the citizen type
+        $services = $citizenType->services()
+            ->where('services.category_id', $rootValue->id)
+            ->where('services.status', 1)
+            ->orderBy('sort_order')
+            ->with(['translations', 'images', 'category'])
+            ->get();
+
+        return $services;
     }
 }

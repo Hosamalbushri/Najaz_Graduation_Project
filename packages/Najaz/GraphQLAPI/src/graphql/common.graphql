@@ -162,7 +162,7 @@ type Citizen {
     status: Boolean
     isVerified: Boolean @rename(attribute: "is_verified")
     identityVerificationStatus: Boolean @rename(attribute: "identity_verification_status")
-    citizenTypeId: Int @rename(attribute: "citizen_type_id")
+    citizenTypeName: String @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\CitizenQuery@citizenTypeName")
     createdAt: DateTime @rename(attribute: "created_at")
     updatedAt: DateTime @rename(attribute: "updated_at")
     identityVerification: IdentityVerification @hasOne(relation: "identityVerification")

@@ -27,5 +27,17 @@ class CitizenQuery
             ->with('translations')
             ->get();
     }
+
+    /**
+     * Return the citizen type name instead of ID.
+     */
+    public function citizenTypeName($rootValue): ?string
+    {
+        if (! $rootValue || ! $rootValue->relationLoaded('citizenType')) {
+            $rootValue?->load('citizenType');
+        }
+
+        return $rootValue?->citizenType?->name;
+    }
 }
 
