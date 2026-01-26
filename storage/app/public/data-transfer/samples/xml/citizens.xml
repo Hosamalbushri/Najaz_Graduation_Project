@@ -8,7 +8,7 @@
         gender="Male"
         date_of_birth="1990-01-15"
         email="ahmed@example.com"
-        phone="+966501234567"
+        phone="731234567"
         status="1"
     />
     <citizen
@@ -19,7 +19,7 @@
         gender="Female"
         date_of_birth="1992-05-20"
         email="fatima@example.com"
-        phone="+966502345678"
+        phone="772345678"
         status="1"
     />
     <citizen
@@ -30,7 +30,7 @@
         gender="Male"
         date_of_birth="1988-11-10"
         email="khalid@example.com"
-        phone="+966503456789"
+        phone="783456789"
         status="1"
     />
 </citizens>

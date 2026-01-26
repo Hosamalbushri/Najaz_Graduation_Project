@@ -44,6 +44,12 @@ class Importer extends AbstractImporter
      */
     const ERROR_DUPLICATE_PHONE = 'duplicated_phone';
 
+    /**
+     * Error code for phone already used by another citizen.
+     *
+     * @var string
+     */
+    const ERROR_PHONE_ALREADY_EXISTS = 'phone_already_exists';
 
     /**
      * Permanent entity columns.
@@ -73,6 +79,7 @@ class Importer extends AbstractImporter
         self::ERROR_DUPLICATE_NATIONAL_ID             => 'data_transfer::app.importers.citizens.validation.errors.duplicate-national-id',
         self::ERROR_DUPLICATE_EMAIL                   => 'data_transfer::app.importers.citizens.validation.errors.duplicate-email',
         self::ERROR_DUPLICATE_PHONE                   => 'data_transfer::app.importers.citizens.validation.errors.duplicate-phone',
+        self::ERROR_PHONE_ALREADY_EXISTS              => 'data_transfer::app.importers.citizens.validation.errors.phone-already-exists',
     ];
 
     /**
@@ -99,6 +106,11 @@ class Importer extends AbstractImporter
      * Phones storage.
      */
     protected array $phones = [];
+
+    /**
+     * Existing phones from DB: phone => national_id (for duplicate check).
+     */
+    protected array $existingPhonesFromDb = [];
 
     /**
      * Create a new helper instance.
@@ -132,8 +144,26 @@ class Importer extends AbstractImporter
     public function validateData(): void
     {
         $this->citizenStorage->init();
+        $this->loadExistingPhonesFromDb();
 
         parent::validateData();
+    }
+
+    /**
+     * Load existing phones from database (phone => national_id).
+     */
+    protected function loadExistingPhonesFromDb(): void
+    {
+        $this->existingPhonesFromDb = [];
+        $citizens = $this->citizenRepository->all(['national_id', 'phone']);
+        foreach ($citizens as $citizen) {
+            if (! empty($citizen->phone)) {
+                $normalized = $this->cleanPhone($citizen->phone);
+                if ($normalized !== '') {
+                    $this->existingPhonesFromDb[$normalized] = $citizen->national_id;
+                }
+            }
+        }
     }
 
     /**
@@ -155,6 +185,13 @@ class Importer extends AbstractImporter
          */
         if (isset($rowData['national_id'])) {
             $rowData['national_id'] = $this->cleanNationalId($rowData['national_id']);
+        }
+
+        /**
+         * Clean phone (9 digits, 73/77/78/71) for validation and duplicate check.
+         */
+        if (isset($rowData['phone'])) {
+            $rowData['phone'] = $this->cleanPhone($rowData['phone']);
         }
 
         /**
@@ -230,7 +267,7 @@ class Importer extends AbstractImporter
         }
 
         /**
-         * Check if phone is unique (if provided).
+         * Check if phone is unique within the import file.
          */
         if (! empty($rowData['phone'])) {
             if (! in_array($rowData['phone'], $this->phones)) {
@@ -242,6 +279,19 @@ class Importer extends AbstractImporter
                 );
 
                 $this->skipRow($rowNumber, self::ERROR_DUPLICATE_PHONE, 'phone', $message);
+            }
+
+            /**
+             * Check if phone is already used by another citizen in the database.
+             */
+            $existingNationalId = $this->existingPhonesFromDb[$rowData['phone']] ?? null;
+            if ($existingNationalId !== null && $existingNationalId !== $rowData['national_id']) {
+                $message = sprintf(
+                    trans($this->messages[self::ERROR_PHONE_ALREADY_EXISTS]),
+                    $rowData['phone']
+                );
+
+                $this->skipRow($rowNumber, self::ERROR_PHONE_ALREADY_EXISTS, 'phone', $message);
             }
         }
 
@@ -261,6 +311,29 @@ class Importer extends AbstractImporter
         $nationalId = preg_replace('/[\s\-_]/', '', $nationalId);
 
         return $nationalId;
+    }
+
+    /**
+     * Clean phone to 9 digits (73, 77, 78, 71). Strip non-digits and optional 966 prefix.
+     */
+    protected function cleanPhone($phone): string
+    {
+        if ($phone === null || $phone === '') {
+            return '';
+        }
+
+        $phone = (string) $phone;
+        $digits = preg_replace('/\D/', '', $phone);
+
+        if (strlen($digits) === 12 && str_starts_with($digits, '966')) {
+            return substr($digits, 3);
+        }
+
+        if (strlen($digits) === 9) {
+            return $digits;
+        }
+
+        return $digits;
     }
 
     /**
@@ -377,6 +450,8 @@ class Importer extends AbstractImporter
         // Clean national_id
         $nationalId = $this->cleanNationalId($rowData['national_id']);
 
+        $phone = isset($rowData['phone']) ? $this->cleanPhone($rowData['phone']) : null;
+
         $attributes = [
             'first_name'                  => $rowData['first_name'],
             'middle_name'                 => $rowData['middle_name'] ?? '',
@@ -384,7 +459,7 @@ class Importer extends AbstractImporter
             'gender'                      => $rowData['gender'] ?? null,
             'date_of_birth'               => $rowData['date_of_birth'] ?? null,
             'email'                       => $rowData['email'] ?? null,
-            'phone'                       => $rowData['phone'] ?? null,
+            'phone'                       => $phone !== '' ? $phone : null,
             'citizen_type_id'             => 1,
             'status'                      => isset($rowData['status']) ? (int) (bool) $rowData['status'] : 1,
             'image'                       => $rowData['image'] ?? null,

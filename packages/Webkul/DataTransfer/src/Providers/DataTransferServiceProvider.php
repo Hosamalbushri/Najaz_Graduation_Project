@@ -22,5 +22,11 @@ class DataTransferServiceProvider extends ServiceProvider
         $this->loadTranslationsFrom(__DIR__.'/../Resources/lang', 'data_transfer');
 
         $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                \Webkul\DataTransfer\Console\GenerateImportSamplesCommand::class,
+            ]);
+        }
     }
 }

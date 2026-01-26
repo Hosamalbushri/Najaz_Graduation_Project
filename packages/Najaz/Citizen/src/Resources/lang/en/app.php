@@ -11,6 +11,7 @@ return [
                     'duplicate-national-id' => 'National ID: \'%s\' is found more than once in the import file.',
                     'duplicate-email'        => 'Email: \'%s\' is found more than once in the import file.',
                     'duplicate-phone'       => 'Phone: \'%s\' is found more than once in the import file.',
+                    'phone-already-exists'  => 'Phone: \'%s\' is already registered for another citizen in the system.',
                     'invalid-citizen-type'   => 'Citizen type is invalid or not found.',
                 ],
             ],
