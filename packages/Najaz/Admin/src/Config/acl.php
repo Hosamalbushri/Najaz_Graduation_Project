@@ -351,7 +351,7 @@ return [
         'sort'  => 3,
     ], [
         'key'   => 'service-requests.custom-template.copy',
-        'name'  => 'Admin::app.acl.copy',
+        'name'  => 'Admin::app.service-requests.custom-template.copy',
         'route' => 'admin.service-requests.custom-template.copy',
         'sort'  => 4,
     ],

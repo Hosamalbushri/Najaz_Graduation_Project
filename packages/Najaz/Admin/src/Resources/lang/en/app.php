@@ -1040,6 +1040,7 @@ return [
         'custom-template' => [
             'title'                  => 'Custom Template',
             'tab-title'              => 'Custom Template',
+            'copy'                   => 'Copy from Original Template',
             'edit'                   => 'Edit Custom Template',
             'template-content'       => 'Additional Template Content',
             'template-content-help'  => 'Add additional HTML content for this request. It will be merged with the original template.',
@@ -1356,6 +1357,8 @@ return [
         'update-status'          => 'Update Status',
         'add-notes'              => 'Add Notes',
         'print'                  => 'Print',
+        'custom-template'        => 'Custom Template',
+        'copy'                   => 'Copy',
         'download-word'          => 'Download Word',
         'upload-pdf'             => 'Upload PDF',
         'mark-read'              => 'Mark as Read',

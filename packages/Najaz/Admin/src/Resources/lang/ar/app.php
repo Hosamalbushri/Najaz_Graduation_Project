@@ -1043,6 +1043,7 @@ return [
         'custom-template' => [
             'title'                  => 'القالب المخصص',
             'tab-title'              => 'القالب المخصص',
+            'copy'                   => 'نسخ من القالب الأصلي',
             'edit'                   => 'تحرير القالب المخصص',
             'template-content'       => 'محتوى القالب الإضافي',
             'template-content-help'  => 'أضف محتوى HTML إضافي لهذا الطلب. سيتم دمجه مع القالب الأصلي.',
@@ -1357,6 +1358,8 @@ return [
         'update-status'          => 'تحديث الحالة',
         'add-notes'              => 'إضافة ملاحظات',
         'print'                  => 'طباعة',
+        'custom-template'        => 'القالب المخصص',
+        'copy'                   => 'نسخ',
         'download-word'          => 'تنزيل Word',
         'upload-pdf'             => 'رفع PDF',
         'mark-read'              => 'تعليم كمقروء',
