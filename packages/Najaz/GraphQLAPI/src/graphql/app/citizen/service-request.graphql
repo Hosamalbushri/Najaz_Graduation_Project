@@ -107,12 +107,12 @@ type ServiceRequest {
     serviceId: Int! @rename(attribute: "service_id")
     citizenId: Int! @rename(attribute: "citizen_id")
     status: String!
-    """
-    Prefer formDataEntries for structured per-group form data.
-    """
-    formData: JSON @rename(attribute: "form_data")
-    formDataEntries: [ServiceRequestFormDataEntry!]! @hasMany(relation: "formData")
     statusReasons: [ServiceRequestStatusReasonType!]! @hasMany(relation: "statusReasons")
+    """
+    Form data organized by groups, similar to service form structure.
+    Each group contains fields with code, label, and value from form data.
+    """
+    formData: JSON @field(resolver: "Najaz\\GraphQLAPI\\Queries\\App\\Citizen\\ServiceRequestQuery@fieldLabels")
     notes: String
     completedAt: DateTime @rename(attribute: "completed_at")
     createdAt: DateTime @rename(attribute: "created_at")

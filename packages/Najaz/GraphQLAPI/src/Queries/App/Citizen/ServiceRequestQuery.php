@@ -98,7 +98,12 @@ class ServiceRequestQuery
                         $subQ->where('citizens.id', $citizen->id);
                     });
             })
-            ->with(['service', 'beneficiaries', 'formData', 'statusReasons'])
+            ->with([
+                'service.attributeGroups.fields.attributeType',
+                'beneficiaries',
+                'formData',
+                'statusReasons',
+            ])
             ->first();
 
         if (! $request) {
@@ -150,6 +155,129 @@ class ServiceRequestQuery
             'total' => $paginator->total(),
             'hasMorePages' => $paginator->hasMorePages(),
         ];
+    }
+
+    /**
+     * Get field labels for a service request, organized by groups like service form.
+     * Returns an array of groups, each containing fields with code, label, and value.
+     */
+    public function fieldLabels($rootValue): array
+    {
+        if (! $rootValue instanceof \Najaz\Request\Models\ServiceRequest) {
+            return [];
+        }
+
+        $locale = app()->getLocale();
+        $fallbackLocale = config('app.fallback_locale', 'ar');
+
+        // Ensure service is loaded
+        if (! $rootValue->relationLoaded('service')) {
+            $rootValue->load('service');
+        }
+
+        if (! $rootValue->service) {
+            return [];
+        }
+
+        // Ensure formData is loaded
+        if (! $rootValue->relationLoaded('formData')) {
+            $rootValue->load('formData');
+        }
+
+        // Build a map of form data values by group and field code
+        $formDataMap = [];
+        foreach ($rootValue->formData as $formDataEntry) {
+            $groupCode = $formDataEntry->group_code;
+            if ($formDataEntry->fields_data && is_array($formDataEntry->fields_data)) {
+                foreach ($formDataEntry->fields_data as $fieldCode => $fieldValue) {
+                    // Store both flat and nested keys
+                    $formDataMap[$fieldCode] = $fieldValue;
+                    $formDataMap[$groupCode.'.'.$fieldCode] = $fieldValue;
+                }
+            }
+        }
+
+        // Ensure attributeGroups are loaded
+        if (! $rootValue->service->relationLoaded('attributeGroups')) {
+            $rootValue->service->load('attributeGroups.fields.attributeType');
+        }
+
+        if (! $rootValue->service->attributeGroups) {
+            return [];
+        }
+
+        // Load custom service fields from ServiceAttributeGroupService
+        $pivotIds = $rootValue->service->attributeGroups->pluck('pivot.id')->filter();
+        $pivotRelations = collect();
+        
+        if ($pivotIds->isNotEmpty()) {
+            $pivotRelations = \Najaz\Service\Models\ServiceAttributeGroupService::with([
+                'fields.translations',
+                'attributeGroup.translations',
+                'translations',
+            ])->whereIn('id', $pivotIds)->get()->keyBy('id');
+        }
+
+        $groups = $rootValue->service->attributeGroups->map(function ($group) use ($pivotRelations, $locale, $fallbackLocale, $formDataMap) {
+            $pivotId = $group->pivot->id ?? null;
+            $pivotRelation = $pivotId ? $pivotRelations->get($pivotId) : null;
+            $groupCode = $group->pivot->custom_code ?? $group->code;
+
+            // Get custom name from pivot relation translations
+            $customName = null;
+            if ($pivotRelation && $pivotRelation->relationLoaded('translations')) {
+                $translation = $pivotRelation->translations->where('locale', $locale)->first();
+                $customName = $translation?->custom_name;
+                
+                if (empty($customName)) {
+                    $fallbackTranslation = $pivotRelation->translations->where('locale', $fallbackLocale)->first();
+                    $customName = $fallbackTranslation?->custom_name;
+                }
+            }
+
+            // Get group name with fallback
+            $groupTranslation = $group->translate($locale);
+            $groupName = $customName 
+                ?? ($groupTranslation?->name) 
+                ?? ($group->translate($fallbackLocale)?->name)
+                ?? $group->default_name
+                ?? $group->code;
+
+            // Use custom service fields if available, otherwise fall back to template fields
+            $fieldsToUse = $pivotRelation && $pivotRelation->fields && $pivotRelation->fields->isNotEmpty()
+                ? $pivotRelation->fields
+                : ($group->fields ?? collect());
+
+            $fields = $fieldsToUse->map(function ($field) use ($locale, $fallbackLocale, $groupCode, $formDataMap) {
+                // Get field label with fallback
+                $fieldTranslation = $field->translate($locale);
+                $fieldLabel = $fieldTranslation?->label;
+                
+                if (empty($fieldLabel)) {
+                    $fallbackFieldTranslation = $field->translate($fallbackLocale);
+                    $fieldLabel = $fallbackFieldTranslation?->label;
+                }
+                
+                $fieldLabel = $fieldLabel ?? $field->code;
+
+                // Get field value from formData (try nested first, then flat)
+                $fieldValue = $formDataMap[$groupCode.'.'.$field->code] ?? $formDataMap[$field->code] ?? null;
+
+                return [
+                    'code' => $field->code,
+                    'label' => (string) $fieldLabel,
+                    'value' => $fieldValue,
+                ];
+            })->values()->all();
+
+            return [
+                'code' => $groupCode,
+                'name' => (string) $groupName,
+                'fields' => $fields,
+            ];
+        })->values()->all();
+
+        return $groups;
     }
 }
 
