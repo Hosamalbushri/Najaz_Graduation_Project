@@ -98,7 +98,7 @@ class ServiceRequestQuery
                         $subQ->where('citizens.id', $citizen->id);
                     });
             })
-            ->with(['service', 'beneficiaries'])
+            ->with(['service', 'beneficiaries', 'formData', 'statusReasons'])
             ->first();
 
         if (! $request) {

@@ -514,7 +514,7 @@ class ServiceRepository extends Repository
             ->get(['id', 'name'])
             ->map(fn ($type) => [
                 'id'       => $type->id,
-                'key'      => $type->id,
+                'key'      => (string) $type->id,
                 'name'     => $type->name,
                 'children' => [],
             ])

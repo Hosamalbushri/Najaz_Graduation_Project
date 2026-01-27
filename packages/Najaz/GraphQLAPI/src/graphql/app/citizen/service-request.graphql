@@ -83,13 +83,36 @@ type ServiceRequestResponse {
     request: ServiceRequest
 }
 
+"""
+One group of form data for a service request (e.g. applicant data, attachments).
+"""
+type ServiceRequestFormDataEntry {
+    groupCode: String! @rename(attribute: "group_code")
+    groupName: String @rename(attribute: "group_name")
+    fieldsData: JSON! @rename(attribute: "fields_data")
+}
+
+"""
+A status change reason (rejection or revision request) for a service request.
+"""
+type ServiceRequestStatusReasonType {
+    reasonType: String! @rename(attribute: "reason_type")
+    reason: String!
+    createdAt: DateTime! @rename(attribute: "created_at")
+}
+
 type ServiceRequest {
     id: ID!
     incrementId: String @rename(attribute: "increment_id")
     serviceId: Int! @rename(attribute: "service_id")
     citizenId: Int! @rename(attribute: "citizen_id")
     status: String!
+    """
+    Prefer formDataEntries for structured per-group form data.
+    """
     formData: JSON @rename(attribute: "form_data")
+    formDataEntries: [ServiceRequestFormDataEntry!]! @hasMany(relation: "formData")
+    statusReasons: [ServiceRequestStatusReasonType!]! @hasMany(relation: "statusReasons")
     notes: String
     completedAt: DateTime @rename(attribute: "completed_at")
     createdAt: DateTime @rename(attribute: "created_at")
